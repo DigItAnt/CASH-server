@@ -2,8 +2,6 @@ package it.cnr.ilc.lari.itant.belexo.om;
 
 import java.util.List;
 
-import javax.validation.constraints.Pattern;
-
 public class DocumentSystemNode {
     private String name;
     private String path;
@@ -41,7 +39,7 @@ public class DocumentSystemNode {
     public void setChildren(List<DocumentSystemNode> children) {
         this.children = children;
     }
-    
+
     public int getElement_id() {
         return element_id;
     }
