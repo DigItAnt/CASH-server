@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.cnr.ilc.lari.itant.belexo.om.GetDocumentSystemOutput;
+import it.cnr.ilc.lari.itant.belexo.om.GetUsersOutput;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
 
@@ -24,4 +25,14 @@ public class BootstrapController {
 		toret.setResults(toret.getDocumentSystem().size());
 		return toret;
 	}
+
+	@GetMapping("/api/getUsers")
+	public GetUsersOutput getUsers(@RequestParam String requestUUID) {
+		PodamFactory factory = new PodamFactoryImpl();
+		GetUsersOutput toret = factory.manufacturePojo(GetUsersOutput.class);
+		toret.setRequestUUID(requestUUID);
+		toret.setResults(toret.getUsers().size());
+		return toret;
+	}
+
 }
