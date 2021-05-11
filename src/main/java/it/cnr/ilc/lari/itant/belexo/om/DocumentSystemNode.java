@@ -1,12 +1,15 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
 import java.util.List;
+import java.util.Map;
 
 public class DocumentSystemNode {
     private String name;
     private String path;
     private List<DocumentSystemNode> children;
     private int element_id;
+    private Map<String, String> metadata;
+    // private String key_meta;  // TODO ripensare con value_meta, vedi doc
 
     static public enum FileFolder {
         file, folder
@@ -45,6 +48,13 @@ public class DocumentSystemNode {
     }
     public void setElement_id(int element_id) {
         this.element_id = element_id;
+    }
+    
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+    public void setMetadata(Map<String, String> metadata) {
+        this.metadata = metadata;
     }
 
     
