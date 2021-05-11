@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.cnr.ilc.lari.itant.belexo.om.AddFolderRequest;
+import it.cnr.ilc.lari.itant.belexo.om.AddFolderResponse;
 import it.cnr.ilc.lari.itant.belexo.om.GetDocumentSystemOutput;
 import it.cnr.ilc.lari.itant.belexo.om.GetUsersOutput;
 import it.cnr.ilc.lari.itant.belexo.om.SearchFilesRequest;
@@ -47,4 +49,13 @@ public class BootstrapController {
 		toret.setResults(toret.getFiles().size());
 		return toret;
 	}
+
+	@PostMapping("/api/addFolder")
+	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) {
+		PodamFactory factory = new PodamFactoryImpl();
+		AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
+		toret.setRequestUUID(request.getRequestUUID());
+		return toret;
+	}
+
 }
