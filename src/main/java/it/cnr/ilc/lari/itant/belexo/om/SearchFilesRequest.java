@@ -5,6 +5,8 @@ import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 public class SearchFilesRequest {
     String requestUUID;
@@ -106,10 +108,12 @@ public class SearchFilesRequest {
         this.untilDate = untilDate;
     }
 
+    //@JsonSerialize(using = MetadataSerializer.class)
     public Map<String, String> getMetadata() {
         return metadata;
     }
 
+    //@JsonDeserialize(using = MetadataDeserializer.class)
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
