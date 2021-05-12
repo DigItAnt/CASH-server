@@ -3,8 +3,6 @@ package it.cnr.ilc.lari.itant.belexo.om;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 public class FileInfo {
     String path;
