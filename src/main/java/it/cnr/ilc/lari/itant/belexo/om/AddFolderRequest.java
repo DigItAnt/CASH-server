@@ -2,28 +2,8 @@ package it.cnr.ilc.lari.itant.belexo.om;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class AddFolderRequest {
-    String requestUUID;
-    int userId;
+public class AddFolderRequest extends UserReqUUID {
     int elementId;
-
-    public String getRequestUUID() {
-        return requestUUID;
-    }
-
-    public void setRequestUUID(String requestUUID) {
-        this.requestUUID = requestUUID;
-    }
-
-    @JsonProperty("user-id")
-    public int getUserId() {
-        return userId;
-    }
-
-    @JsonProperty("user-id")
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
 
     @JsonProperty("element-id")
     public int getElementId() {

@@ -2,7 +2,7 @@ package it.cnr.ilc.lari.itant.belexo.om;
 
 import java.util.List;
 
-public class GetUsersOutput {
+public class GetUsersResponse {
     private String requestUUID;
     private Integer results;
     private List<User> users;

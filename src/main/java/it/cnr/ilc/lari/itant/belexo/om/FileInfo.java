@@ -3,6 +3,8 @@ package it.cnr.ilc.lari.itant.belexo.om;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 public class FileInfo {
     String path;
@@ -36,9 +38,13 @@ public class FileInfo {
     public void setElementId(int elementId) {
         this.elementId = elementId;
     }
+
+    //@JsonSerialize(using = MetadataSerializer.class)
     public Map<String, String> getMetadata() {
         return metadata;
     }
+
+    //@JsonDeserialize(using = MetadataDeserializer.class)
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
