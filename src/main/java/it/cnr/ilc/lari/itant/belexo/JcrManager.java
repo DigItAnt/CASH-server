@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.cnr.ilc.lari.itant.belexo.exc.ForbiddenException;
+import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 
 public class JcrManager {
@@ -133,14 +134,14 @@ public class JcrManager {
         return 0;
     }
 
-    public synchronized static int removeFolder(int elementId) throws Exception {
+    public synchronized static void removeFolder(int elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
             log.info("Removing folder " + elementId);
             if (elementId == ROOT_ID)
-                throw new ForbiddenException();
+                throw new InvalidParamException();
             Node node = getNodeById(session, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
@@ -154,8 +155,47 @@ public class JcrManager {
         } finally {
             if (session != null) session.logout();
         }
-        return 0;
     }
+
+    public synchronized static void renameNode(int elementId, String newname) throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
+
+            log.info("Renaming name " + elementId + " with name " + newname);
+            if ( newname.contains("/") )
+                throw new InvalidParamException();
+            if (elementId == ROOT_ID)
+                throw new ForbiddenException();
+            Node node = getNodeById(session, elementId);
+            if (node == null)
+                throw new NodeNotFoundException();
+            String newpath = node.getParent().getPath();
+            if (!newpath.endsWith("/"))
+                newpath += "/";
+            newpath += newname;
+            
+            boolean nameOk = false;
+            try {
+                node.getParent().getNode(newname);
+            } catch(PathNotFoundException e) {
+                nameOk = true;
+            }
+            if (!nameOk)
+                throw new InvalidParamException();
+
+            node.getSession().move(node.getPath(), newpath);
+        
+            session.save();
+            log.info("Renamed node " + newname + ", id: " + elementId);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
+    }
+
 
 
     public static void test2(Repository repository) throws Exception {

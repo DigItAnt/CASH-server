@@ -46,10 +46,11 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/renameFolder")
-	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request) {
+	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RenameFolderResponse toret = factory.manufacturePojo(RenameFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
+		JcrManager.renameNode(request.getElementId(), request.getRenameString());
 		return toret;
 	}
 
