@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.cnr.ilc.lari.itant.belexo.JcrManager;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderResponse;
 import it.cnr.ilc.lari.itant.belexo.om.CopyFileToRequest;
@@ -40,6 +41,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
+		JcrManager.addFolder(request.getElementId());
 		return toret;
 	}
 
@@ -56,6 +58,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
+		JcrManager.removeFolder(request.getElementId());
 		return toret;
 	}
 
