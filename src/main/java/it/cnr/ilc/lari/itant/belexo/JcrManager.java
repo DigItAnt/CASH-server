@@ -20,6 +20,9 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.cnr.ilc.lari.itant.belexo.exc.ForbiddenException;
+import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
+
 public class JcrManager {
     public final static String MYID = "myid";
     public final static String MYTYPE = "mytype";
@@ -102,17 +105,18 @@ public class JcrManager {
         return name;
     }
 
-    public synchronized static int addFolder(int parentId) {
+    public synchronized static int addFolder(int parentId) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
+            log.info("Creating folder under parent " + parentId);
             Node root = session.getRootNode();
             Node parent = root;
             if (parentId != ROOT_ID)
                 parent = getNodeById(session, parentId);
-            if (parent == null) // TODO custom exception
-                throw new Exception("NOT FOUND");
+            if (parent == null)
+                throw new NodeNotFoundException();
             int newid = getNewId(session);
             String name = getNewFolderName(parent);
             Node newfolder = parent.addNode(name);
@@ -121,29 +125,32 @@ public class JcrManager {
             session.save();
             log.info("Created folder " + name + ", id: " + newid);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.toString());
+            throw e;
         } finally {
             if (session != null) session.logout();
         }
         return 0;
     }
 
-    public synchronized static int removeFolder(int elementId) {
+    public synchronized static int removeFolder(int elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
-            if (elementId == ROOT_ID) // TODO custom exception
-                throw new Exception("CANNOT REMOVE ROOT");
+            log.info("Removing folder " + elementId);
+            if (elementId == ROOT_ID)
+                throw new ForbiddenException();
             Node node = getNodeById(session, elementId);
-            if (node == null) // TODO custom exception
-                throw new Exception("NOT FOUND");
+            if (node == null)
+                throw new NodeNotFoundException();
             String name = node.getName();
             node.remove();
             session.save();
             log.info("Removed node " + name + ", id: " + elementId);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.toString());
+            throw e;
         } finally {
             if (session != null) session.logout();
         }

@@ -37,7 +37,7 @@ import uk.co.jemos.podam.api.PodamFactoryImpl;
 @RestController
 public class CRUDController {
 	@PostMapping("/api/crud/addFolder")
-	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) {
+	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
@@ -54,7 +54,7 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/removeFolder")
-	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request) {
+	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
