@@ -6,6 +6,8 @@ import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
+import javax.jcr.Property;
+import javax.jcr.PropertyIterator;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
@@ -30,6 +32,7 @@ public class JcrManager {
     public final static String TYPE_FOLDER = "folder";
     public final static String TYPE_FILE = "file";
     public final static String BASE_FOLDER_NAME = "new-folder-";
+    public final static String META_PFIX = "meta_";
     private final static int ROOT_ID = 0;
 
     private static final Logger log = LoggerFactory.getLogger(JcrManager.class);
@@ -223,4 +226,19 @@ public class JcrManager {
         } 
     }
 
+    public static void logProperties(Node node) {
+        try {
+            PropertyIterator pit = node.getProperties();
+            while ( pit.hasNext() ) {
+                Property p = pit.nextProperty();
+                try {
+                    log.info("P " + p.getName() + ": " + p.getString());
+                } catch ( Exception e ) {
+                    log.info("Cannot log " + p.toString());
+                }
+            }
+        } catch ( Exception me ) {
+            log.info("Cannot access properties of " + node.toString());
+        }
+    }
 }

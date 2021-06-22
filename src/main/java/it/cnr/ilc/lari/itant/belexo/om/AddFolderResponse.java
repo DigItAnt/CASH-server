@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AddFolderResponse {
    String requestUUID;
-   int responseStatus;
+   int responseStatus = ResponseStatus.OK; // by default
    private List<DocumentSystemNode> documentSystem;
 
 

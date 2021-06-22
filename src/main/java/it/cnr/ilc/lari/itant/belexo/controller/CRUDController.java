@@ -12,6 +12,7 @@ import it.cnr.ilc.lari.itant.belexo.om.CopyFileToRequest;
 import it.cnr.ilc.lari.itant.belexo.om.CopyFileToResponse;
 import it.cnr.ilc.lari.itant.belexo.om.DeleteMetadataRequest;
 import it.cnr.ilc.lari.itant.belexo.om.DeleteMetadataResponse;
+import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileResponse;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFileToRequest;
@@ -26,6 +27,7 @@ import it.cnr.ilc.lari.itant.belexo.om.RenameFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFileResponse;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFolderResponse;
+import it.cnr.ilc.lari.itant.belexo.om.ResponseStatus;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataResponse;
 import it.cnr.ilc.lari.itant.belexo.om.UploadFileRequest;
@@ -38,8 +40,10 @@ import uk.co.jemos.podam.api.PodamFactoryImpl;
 public class CRUDController {
 	@PostMapping("/api/crud/addFolder")
 	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
+		//PodamFactory factory = new PodamFactoryImpl();
+		//AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
+		AddFolderResponse toret = new AddFolderResponse();
+		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		JcrManager.addFolder(request.getElementId());
 		return toret;
