@@ -157,12 +157,12 @@ public class JcrManager {
         return 0;
     }
 
-    public synchronized static void removeFolder(int elementId) throws Exception {
+    public synchronized static void removeNode(int elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
-            log.info("Removing folder " + elementId);
+            log.info("Removing node " + elementId);
             if (elementId == ROOT_ID)
                 throw new InvalidParamException();
             Node node = getNodeById(session, elementId);

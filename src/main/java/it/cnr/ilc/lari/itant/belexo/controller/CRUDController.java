@@ -64,7 +64,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
-		JcrManager.removeFolder(request.getElementId());
+		JcrManager.removeNode(request.getElementId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		return toret;
 	}
