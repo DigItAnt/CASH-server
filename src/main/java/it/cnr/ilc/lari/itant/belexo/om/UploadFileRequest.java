@@ -2,19 +2,11 @@
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class UploadFileRequest extends UserReqUUID {
+public class UploadFileRequest extends AddFolderRequest {
     String path;
     
     @JsonProperty("file-name")
     String fileName;
-
-    public String getPath() {
-        return path;
-    }
-
-    public void setPath(String path) {
-        this.path = path;
-    }
 
     public String getFileName() {
         return fileName;
