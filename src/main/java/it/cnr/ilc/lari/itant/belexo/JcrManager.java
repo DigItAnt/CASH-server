@@ -94,27 +94,43 @@ public class JcrManager {
         return startFrom;
     }
 
+    public static boolean fileExists(Node parent, String filename) throws Exception {
+        try {
+            parent.getNode(filename);
+        } catch (PathNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
+
     public static String getNewFolderName(Node parent) throws Exception {
         int tmp = 1;
         String name = null;
         while ( true ) {
             name = BASE_FOLDER_NAME + tmp;
-            try {
-                parent.getNode(name);
-            } catch (PathNotFoundException e) {
+            if (!fileExists(parent, name))
                 break;
-            }
             tmp += 1;
         }
         return name;
     }
 
     public synchronized static int addFolder(int parentId) throws Exception {
+        log.info("Creating folder under parent " + parentId);
+        return addNode(parentId, null, TYPE_FOLDER);
+    }
+
+    public synchronized static int addFile(int parentId, String filename) throws Exception {
+        log.info("Creating file under parent " + parentId);
+        return addNode(parentId, filename, TYPE_FILE);
+    }
+
+    public synchronized static int addNode(int parentId, String nodename, String nodetype) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
-            log.info("Creating folder under parent " + parentId);
+            log.info("Creating node under parent " + parentId);
             Node root = session.getRootNode();
             Node parent = root;
             if (parentId != ROOT_ID)
@@ -122,12 +138,16 @@ public class JcrManager {
             if (parent == null)
                 throw new NodeNotFoundException();
             int newid = getNewId(session);
-            String name = getNewFolderName(parent);
+            String name = nodename;
+            if (name == null)
+                name = getNewFolderName(parent);
+            if (fileExists(parent, name))
+                throw new InvalidParamException();
             Node newfolder = parent.addNode(name);
             newfolder.setProperty(MYID, newid);
-            newfolder.setProperty(MYTYPE, TYPE_FOLDER);
+            newfolder.setProperty(MYTYPE, nodetype);
             session.save();
-            log.info("Created folder " + name + ", id: " + newid);
+            log.info("Created node " + name + ", id: " + newid);
         } catch (Exception e) {
             log.error(e.toString());
             throw e;
