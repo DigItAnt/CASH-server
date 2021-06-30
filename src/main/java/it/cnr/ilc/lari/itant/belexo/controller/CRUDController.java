@@ -145,6 +145,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
 		// TODO
+		JcrManager.addFile(request.getElementId(), request.getFileName());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
