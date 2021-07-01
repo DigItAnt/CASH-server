@@ -27,7 +27,6 @@ import it.cnr.ilc.lari.itant.belexo.om.RenameFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFileResponse;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFolderResponse;
-import it.cnr.ilc.lari.itant.belexo.om.ResponseStatus;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataResponse;
 import it.cnr.ilc.lari.itant.belexo.om.UploadFileRequest;
@@ -103,7 +102,7 @@ public class CRUDController {
 	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		CopyFileToResponse toret = factory.manufacturePojo(CopyFileToResponse.class);
-		// TODO
+		JcrManager.copyNode(request.getElementId(), request.getTargetId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;

@@ -12,6 +12,7 @@ import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
+import javax.jcr.Workspace;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
@@ -94,6 +95,13 @@ public class JcrManager {
         return startFrom;
     }
 
+    public static boolean isDirectory(Session session, int nodeId) throws Exception {
+        if (nodeId == ROOT_ID) return true;
+        Node node = getNodeById(session, nodeId);
+        if (node == null) return false;
+        return ( node.getProperty(MYTYPE).getString().equals(TYPE_FOLDER) );
+    }
+
     public static boolean fileExists(Node parent, String filename) throws Exception {
         try {
             parent.getNode(filename);
@@ -137,6 +145,12 @@ public class JcrManager {
                 parent = getNodeById(session, parentId);
             if (parent == null)
                 throw new NodeNotFoundException();
+
+            if (!isDirectory(session, parentId)) {
+                log.error("destination is not a directory");
+                throw new InvalidParamException();
+            }
+    
             int newid = getNewId(session);
             String name = nodename;
             if (name == null)
@@ -235,8 +249,15 @@ public class JcrManager {
             Node parent = root;
             if (destId != ROOT_ID)
                 parent = getNodeById(session, destId);
-            if (parent == null)
+            if (parent == null) {
+                log.error("cannot move file: parent not found");
                 throw new NodeNotFoundException();
+            }
+
+            if (!isDirectory(session, destId)) {
+                log.error("destination is not a directory");
+                throw new InvalidParamException();
+            }
 
             String newpath = parent.getPath();
             if (!newpath.endsWith("/"))
@@ -249,8 +270,10 @@ public class JcrManager {
             } catch (PathNotFoundException e) {
                 nameOk = true;
             }
-            if (!nameOk)
+            if (!nameOk) {
+                log.error("cannot move file: name already present");
                 throw new InvalidParamException();
+            }
 
             try {
                 node.getSession().move(node.getPath(), newpath);
@@ -260,6 +283,72 @@ public class JcrManager {
 
             session.save();
             log.info("Moved node " + node.getName() + ", id: " + elementId);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
+    }
+
+    public synchronized static void copyNode(int elementId, int destId) throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
+
+            log.info("Copying node " + elementId + " under " + destId);
+            if (elementId == ROOT_ID)
+                throw new InvalidParamException();
+            Node node = getNodeById(session, elementId);
+            if (node == null)
+                throw new NodeNotFoundException();
+
+            if (isDirectory(session, elementId)) {
+                log.error("node is not a file: " + elementId);
+                throw new InvalidParamException();
+            }
+
+            Node root = session.getRootNode();
+            Node parent = root;
+            if (destId != ROOT_ID)
+                parent = getNodeById(session, destId);
+            if (parent == null)
+                throw new NodeNotFoundException();
+
+            if (!isDirectory(session, destId)) {
+                log.error("destination is not a directory");
+                throw new InvalidParamException();
+            }
+
+            String newpath = parent.getPath();
+            if (!newpath.endsWith("/"))
+                newpath += "/";
+            newpath += node.getName();
+
+            boolean nameOk = false;
+            try {
+                parent.getNode(node.getName());
+            } catch (PathNotFoundException e) {
+                nameOk = true;
+            }
+            if (!nameOk) {
+                log.error("cannot move file: name already present");
+                throw new InvalidParamException();
+            }
+
+
+            Workspace workspace = session.getWorkspace(); 
+
+            try {
+                workspace.copy(node.getPath(), newpath);
+                String relpath = newpath.substring(1); // remove /
+                root.getNode(relpath).setProperty(MYID, getNewId(session));
+            } catch (RepositoryException e) {
+                throw new InvalidParamException();
+            }
+
+            session.save();
+            log.info("Copied node " + node.getName() + ", id: " + elementId);
         } catch (Exception e) {
             log.error(e.toString());
             throw e;
