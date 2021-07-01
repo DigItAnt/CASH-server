@@ -219,6 +219,55 @@ public class JcrManager {
         }
     }
 
+    public synchronized static void moveNode(int elementId, int destId) throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
+
+            log.info("Moving node " + elementId + " under " + destId);
+            if (elementId == ROOT_ID)
+                throw new InvalidParamException();
+            Node node = getNodeById(session, elementId);
+            if (node == null)
+                throw new NodeNotFoundException();
+
+            Node root = session.getRootNode();
+            Node parent = root;
+            if (destId != ROOT_ID)
+                parent = getNodeById(session, destId);
+            if (parent == null)
+                throw new NodeNotFoundException();
+
+            String newpath = parent.getPath();
+            if (!newpath.endsWith("/"))
+                newpath += "/";
+            newpath += node.getName();
+
+            boolean nameOk = false;
+            try {
+                parent.getNode(node.getName());
+            } catch (PathNotFoundException e) {
+                nameOk = true;
+            }
+            if (!nameOk)
+                throw new InvalidParamException();
+
+            try {
+                node.getSession().move(node.getPath(), newpath);
+            } catch (RepositoryException e) {
+                throw new InvalidParamException();
+            }
+
+            session.save();
+            log.info("Moved node " + node.getName() + ", id: " + elementId);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
+    }
+
 
 
     public static void test2(Repository repository) throws Exception {

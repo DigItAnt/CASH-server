@@ -73,7 +73,7 @@ public class CRUDController {
 	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFolderResponse toret = factory.manufacturePojo(MoveFolderResponse.class);
-		// TODO
+		JcrManager.moveNode(request.getElementId(), request.getTargetId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -83,7 +83,7 @@ public class CRUDController {
 	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFileResponse toret = factory.manufacturePojo(RemoveFileResponse.class);
-		// TODO
+		JcrManager.removeNode(request.getElementId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -93,7 +93,7 @@ public class CRUDController {
 	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RenameFileResponse toret = factory.manufacturePojo(RenameFileResponse.class);
-		// TODO
+		JcrManager.renameNode(request.getElementId(), request.getRenameString());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -113,7 +113,7 @@ public class CRUDController {
 	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFileToResponse toret = factory.manufacturePojo(MoveFileToResponse.class);
-		// TODO
+		JcrManager.moveNode(request.getElementId(), request.getTargetId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -144,7 +144,6 @@ public class CRUDController {
 		// TODO: Missing the file StreamBuffer!
 		PodamFactory factory = new PodamFactoryImpl();
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
-		// TODO
 		JcrManager.addFile(request.getElementId(), request.getFileName());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
