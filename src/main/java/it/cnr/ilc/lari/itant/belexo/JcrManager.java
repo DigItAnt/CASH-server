@@ -46,7 +46,11 @@ public class JcrManager {
 
     public static void createRepository() throws Exception {
 		// https://jackrabbit.apache.org/archive/wiki/JCR/RemoteAccess_115513494.html
-        repository = JcrUtils.getRepository("http://localhost:8081/server");
+        String jackrabbitURL = System.getenv("JACKRABBIT_URL");
+        if (jackrabbitURL == null)
+            jackrabbitURL = "http://localhost:8081/server";
+        log.info("JACKRABBIT URL: " + jackrabbitURL);
+        repository = JcrUtils.getRepository(jackrabbitURL);
     }
 
     public static Repository getRepository() {

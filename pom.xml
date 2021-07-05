@@ -17,6 +17,10 @@
 		<java.version>11</java.version>
 		<javax.jcr.version>2.0</javax.jcr.version>
 		<jackrabbit.version>2.20.2</jackrabbit.version>
+
+		<maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
 	<dependencies>
 
