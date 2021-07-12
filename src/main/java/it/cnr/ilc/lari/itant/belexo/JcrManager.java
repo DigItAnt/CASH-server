@@ -231,8 +231,8 @@ public class JcrManager {
             log.info("Renaming name " + elementId + " with name " + newname);
             if ( newname.contains("/") )
                 throw new InvalidParamException();
-            if (elementId == ROOT_ID)
-                throw new ForbiddenException();
+            //if (elementId == ROOT_ID)
+            //    throw new ForbiddenException();
             Node node = getNodeById(session, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
