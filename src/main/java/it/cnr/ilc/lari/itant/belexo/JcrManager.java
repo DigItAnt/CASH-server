@@ -51,6 +51,34 @@ public class JcrManager {
             jackrabbitURL = "http://localhost:8081/server";
         log.info("JACKRABBIT URL: " + jackrabbitURL);
         repository = JcrUtils.getRepository(jackrabbitURL);
+        createRootFolderIfNeeded();
+    }
+
+    private static void createRootFolderIfNeeded() throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
+            if (getNodeById(session, ROOT_ID) != null) {
+                log.info("repo already initialized");
+                return;
+            }
+
+            log.info("Initializing repo, creating root node /root (0)");
+            Node parent = session.getRootNode();
+    
+            int newid = ROOT_ID;
+            String name = "root";
+            Node newfolder = parent.addNode(name);
+            newfolder.setProperty(MYID, newid);
+            newfolder.setProperty(MYTYPE, TYPE_FOLDER);
+            session.save();
+            log.info("Created /root" + ", id: " + newid);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
     }
 
     public static Repository getRepository() {
@@ -100,7 +128,7 @@ public class JcrManager {
     }
 
     public static boolean isDirectory(Session session, int nodeId) throws Exception {
-        if (nodeId == ROOT_ID) return true;
+        //if (nodeId == ROOT_ID) return true;
         Node node = getNodeById(session, nodeId);
         if (node == null) return false;
         return ( node.getProperty(MYTYPE).getString().equals(TYPE_FOLDER) );
@@ -143,10 +171,7 @@ public class JcrManager {
             session = getSession();
 
             log.info("Creating node under parent " + parentId);
-            Node root = session.getRootNode();
-            Node parent = root;
-            if (parentId != ROOT_ID)
-                parent = getNodeById(session, parentId);
+            Node parent = getNodeById(session, parentId);
             if (parent == null)
                 throw new NodeNotFoundException();
 
@@ -249,10 +274,7 @@ public class JcrManager {
             if (node == null)
                 throw new NodeNotFoundException();
 
-            Node root = session.getRootNode();
-            Node parent = root;
-            if (destId != ROOT_ID)
-                parent = getNodeById(session, destId);
+            Node parent = getNodeById(session, destId);
             if (parent == null) {
                 log.error("cannot move file: parent not found");
                 throw new NodeNotFoundException();
@@ -313,9 +335,7 @@ public class JcrManager {
             }
 
             Node root = session.getRootNode();
-            Node parent = root;
-            if (destId != ROOT_ID)
-                parent = getNodeById(session, destId);
+            Node parent = getNodeById(session, destId);
             if (parent == null)
                 throw new NodeNotFoundException();
 
