@@ -1,6 +1,7 @@
 package it.cnr.ilc.lari.itant.belexo;
 
 import java.io.File;
+import java.util.Map;
 
 import javax.jcr.LoginException;
 import javax.jcr.Node;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import it.cnr.ilc.lari.itant.belexo.exc.ForbiddenException;
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
+import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataRequest;
 
 public class JcrManager {
     public final static String MYID = "myid";
@@ -382,30 +384,29 @@ public class JcrManager {
     }
 
 
+    public synchronized static void updateNodeMetadata(int elementId, Map<String, String> props) throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
 
-    public static void test2(Repository repository) throws Exception {
-        Session session = repository.login(new SimpleCredentials("admin", "admin".toCharArray()));
+            Node node = getNodeById(session, elementId);
+            if (node == null)
+                throw new NodeNotFoundException();
 
-        try { 
-            Node root = session.getRootNode(); 
-
-            // Store content 
-            Node hello = root.addNode("hello"); 
-            Node world = hello.addNode("world"); 
-            world.setProperty("message", "Hello, World!"); 
-            session.save(); 
-
-            // Retrieve content 
-            Node node = root.getNode("hello/world"); 
-            System.out.println(node.getPath()); 
-            System.out.println(node.getProperty("message").getString()); 
-
-            // Remove content 
-            //root.getNode("hello").remove(); 
-            session.save(); 
-        } finally { 
-            session.logout(); 
-        } 
+            log.info("Setting node metadata" + elementId);
+            for (Map.Entry<String, String> prop: props.entrySet()) {
+                String internalName = META_PFIX + prop.getKey();
+                node.setProperty(internalName, prop.getValue());
+            }
+            session.save();
+            log.info("Properties set on node with id: " + elementId);
+            logProperties(node);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
     }
 
     public static void logProperties(Node node) {

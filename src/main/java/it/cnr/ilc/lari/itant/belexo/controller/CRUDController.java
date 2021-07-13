@@ -122,7 +122,7 @@ public class CRUDController {
 	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		UpdateMetadataResponse toret = factory.manufacturePojo(UpdateMetadataResponse.class);
-		// TODO
+		JcrManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
