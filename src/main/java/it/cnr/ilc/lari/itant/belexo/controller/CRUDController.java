@@ -132,7 +132,7 @@ public class CRUDController {
 	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		DeleteMetadataResponse toret = factory.manufacturePojo(DeleteMetadataResponse.class);
-		// TODO
+		JcrManager.deleteNodeMetadata(request.getElementId());
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;

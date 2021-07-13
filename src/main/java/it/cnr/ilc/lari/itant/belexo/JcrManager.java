@@ -393,14 +393,40 @@ public class JcrManager {
             if (node == null)
                 throw new NodeNotFoundException();
 
-            log.info("Setting node metadata" + elementId);
+            log.info("Setting node metadata for " + elementId);
             for (Map.Entry<String, String> prop: props.entrySet()) {
                 String internalName = META_PFIX + prop.getKey();
                 node.setProperty(internalName, prop.getValue());
             }
             session.save();
             log.info("Properties set on node with id: " + elementId);
-            logProperties(node);
+            //logProperties(node);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
+    }
+
+    public synchronized static void deleteNodeMetadata(int elementId) throws Exception {
+        Session session = null;
+        try {
+            session = getSession();
+
+            log.info("Deleting node metadata for " + elementId);
+            Node node = getNodeById(session, elementId);
+            if (node == null)
+                throw new NodeNotFoundException();
+
+            PropertyIterator pit = node.getProperties(META_PFIX + "*");
+            while (pit.hasNext()) {
+                pit.nextProperty().remove();
+            }
+
+            session.save();
+            log.info("Deleted metadata for node with id: " + elementId);
+            //logProperties(node);
         } catch (Exception e) {
             log.error(e.toString());
             throw e;
