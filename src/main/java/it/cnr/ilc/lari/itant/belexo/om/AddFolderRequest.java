@@ -3,15 +3,15 @@ package it.cnr.ilc.lari.itant.belexo.om;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AddFolderRequest extends UserReqUUID {
-    int elementId;
+    long elementId;
 
     @JsonProperty("element-id")
-    public int getElementId() {
+    public long getElementId() {
         return elementId;
     }
 
     @JsonProperty("element-id")
-    public void setElementId(int elementId) {
+    public void setElementId(long elementId) {
         this.elementId = elementId;
     }
     
