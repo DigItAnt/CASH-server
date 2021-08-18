@@ -1,5 +1,12 @@
 package it.cnr.ilc.lari.itant.belexo.controller;
 
+import java.io.File;
+import java.io.FileInputStream;
+
+import javax.jcr.Node;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -37,6 +44,8 @@ import uk.co.jemos.podam.api.PodamFactoryImpl;
 @CrossOrigin
 @RestController
 public class CRUDController {
+	private static final Logger log = LoggerFactory.getLogger(CRUDController.class);
+
 	@PostMapping("/api/crud/addFolder")
 	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) throws Exception {
 		//PodamFactory factory = new PodamFactoryImpl();
@@ -143,7 +152,14 @@ public class CRUDController {
 		// TODO: Missing the file StreamBuffer!
 		PodamFactory factory = new PodamFactoryImpl();
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
-		JcrManager.addFile(request.getElementId(), request.getFileName());
+		// TODO: for the moment open a dummy file
+		FileInputStream fis = null;
+		try { 
+			fis = new FileInputStream(new File("/tmp/ItAnt_Oscan_2.xml"));
+		} catch (Exception e) {
+			log.info("test file /tmp/ItAnt_Oscan_2.xml not found.");
+		}
+		JcrManager.addFile(request.getElementId(), request.getFileName(), fis);
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -152,6 +168,8 @@ public class CRUDController {
 	@PostMapping("/api/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request) throws Exception {
 		// TODO: Return File!!
+		Node node = JcrManager.getNodeById(request.getElementId());
+		JcrManager.logFileNode(node);
 		PodamFactory factory = new PodamFactoryImpl();
 		DownloadFileResponse toret = factory.manufacturePojo(DownloadFileResponse.class);
 		// TODO

@@ -1,8 +1,11 @@
 package it.cnr.ilc.lari.itant.belexo;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Map;
 
+import javax.jcr.ImportUUIDBehavior;
 import javax.jcr.LoginException;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -31,14 +34,16 @@ public class JcrManager {
     public final static String MYID = "myid";
     public final static String MYTYPE = "mytype";
     public final static String TYPE_FOLDER = "folder";
-    public final static String TYPE_FILE = "file";
+    public final static String TYPE_FILE = "file"; // this node represents a file
+    public final static String TYPE_CONTENT = "content"; // under a file node, this represents the content
+    public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
     public final static String BASE_FOLDER_NAME = "new-folder-";
     public final static String META_PFIX = "meta_";
     private final static int ROOT_ID = 0;
 
     private static final Logger log = LoggerFactory.getLogger(JcrManager.class);
     private static Repository repository;
-    private static int startFrom = 1;
+    private static long startFrom = 1;
 
     public static void init() throws Exception {
         createRepository();
@@ -107,7 +112,12 @@ public class JcrManager {
         return session;
     }
 
-    public static Node getNodeById(Session session, int nodeId) throws Exception {
+    public static Node getNodeById(long nodeId) throws Exception {
+        Session session = getSession();
+        return getNodeById(session, nodeId);
+    }
+
+    public static Node getNodeById(Session session, long nodeId) throws Exception {
         QueryManager queryManager = session.getWorkspace().getQueryManager();
         String querytext = "SELECT * FROM [nt:base] WHERE [nt:base].myid = " + nodeId;
         Query query = queryManager.createQuery(querytext, Query.JCR_SQL2);
@@ -118,7 +128,7 @@ public class JcrManager {
         return null;
     }
 
-    public static int getNewId(Session session) throws Exception {
+    public static long getNewId(Session session) throws Exception {
         while ( true ) {
             if (getNodeById(session, startFrom) == null)
                 break;
@@ -127,7 +137,7 @@ public class JcrManager {
         return startFrom;
     }
 
-    public static boolean isDirectory(Session session, int nodeId) throws Exception {
+    public static boolean isDirectory(Session session, long nodeId) throws Exception {
         //if (nodeId == ROOT_ID) return true;
         Node node = getNodeById(session, nodeId);
         if (node == null) return false;
@@ -155,17 +165,38 @@ public class JcrManager {
         return name;
     }
 
-    public synchronized static int addFolder(int parentId) throws Exception {
+    public synchronized static int addFolder(long parentId) throws Exception {
         log.info("Creating folder under parent " + parentId);
         return addNode(parentId, null, TYPE_FOLDER);
     }
 
-    public synchronized static int addFile(int parentId, String filename) throws Exception {
+    public synchronized static int addFile(long parentId, String filename, InputStream contentStream) throws Exception {
         log.info("Creating file under parent " + parentId);
-        return addNode(parentId, filename, TYPE_FILE);
+        // The file has been added as a node. We should now fill its content and import it.
+        Session session = null;
+        try {
+            session = getSession();
+            Node node = addNodeInternal(session, parentId, filename, TYPE_FILE);
+            session.save();
+            if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
+                log.info("MYID: " + node.getProperty(MYID).getLong());
+                Node structured = addNodeInternal(session, node.getProperty(MYID).getLong(), "structure", TYPE_STRUCTURE, true);
+                log.info("Added content under: " + structured.getPath());
+                session.save();
+                session.importXML(structured.getPath(), contentStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+            }    
+            session.save();
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        } finally {
+            if (session != null) session.logout();
+        }
+        return 0;
     }
 
-    public synchronized static int addNode(int parentId, String nodename, String nodetype) throws Exception {
+    // TODO: this one should wrap addNodeInternal instead
+    public synchronized static int addNode(long parentId, String nodename, String nodetype) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -180,7 +211,7 @@ public class JcrManager {
                 throw new InvalidParamException();
             }
     
-            int newid = getNewId(session);
+            long newid = getNewId(session);
             String name = nodename;
             if (name == null)
                 name = getNewFolderName(parent);
@@ -200,7 +231,42 @@ public class JcrManager {
         return 0;
     }
 
-    public synchronized static void removeNode(int elementId) throws Exception {
+    protected synchronized static Node addNodeInternal(Session session, long parentId, String nodename, String nodetype) throws Exception {
+        return addNodeInternal(session, parentId, nodename, nodetype, false);
+    }
+
+    protected synchronized static Node addNodeInternal(Session session, long parentId, String nodename, String nodetype,
+                                                       boolean skipCheckDir) throws Exception {
+        Node newNode = null;
+        try {
+            log.info("Creating node under parent " + parentId);
+            Node parent = getNodeById(session, parentId);
+            if (parent == null)
+                throw new NodeNotFoundException();
+
+            if (!skipCheckDir && !isDirectory(session, parentId)) {
+                log.error("destination is not a directory");
+                throw new InvalidParamException();
+            }
+    
+            long newid = getNewId(session);
+            String name = nodename;
+            if (name == null)
+                name = getNewFolderName(parent);
+            if (fileExists(parent, name))
+                throw new InvalidParamException();
+            newNode = parent.addNode(name);
+            newNode.setProperty(MYID, newid);
+            newNode.setProperty(MYTYPE, nodetype);
+            log.info("Created node " + name + ", id: " + newid);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        }
+        return newNode;
+    }
+
+    public synchronized static void removeNode(long elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -223,7 +289,7 @@ public class JcrManager {
         }
     }
 
-    public synchronized static void renameNode(int elementId, String newname) throws Exception {
+    public synchronized static void renameNode(long elementId, String newname) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -262,7 +328,7 @@ public class JcrManager {
         }
     }
 
-    public synchronized static void moveNode(int elementId, int destId) throws Exception {
+    public synchronized static void moveNode(long elementId, int destId) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -317,7 +383,7 @@ public class JcrManager {
         }
     }
 
-    public synchronized static void copyNode(int elementId, int destId) throws Exception {
+    public synchronized static void copyNode(long elementId, long destId) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -382,7 +448,7 @@ public class JcrManager {
     }
 
 
-    public synchronized static void updateNodeMetadata(int elementId, Map<String, String> props) throws Exception {
+    public synchronized static void updateNodeMetadata(long elementId, Map<String, String> props) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -408,7 +474,7 @@ public class JcrManager {
         }
     }
 
-    public synchronized static void deleteNodeMetadata(int elementId) throws Exception {
+    public synchronized static void deleteNodeMetadata(long elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
@@ -448,5 +514,25 @@ public class JcrManager {
         } catch ( Exception me ) {
             log.info("Cannot access properties of " + node.toString());
         }
+    }
+
+    protected static void logTree(Node node) throws Exception {
+        // recursively log all nodes in this three, properties included
+        log.info("START " + node.getPath());
+        logProperties(node);
+        NodeIterator nit = node.getNodes("*"); // child nodes
+        while ( nit.hasNext() ) {
+            logTree(nit.nextNode());
+        }
+        log.info("END " + node.getPath());
+    }
+
+    public static void logFileNode(Node node) throws Exception {
+        if ( !node.getProperty(MYTYPE).getString().equals(TYPE_FILE) ) {
+            log.info("Node has type: " + node.getProperty(MYTYPE).getString());
+            log.warn("Node " + node.getPath() + " is not of file type; ");
+            return;
+        }
+        logTree(node);
     }
 }
