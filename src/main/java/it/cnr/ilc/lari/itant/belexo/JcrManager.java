@@ -24,10 +24,8 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.cnr.ilc.lari.itant.belexo.exc.ForbiddenException;
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
-import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataRequest;
 
 public class JcrManager {
     public final static String MYID = "myid";
@@ -389,6 +387,7 @@ public class JcrManager {
         try {
             session = getSession();
 
+            // TODO occhio injection
             Node node = getNodeById(session, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
