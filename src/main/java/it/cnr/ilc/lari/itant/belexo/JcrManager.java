@@ -36,11 +36,11 @@ public class JcrManager {
     public final static String MYTYPE = "mytype";
     public final static String TYPE_FOLDER = "folder";
     public final static String TYPE_FILE = "file"; // this node represents a file
-    public final static String TYPE_CONTENT = "content"; // under a file node, this represents the content
     public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
     public final static String BASE_FOLDER_NAME = "new-folder-";
     public final static String META_PFIX = "meta_";
     public final static String ORIGINAL_CONTENT = "original_content";
+    public final static String CONTENT_TYPE = "content_type";
     private final static int ROOT_ID = 0;
 
     private static final Logger log = LoggerFactory.getLogger(JcrManager.class);
@@ -172,7 +172,12 @@ public class JcrManager {
         return addNode(parentId, null, TYPE_FOLDER);
     }
 
-    public synchronized static int addFile(long parentId, String filename, InputStream contentStream) throws Exception {
+    protected static void setFileData(Node node, String contentType, byte[] content) throws Exception {
+        node.setProperty(ORIGINAL_CONTENT, new BinaryImpl(content));
+        node.setProperty(CONTENT_TYPE, contentType);
+    }
+
+    public synchronized static int addFile(long parentId, String filename, InputStream contentStream, String contentType) throws Exception {
         log.info("Creating file under parent " + parentId);
         // The file has been added as a node. We should now fill its content and import it.
         Session session = null;
@@ -183,7 +188,7 @@ public class JcrManager {
 
             // add original content to node
             byte[] contentBytes = contentStream.readAllBytes();
-            node.setProperty(ORIGINAL_CONTENT, new BinaryImpl(contentBytes));
+            setFileData(node, contentType, contentBytes);
 
             session.save();
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
