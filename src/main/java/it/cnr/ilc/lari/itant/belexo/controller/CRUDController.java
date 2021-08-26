@@ -2,15 +2,22 @@ package it.cnr.ilc.lari.itant.belexo.controller;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 
 import javax.jcr.Node;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import it.cnr.ilc.lari.itant.belexo.JcrManager;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderRequest;
@@ -36,7 +43,6 @@ import it.cnr.ilc.lari.itant.belexo.om.RenameFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.RenameFolderResponse;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.belexo.om.UpdateMetadataResponse;
-import it.cnr.ilc.lari.itant.belexo.om.UploadFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.UploadFileResponse;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
@@ -147,21 +153,19 @@ public class CRUDController {
 		return toret;
 	}
 
-	@PostMapping("/api/crud/uploadFile")
-	public UploadFileResponse uploadFile(@RequestBody UploadFileRequest request) throws Exception {
-		// TODO: Missing the file StreamBuffer!
+	@RequestMapping(
+    path = "/api/crud/uploadFile", 
+    method = RequestMethod.POST, 
+    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
+	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
+										 @RequestParam("element-id") Integer elementID, 
+										 @RequestParam("file") MultipartFile file) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
-		// TODO: for the moment open a dummy file
-		FileInputStream fis = null;
-		try { 
-			fis = new FileInputStream(new File("/tmp/ItAnt_Oscan_2.xml"));
-		} catch (Exception e) {
-			log.info("test file /tmp/ItAnt_Oscan_2.xml not found.");
-		}
-		JcrManager.addFile(request.getElementId(), request.getFileName(), fis);
+		InputStream fis = file.getInputStream();
+		JcrManager.addFile(elementID, file.getOriginalFilename(), fis);
 		toret.setDocumentSystem(DocumentSystemNode.populateTree());
-		toret.setRequestUUID(request.getRequestUUID());
+		toret.setRequestUUID(requestUUID);
 		return toret;
 	}
 

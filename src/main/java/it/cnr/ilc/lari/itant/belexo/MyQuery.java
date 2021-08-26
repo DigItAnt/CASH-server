@@ -26,7 +26,7 @@ public class MyQuery {
             RowIterator riter = result.getRows();
             while (riter.hasNext()) {
                 Row row = riter.nextRow();
-                Node node = row.getNode("p");
+                Node node = row.getNode("s");
                 System.out.println("NODEEEEEE " + node.getPath());
                 JcrManager.logProperties(node);
             }
@@ -39,7 +39,7 @@ public class MyQuery {
 
     public static void main(String[] args) {
         String statement = "SELECT * FROM [nt:base] as s WHERE s.[type]='traditionalID'";
-        statement = "select * from [nt:unstructured] as p INNER JOIN [nt:unstructured] as c on ISCHILDNODE(c,p) WHERE c.[meta_docid]='123'";
+        //statement = "select * from [nt:unstructured] as p INNER JOIN [nt:unstructured] as c on ISCHILDNODE(c,p) WHERE c.[meta_docid]='123'";
         doQuery(statement);
     }
 
