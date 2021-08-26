@@ -174,9 +174,10 @@ public class JcrManager {
         log.info("Creating file under parent " + parentId);
         // The file has been added as a node. We should now fill its content and import it.
         Session session = null;
+        Node node = null;
         try {
             session = getSession();
-            Node node = addNodeInternal(session, parentId, filename, TYPE_FILE);
+            node = addNodeInternal(session, parentId, filename, TYPE_FILE);
             session.save();
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
                 log.info("MYID: " + node.getProperty(MYID).getLong());
@@ -187,7 +188,8 @@ public class JcrManager {
             }    
             session.save();
         } catch (Exception e) {
-            // TODO: rollback se errore
+            if (node != null)
+                removeNode(node.getProperty(MYID).getLong());
             log.error(e.toString());
             throw e;
         } finally {
