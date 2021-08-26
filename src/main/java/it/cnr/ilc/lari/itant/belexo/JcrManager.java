@@ -521,6 +521,7 @@ public class JcrManager {
             while ( pit.hasNext() ) {
                 Property p = pit.nextProperty();
                 try {
+                    if (p.getName().equals(ORIGINAL_CONTENT)) continue;
                     log.info("P " + p.getName() + ": " + p.getString());
                 } catch ( Exception e ) {
                     log.info("Cannot log " + p.toString());
