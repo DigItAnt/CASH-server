@@ -187,6 +187,7 @@ public class JcrManager {
             }    
             session.save();
         } catch (Exception e) {
+            // TODO: rollback se errore
             log.error(e.toString());
             throw e;
         } finally {
