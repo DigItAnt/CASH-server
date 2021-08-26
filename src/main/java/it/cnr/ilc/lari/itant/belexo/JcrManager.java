@@ -1,6 +1,6 @@
 package it.cnr.ilc.lari.itant.belexo;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Map;
@@ -24,6 +24,7 @@ import javax.jcr.query.QueryResult;
 import org.apache.jackrabbit.commons.JcrUtils;
 import org.apache.jackrabbit.core.RepositoryImpl;
 import org.apache.jackrabbit.core.config.RepositoryConfig;
+import org.apache.jackrabbit.value.BinaryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ public class JcrManager {
     public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
     public final static String BASE_FOLDER_NAME = "new-folder-";
     public final static String META_PFIX = "meta_";
+    public final static String ORIGINAL_CONTENT = "original_content";
     private final static int ROOT_ID = 0;
 
     private static final Logger log = LoggerFactory.getLogger(JcrManager.class);
@@ -178,14 +180,19 @@ public class JcrManager {
         try {
             session = getSession();
             node = addNodeInternal(session, parentId, filename, TYPE_FILE);
+
+            // add original content to node
+            byte[] contentBytes = contentStream.readAllBytes();
+            node.setProperty(ORIGINAL_CONTENT, new BinaryImpl(contentBytes));
+
             session.save();
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
                 log.info("MYID: " + node.getProperty(MYID).getLong());
                 Node structured = addNodeInternal(session, node.getProperty(MYID).getLong(), "structure", TYPE_STRUCTURE, true);
                 log.info("Added content under: " + structured.getPath());
                 session.save();
-                session.importXML(structured.getPath(), contentStream, ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
-            }    
+                session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+            }
             session.save();
         } catch (Exception e) {
             if (node != null)
