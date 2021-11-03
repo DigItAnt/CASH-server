@@ -1,5 +1,6 @@
 package it.cnr.ilc.lari.itant.belexo.utils;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -26,6 +27,11 @@ public class FakeTextExtractor implements TextExtractorInterface {
     }
 
     @Override
+    public List<String> extract(InputStream content) {
+        return extract((Node) null);
+    }
+
+    @Override
     public List<String> extract(Node node) {
         List<String> toret = new ArrayList<>();
         int numTokens = new Random().nextInt(maxTokens);
@@ -44,7 +50,7 @@ public class FakeTextExtractor implements TextExtractorInterface {
     }
 
     public static void main(String[] args) {
-        for (String token: new FakeTextExtractor(10).extract(null))
+        for (String token: new FakeTextExtractor(10).extract((Node) null))
             System.out.println(token);
     }
 }

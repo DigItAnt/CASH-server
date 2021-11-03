@@ -27,16 +27,23 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.web.ServerProperties.Tomcat.Resource;
 
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
+import it.cnr.ilc.lari.itant.belexo.utils.FakeTextExtractor;
+import it.cnr.ilc.lari.itant.belexo.utils.NodeTypeRegister;
+import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 
 public class JcrManager {
     public final static String MYID = "myid";
     public final static String MYTYPE = "mytype";
+    public final static String PTYPE_TOKEN = "[ns:TokenNode]";
     public final static String TYPE_FOLDER = "folder";
     public final static String TYPE_FILE = "file"; // this node represents a file
     public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
+    public final static String TYPE_UNSTRUCTURED = "unstructured"; // under a file node, this is the text
+    public final static String TEXT_PROPERTY = "text"; // property of usntructured holding the extracted text
     public final static String BASE_FOLDER_NAME = "new-folder-";
     public final static String META_PFIX = "meta_";
     public final static String ORIGINAL_CONTENT = "original_content";
@@ -67,9 +74,14 @@ public class JcrManager {
             session = getSession();
             if (getNodeById(session, ROOT_ID) != null) {
                 log.info("repo already initialized");
+                log.info("registering nodes anyway");
+                NodeTypeRegister.registerTypes(session);
+                session.save();
                 return;
             }
 
+            log.info("registering nodes");
+            NodeTypeRegister.registerTypes(session);
             log.info("Initializing repo, creating root node /root (0)");
             Node parent = session.getRootNode();
     
@@ -101,6 +113,8 @@ public class JcrManager {
         RepositoryConfig config = RepositoryConfig.create(new File(dir));
         //RepositoryConfig config = RepositoryConfig.create(xml, dir);
         repository = RepositoryImpl.create(config);
+        log.warn("Registering node types");
+        NodeTypeRegister.registerTypes(getSession());
         return repository;
     }
 
@@ -195,7 +209,17 @@ public class JcrManager {
                 log.info("MYID: " + node.getProperty(MYID).getLong());
                 Node structured = addNodeInternal(session, node.getProperty(MYID).getLong(), "structure", TYPE_STRUCTURE, true);
                 log.info("Added content under: " + structured.getPath());
-                session.save();
+                Node unstructured = addNodeInternal(session, node.getProperty(MYID).getLong(), "unstructured",
+                                                    TYPE_UNSTRUCTURED, true);
+                TextExtractorInterface extractor = new FakeTextExtractor(); // TODO: replace with actual extractor
+                String text = String.join(" ", extractor.extract(unstructured));
+                unstructured.setProperty(TEXT_PROPERTY, text);
+                log.info("Added text under: " + unstructured.getPath());
+                for (String token: text.split(" ")) {
+                    Node tokenNode = unstructured.addNode("token", PTYPE_TOKEN);
+                    tokenNode.setProperty(TEXT_PROPERTY, token); 
+                }
+                session.save();                
                 session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
             }
             session.save();
@@ -225,7 +249,7 @@ public class JcrManager {
                 log.error("destination is not a directory");
                 throw new InvalidParamException();
             }
-    
+            
             long newid = getNewId(session);
             String name = nodename;
             if (name == null)

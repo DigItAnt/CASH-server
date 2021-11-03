@@ -1,0 +1,27 @@
+﻿package it.cnr.ilc.lari.itant.belexo.importers;
+
+import javax.jcr.Node;
+
+/**
+ * This class implements the importing of epidoc. It provides methods to deal with the extra
+ * info (metadata, annotations) to be extracted from the uploadd 
+ */
+public class EpiDoc {
+    Node rootNode;
+    public EpiDoc(Node docNode) {
+        rootNode = docNode;
+    }
+    
+    public String getText() {
+        /* extracts the text */
+        StringBuffer buf = new StringBuffer("");    
+        try {
+            String rootPath = rootNode.getPath();
+            String statement = "select * from [nt:base] as node INNER JOIN [nt:unstructured] WHERE ISDESCENDANTNODE(node,?) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7') and p.[mytype] = 'file'";
+        } catch ( Exception e ) {
+            // TODO
+        }
+
+        return buf.toString();
+    }
+}
