@@ -11,7 +11,7 @@ public class NodeTypeRegister {
 
     protected static final String annotationNodeCND =
         "<ns = 'http://ilc.cnr.ir/belexo/ns'>\n" +
-        "[ns:TokenNode] > nt:unstructured orderable";
+        "[ns:AnnotationNode] > nt:unstructured orderable";
 
     public static void RegisterCustomNodeTypes(Session session, String cnd) throws Exception {
         CndImporter.registerNodeTypes(new StringReader(cnd), session, true);

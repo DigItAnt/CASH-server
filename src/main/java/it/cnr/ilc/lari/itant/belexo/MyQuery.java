@@ -44,6 +44,7 @@ public class MyQuery {
         String statement = "SELECT * FROM [nt:base] as p WHERE CONTAINS (p.[jcr:xmlcharacters], 'Oscan 2')";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:unstructured] as p on ISDESCENDANTNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7') and p.[mytype] = 'file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:base] as p on ISCHILDNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7')";
+        statement = "SELECT * FROM [ns:TokenNode] as p";
         doQuery(statement);
     }
 

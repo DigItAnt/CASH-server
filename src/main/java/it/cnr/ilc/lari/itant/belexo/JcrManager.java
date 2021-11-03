@@ -38,7 +38,7 @@ import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 public class JcrManager {
     public final static String MYID = "myid";
     public final static String MYTYPE = "mytype";
-    public final static String PTYPE_TOKEN = "[ns:TokenNode]";
+    public final static String PTYPE_TOKEN = "ns:TokenNode";
     public final static String TYPE_FOLDER = "folder";
     public final static String TYPE_FILE = "file"; // this node represents a file
     public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
