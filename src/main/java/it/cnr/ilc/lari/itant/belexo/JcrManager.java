@@ -27,7 +27,6 @@ import org.apache.jackrabbit.core.config.RepositoryConfig;
 import org.apache.jackrabbit.value.BinaryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.web.ServerProperties.Tomcat.Resource;
 
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
@@ -39,6 +38,8 @@ public class JcrManager {
     public final static String MYID = "myid";
     public final static String MYTYPE = "mytype";
     public final static String PTYPE_TOKEN = "ns:TokenNode";
+    public final static String PTYPE_FOLDER = "ns:FolderNode";
+    public final static String PTYPE_FILE = "ns:FileNode";
     public final static String TYPE_FOLDER = "folder";
     public final static String TYPE_FILE = "file"; // this node represents a file
     public final static String TYPE_STRUCTURE = "structure"; // under a file node, this is the structure
@@ -48,6 +49,7 @@ public class JcrManager {
     public final static String META_PFIX = "meta_";
     public final static String ORIGINAL_CONTENT = "original_content";
     public final static String CONTENT_TYPE = "content_type";
+    public final static String TOKEN_POSITION_PROPERTY = "token_position"; // ordinal position of the token in the text
     private final static int ROOT_ID = 0;
 
     private static final Logger log = LoggerFactory.getLogger(JcrManager.class);
@@ -56,6 +58,14 @@ public class JcrManager {
 
     public static void init() throws Exception {
         createRepository();
+    }
+
+    public static String typeToPtype(String nodetype) {
+        switch (nodetype) {
+            case TYPE_FILE: return PTYPE_FILE;
+            case TYPE_FOLDER: return PTYPE_FOLDER;
+        }
+        return null;
     }
 
     public static void createRepository() throws Exception {
@@ -87,7 +97,7 @@ public class JcrManager {
     
             int newid = ROOT_ID;
             String name = "root";
-            Node newfolder = parent.addNode(name);
+            Node newfolder = parent.addNode(name, PTYPE_FOLDER) ;
             newfolder.setProperty(MYID, newid);
             newfolder.setProperty(MYTYPE, TYPE_FOLDER);
             session.save();
@@ -144,7 +154,7 @@ public class JcrManager {
         return null;
     }
 
-    public static long getNewId(Session session) throws Exception {
+    public static synchronized long getNewId(Session session) throws Exception {
         while ( true ) {
             if (getNodeById(session, startFrom) == null)
                 break;
@@ -196,32 +206,37 @@ public class JcrManager {
         // The file has been added as a node. We should now fill its content and import it.
         Session session = null;
         Node node = null;
+
         try {
             session = getSession();
-            node = addNodeInternal(session, parentId, filename, TYPE_FILE);
+            byte[] contentBytes = contentStream.readAllBytes();
+                node = addNodeInternal(session, parentId, filename, TYPE_FILE);
 
             // add original content to node
-            byte[] contentBytes = contentStream.readAllBytes();
             setFileData(node, contentType, contentBytes);
 
             session.save();
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
                 log.info("MYID: " + node.getProperty(MYID).getLong());
-                Node structured = addNodeInternal(session, node.getProperty(MYID).getLong(), "structure", TYPE_STRUCTURE, true);
+                Node structured = addInternalNode(session, node, "structure", TYPE_STRUCTURE);
                 log.info("Added content under: " + structured.getPath());
-                Node unstructured = addNodeInternal(session, node.getProperty(MYID).getLong(), "unstructured",
-                                                    TYPE_UNSTRUCTURED, true);
+                Node unstructured = addInternalNode(session, node, "unstructured",
+                                                    TYPE_UNSTRUCTURED);
                 TextExtractorInterface extractor = new FakeTextExtractor(); // TODO: replace with actual extractor
                 String text = String.join(" ", extractor.extract(unstructured));
                 unstructured.setProperty(TEXT_PROPERTY, text);
                 log.info("Added text under: " + unstructured.getPath());
+                int ti = 1;
                 for (String token: text.split(" ")) {
-                    Node tokenNode = unstructured.addNode("token", PTYPE_TOKEN);
-                    tokenNode.setProperty(TEXT_PROPERTY, token); 
+                    Node tokenNode = unstructured.addNode("token" + ti, PTYPE_TOKEN);
+                    tokenNode.setProperty(TEXT_PROPERTY, token);
+                    tokenNode.setProperty(TOKEN_POSITION_PROPERTY, ti++);
+                    log.info("Added token node " + tokenNode.getPath());
                 }
                 session.save();                
-                session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);
+                session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);                
             }
+
             session.save();
         } catch (Exception e) {
             if (node != null)
@@ -231,6 +246,7 @@ public class JcrManager {
         } finally {
             if (session != null) session.logout();
         }
+
         return 0;
     }
 
@@ -256,7 +272,10 @@ public class JcrManager {
                 name = getNewFolderName(parent);
             if (fileExists(parent, name))
                 throw new InvalidParamException();
-            Node newfolder = parent.addNode(name);
+
+            String ptype = typeToPtype(nodetype);
+
+            Node newfolder = (ptype == null)?parent.addNode(name):parent.addNode(name, ptype);
             newfolder.setProperty(MYID, newid);
             newfolder.setProperty(MYTYPE, nodetype);
             session.save();
@@ -292,9 +311,13 @@ public class JcrManager {
             String name = nodename;
             if (name == null)
                 name = getNewFolderName(parent);
-            if (fileExists(parent, name))
+            if (fileExists(parent, name)) {
+                log.error("A file of the same name already exists in parent: " + parent.getPath() + " " + name);
                 throw new InvalidParamException();
-            newNode = parent.addNode(name);
+            }
+            String ptype = typeToPtype(nodetype);
+
+            newNode = (ptype == null)?parent.addNode(name):parent.addNode(name, ptype);
             newNode.setProperty(MYID, newid);
             newNode.setProperty(MYTYPE, nodetype);
             log.info("Created node " + name + ", id: " + newid);
@@ -305,14 +328,37 @@ public class JcrManager {
         return newNode;
     }
 
+    protected synchronized static Node addInternalNode(Session session, Node parent, String nodename, String nodetype) throws Exception {
+        Node newNode = null;
+        try {
+            log.info("Creating node under parent " + (parent != null?parent.toString():"<NULL>"));
+            if (parent == null)
+                throw new NodeNotFoundException();
+    
+            String name = nodename;
+            String ptype = typeToPtype(nodetype);
+
+            newNode = (ptype == null)?parent.addNode(name):parent.addNode(name, ptype);
+            newNode.setProperty(MYTYPE, nodetype);
+            log.info("Created node " + name);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        }
+        return newNode;
+    }
+
+
     public synchronized static void removeNode(long elementId) throws Exception {
         Session session = null;
         try {
             session = getSession();
 
             log.info("Removing node " + elementId);
-            if (elementId == ROOT_ID)
+            if (elementId == ROOT_ID) {
+                log.error("Cannot remove root node!");
                 throw new InvalidParamException();
+            }
             Node node = getNodeById(session, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
@@ -334,8 +380,11 @@ public class JcrManager {
             session = getSession();
 
             log.info("Renaming name " + elementId + " with name " + newname);
-            if ( newname.contains("/") )
+            if ( newname.contains("/") ) {
+                log.error("Node name cannot contain '/'");
                 throw new InvalidParamException();
+            }
+            
             //if (elementId == ROOT_ID)
             //    throw new ForbiddenException();
             Node node = getNodeById(session, elementId);
@@ -352,9 +401,10 @@ public class JcrManager {
             } catch(PathNotFoundException e) {
                 nameOk = true;
             }
-            if (!nameOk)
+            if (!nameOk) {
+                log.error("The name " + newname + " is not valid");
                 throw new InvalidParamException();
-
+            }
             node.getSession().move(node.getPath(), newpath);
         
             session.save();
@@ -373,8 +423,10 @@ public class JcrManager {
             session = getSession();
 
             log.info("Moving node " + elementId + " under " + destId);
-            if (elementId == ROOT_ID)
+            if (elementId == ROOT_ID) {
+                log.error("You cannot move the root node!");
                 throw new InvalidParamException();
+            }
             Node node = getNodeById(session, elementId);
             if (node == null)
                 throw new NodeNotFoundException();

@@ -5,6 +5,14 @@ import org.apache.jackrabbit.commons.cnd.CndImporter;
 import java.io.StringReader;
 
 public class NodeTypeRegister {
+    protected static final String folderNodeCND =
+    "<ns = 'http://ilc.cnr.ir/belexo/ns'>\n" +
+    "[ns:FolderNode] > nt:unstructured orderable";
+
+    protected static final String fileNodeCND =
+        "<ns = 'http://ilc.cnr.ir/belexo/ns'>\n" +
+        "[ns:FileNode] > nt:unstructured orderable";
+
     protected static final String tokenNodeCND =
         "<ns = 'http://ilc.cnr.ir/belexo/ns'>\n" +
         "[ns:TokenNode] > nt:unstructured orderable";
@@ -18,6 +26,8 @@ public class NodeTypeRegister {
     }
 
     public static void registerTypes(Session session) throws Exception {
+        RegisterCustomNodeTypes(session, folderNodeCND);
+        RegisterCustomNodeTypes(session, fileNodeCND);
         RegisterCustomNodeTypes(session, tokenNodeCND);
         RegisterCustomNodeTypes(session, annotationNodeCND);
     }
