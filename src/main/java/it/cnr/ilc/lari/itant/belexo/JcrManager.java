@@ -72,7 +72,7 @@ public class JcrManager {
 		// https://jackrabbit.apache.org/archive/wiki/JCR/RemoteAccess_115513494.html
         String jackrabbitURL = System.getenv("JACKRABBIT_URL");
         if (jackrabbitURL == null)
-            jackrabbitURL = "http://localhost:8081/server";
+            jackrabbitURL = "http://localhost:8080/server";
         log.info("JACKRABBIT URL: " + jackrabbitURL);
         repository = JcrUtils.getRepository(jackrabbitURL);
         createRootFolderIfNeeded();
@@ -234,7 +234,7 @@ public class JcrManager {
                     log.info("Added token node " + tokenNode.getPath());
                 }
                 session.save();                
-                session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);                
+                //session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);                
             }
 
             session.save();
