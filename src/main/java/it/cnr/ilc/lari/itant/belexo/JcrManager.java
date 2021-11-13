@@ -35,7 +35,8 @@ import it.cnr.ilc.lari.itant.belexo.utils.NodeTypeRegister;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 
 public class JcrManager {
-    public final static String MYID = "myid";
+    public final static String MYID = "myid"; // this property is on file and folder nodes
+    public final static String FILEREF = "fileref"; // this property is on descendants of file nodes (except importxml nodes)
     public final static String MYTYPE = "mytype";
     public final static String PTYPE_TOKEN = "ns:TokenNode";
     public final static String PTYPE_FOLDER = "ns:FolderNode";
@@ -210,18 +211,21 @@ public class JcrManager {
         try {
             session = getSession();
             byte[] contentBytes = contentStream.readAllBytes();
-                node = addNodeInternal(session, parentId, filename, TYPE_FILE);
+            node = addNodeInternal(session, parentId, filename, TYPE_FILE);
 
             // add original content to node
             setFileData(node, contentType, contentBytes);
 
             session.save();
+            long nid = node.getProperty(MYID).getLong();
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
-                log.info("MYID: " + node.getProperty(MYID).getLong());
+                log.info("MYID: " + nid);
                 Node structured = addInternalNode(session, node, "structure", TYPE_STRUCTURE);
+                structured.setProperty(FILEREF, nid);
                 log.info("Added content under: " + structured.getPath());
                 Node unstructured = addInternalNode(session, node, "unstructured",
                                                     TYPE_UNSTRUCTURED);
+                unstructured.setProperty(FILEREF, nid);
                 TextExtractorInterface extractor = new FakeTextExtractor(); // TODO: replace with actual extractor
                 String text = String.join(" ", extractor.extract(unstructured));
                 unstructured.setProperty(TEXT_PROPERTY, text);
@@ -229,12 +233,13 @@ public class JcrManager {
                 int ti = 1;
                 for (String token: text.split(" ")) {
                     Node tokenNode = unstructured.addNode("token" + ti, PTYPE_TOKEN);
+                    tokenNode.setProperty(FILEREF, nid);
                     tokenNode.setProperty(TEXT_PROPERTY, token);
                     tokenNode.setProperty(TOKEN_POSITION_PROPERTY, ti++);
                     log.info("Added token node " + tokenNode.getPath());
                 }
                 session.save();                
-                //session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);                
+                session.importXML(structured.getPath(), new ByteArrayInputStream(contentBytes), ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING);                
             }
 
             session.save();

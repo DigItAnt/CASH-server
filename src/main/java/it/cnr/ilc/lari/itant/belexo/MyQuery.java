@@ -43,10 +43,11 @@ public class MyQuery {
     }
 
     public static void main(String[] args) {
-        String statement = "SELECT * FROM [nt:base] as p WHERE CONTAINS (p.[jcr:xmlcharacters], 'Oscan 2')";
+        String statement = "SELECT * FROM [nt:base] as p WHERE p.mytype='file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:unstructured] as p on ISDESCENDANTNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7') and p.[mytype] = 'file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:base] as p on ISCHILDNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7')";
         statement = "SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on ISDESCENDANTNODE(t, p) " + " WHERE p.mytype='file'";
+        statement = "SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on t.fileref=p.myid " + " WHERE p.mytype='file'";
         doQuery(statement);
     }
 
