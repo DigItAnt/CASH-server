@@ -73,7 +73,7 @@ public class JcrManager {
 		// https://jackrabbit.apache.org/archive/wiki/JCR/RemoteAccess_115513494.html
         String jackrabbitURL = System.getenv("JACKRABBIT_URL");
         if (jackrabbitURL == null)
-            jackrabbitURL = "http://localhost:8080/server";
+            jackrabbitURL = "http://localhost:8081/server";
         log.info("JACKRABBIT URL: " + jackrabbitURL);
         repository = JcrUtils.getRepository(jackrabbitURL);
         createRootFolderIfNeeded();
