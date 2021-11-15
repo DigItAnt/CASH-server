@@ -28,6 +28,7 @@ public class BelexoApplication {
 
 	public BelexoApplication() throws Exception {
 		log.info("Starting Application");
+        //MyQuery.doQuery("SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on t.fileref=p.myid " + " WHERE p.mytype='file'");
 		JcrManager.init();
 
 		//JcrManager.test2(JcrManager.getRepository());
