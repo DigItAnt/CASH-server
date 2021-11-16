@@ -1,5 +1,11 @@
 package it.cnr.ilc.lari.itant.belexo;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Properties;
+
 import javax.jcr.Node;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
@@ -47,7 +53,25 @@ public class MyQuery {
         }
     }
 
+    public static void connect() throws Exception {
+        Connection conn = null;
+        Properties connProps = new Properties();
+        connProps.put("user", "test");
+        connProps.put("password", "test");
+        conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/belexo", "test", "test");
+        PreparedStatement stmt = conn.prepareStatement("select * from annotations");
+        ResultSet res = stmt.executeQuery();
+        System.out.println("Query executed, " + res.getRow());
+    }
+
     public static void main(String[] args) {
+        try { 
+            connect();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        if ( 1==1) return;
+
         String statement = "SELECT * FROM [nt:base] as p WHERE p.mytype='file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:unstructured] as p on ISDESCENDANTNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7') and p.[mytype] = 'file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:base] as p on ISCHILDNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7')";
