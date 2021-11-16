@@ -13,10 +13,12 @@ import org.apache.jackrabbit.webdav.jcr.JCRWebdavServerServlet;
 import org.apache.jackrabbit.webdav.server.AbstractWebdavServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletRegistrationBean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 @Configuration
 @SpringBootApplication
@@ -25,6 +27,9 @@ public class BelexoApplication {
 
 	private static final String PROP_REPOSITORY_HOME = "repository.home";
     private static final String PROP_REPOSITORY_CONFIG = "repository.config";
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
 	public BelexoApplication() throws Exception {
 		log.info("Starting Application");
@@ -45,6 +50,8 @@ public class BelexoApplication {
 
 	@PreDestroy
 	public void onDestroy() {
+        int result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+        System.out.println("sssssssssssssssssssssssssssssssssssssss  " + result);
 		log.info("Stopping Application");
 		//JcrManager.stop();
 	}
