@@ -114,6 +114,10 @@ public class DocumentSystemNode {
         }
     }
 
+    public static List<DocumentSystemNode> empty() {
+        return new ArrayList<DocumentSystemNode>();
+    }
+
     public static List<DocumentSystemNode> populateTree() throws Exception {
         log.info("Populating Tree");
         ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();

@@ -12,6 +12,10 @@ import it.cnr.ilc.lari.itant.belexo.utils.NodeTypeRegister;
 
 public class MyQuery {
     public static void doQuery(String statement) {
+        doQuery(statement, -1);
+    }
+
+    public static void doQuery(String statement, long limit) {
         Session session = null;
         try {
             JcrManager.init();
@@ -19,6 +23,7 @@ public class MyQuery {
             NodeTypeRegister.registerTypes(session);
             QueryManager qm = session.getWorkspace().getQueryManager();
             Query query = qm.createQuery(statement, Query.JCR_SQL2);
+            if (limit > 0) query.setLimit(limit);
             QueryResult result = query.execute();
             String[] columns = result.getColumnNames();
 
@@ -47,7 +52,8 @@ public class MyQuery {
         //statement = "select * from [nt:base] as c INNER JOIN [nt:unstructured] as p on ISDESCENDANTNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7') and p.[mytype] = 'file'";
         //statement = "select * from [nt:base] as c INNER JOIN [nt:base] as p on ISCHILDNODE(c,p) WHERE CONTAINS (c.[jcr:xmlcharacters], 'Inscription ItAnt Oscan 7')";
         statement = "SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on ISDESCENDANTNODE(t, p) " + " WHERE p.mytype='file'";
-        statement = "SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on t.fileref=p.myid " + " WHERE p.mytype='file'";
+        statement = "SELECT * FROM [ns:FileNode] as p " + "INNER JOIN [ns:TokenNode] as t on t.fileref=p.myid " + " WHERE p.mytype='file' AND t.text = 'gggaaagggeeeddd'";
+        //statement = "SELECT * FROM [ns:TokenNode] as p";
         doQuery(statement);
     }
 

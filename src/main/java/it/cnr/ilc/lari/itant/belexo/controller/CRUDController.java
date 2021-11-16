@@ -161,7 +161,8 @@ public class CRUDController {
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
 		InputStream fis = file.getInputStream();
 		JcrManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		//toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		toret.setDocumentSystem(DocumentSystemNode.empty());
 		toret.setRequestUUID(requestUUID);
 		return toret;
 	}
