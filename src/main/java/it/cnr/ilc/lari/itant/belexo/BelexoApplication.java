@@ -34,18 +34,18 @@ public class BelexoApplication {
 	public BelexoApplication() throws Exception {
 		log.info("Starting Application");
         // QUERY TEST BEGIN
+        /*
         log.info("Running query");
         MyQuery.doQuery("SELECT * FROM [ns:FileNode] as p " +
                         "INNER JOIN [ns:TokenNode] as t on t.fileref=p.myid " +
-                        "INNER JOIN [ns:TokenNode] as t2 on t2.fileref=p.myid " +
-                        "INNER JOIN [ns:TokenNode] as t3 on t3.fileref=p.myid " +
-                        "WHERE p.mytype='file' and ISSAMENODE(t2, t3)");
+                        "WHERE p.mytype='file'");
         log.info("Query executed.");
+        */
         // QUERY TEST END
 		JcrManager.init();
 
 		//JcrManager.test2(JcrManager.getRepository());
-
+        DBManager.init();
 	}
 
 	@PreDestroy

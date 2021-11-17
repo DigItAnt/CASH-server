@@ -1,16 +1,39 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
+import java.util.Date;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.cnr.ilc.lari.itant.belexo.DBManager;
+import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
+
 public class FileInfo {
+    private static final Logger log = LoggerFactory.getLogger(DocumentSystemNode.class);
     String path;
     String name;
     DocumentSystemNode.FileDirectory type;
+
+    @JsonIgnore
+    Date created;
+    
+    @JsonIgnore
+    Date modified;
+
     @JsonProperty("element-id")
-    int elementId;
+    long elementId;
     Map<String, String> metadata;
+
+    @JsonIgnore
+    Map<String, Object> internalProperties;
+
+    @JsonIgnore
+    long father = DBManager.NO_FATHER; // elementid of the father node
 
     public String getPath() {
         return path;
@@ -27,18 +50,38 @@ public class FileInfo {
     public DocumentSystemNode.FileDirectory getType() {
         return type;
     }
+
     public void setType(DocumentSystemNode.FileDirectory type) {
         this.type = type;
     }
-    public int getElementId() {
+
+    @JsonIgnore
+    public void setType(String type) {
+        this.type = type.equals("F")?FileDirectory.file:FileDirectory.directory;
+    }
+
+    @JsonIgnore
+    public String getTypeS() {
+        return this.type==FileDirectory.file?DBManager.TYPE_FILE:DBManager.TYPE_FOLDER;
+    }
+
+    public long getElementId() {
         return elementId;
     }
-    public void setElementId(int elementId) {
+    public void setElementId(long elementId) {
         this.elementId = elementId;
     }
 
     //@JsonSerialize(using = MetadataSerializer.class)
     public Map<String, String> getMetadata() {
+        if ( metadata == null ) {
+            // populate it!
+            try {
+                this.metadata = DBManager.getNodeMetadata(this.elementId);
+            } catch (Exception e) {
+                log.error("Could not fetch metadata for node " + this.name);
+            }
+        }
         return metadata;
     }
 
@@ -47,6 +90,33 @@ public class FileInfo {
         this.metadata = metadata;
     }
 
+    @JsonIgnore
+    public void setInternalProperties(Map<String, Object> props) {
+        this.internalProperties = props;
+    }
 
+    @JsonIgnore
+    public void setFather(long f) {
+        this.father = f;
+    }
 
+    @JsonIgnore
+    public long getFather() {
+        return this.father;
+    }
+
+    @JsonIgnore
+    public boolean hasAncestor(long nodeId) {
+        if ( nodeId == this.elementId ) return true;
+        if ( this.father == DBManager.NO_FATHER ) return false;
+        if ( nodeId == this.father ) return true;
+        try {
+            FileInfo fNode = DBManager.getNodeById(father);
+            return fNode.hasAncestor(nodeId);
+        } catch ( Exception e ) {
+            return false;
+        }
+            
+            
+    }
 }

@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.JcrManager;
 
 public class DocumentSystemNode {
@@ -100,6 +101,27 @@ public class DocumentSystemNode {
         if ( recur ) recurChildren(this, node);
     }
 
+    // Constructor from FileInfo.
+    public DocumentSystemNode(FileInfo node, boolean recur) throws Exception {
+        this.name = node.getName();
+        this.elementId = node.getElementId();
+        this.type = node.getType();
+        this.children = new ArrayList<DocumentSystemNode>();
+        // WTF is path??
+        this.path = ""; // TODO
+        this.metadata = new HashMap<String, String>();
+        this.metadata = node.getMetadata();
+        if ( recur ) recurChildren(this, node);
+    }
+
+    protected static void recurChildren(DocumentSystemNode dsn, FileInfo node) throws Exception {
+        log.info("Recurring over children of " + node.getName());
+        for ( FileInfo child: DBManager.getNodeChildren(node.getElementId()) ) {
+            log.info("Child node " + child.getName());
+            DocumentSystemNode childdsn = new DocumentSystemNode(child, true);
+            dsn.children.add(childdsn);
+        }
+    }
     protected static void recurChildren(DocumentSystemNode dsn, Node node) throws Exception {
         log.info("Recurring over children of " + node.getName());
         NodeIterator nit = node.getNodes();
@@ -117,6 +139,21 @@ public class DocumentSystemNode {
     public static List<DocumentSystemNode> empty() {
         return new ArrayList<DocumentSystemNode>();
     }
+
+    public static List<DocumentSystemNode> populateTreeDB(long root) throws Exception {
+        log.info("Populating Tree");
+        ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();
+        List<FileInfo> children = DBManager.getNodeChildren(root);
+        log.info("Iterating over nodes.");
+        for ( FileInfo node: children ) {;
+            log.info("Node "  + node.getName());
+            DocumentSystemNode dsn = new DocumentSystemNode(node, true);
+            log.info("Adding " + dsn.getName());
+            toret.add(dsn);
+        }
+        return toret;
+    }
+
 
     public static List<DocumentSystemNode> populateTree() throws Exception {
         log.info("Populating Tree");

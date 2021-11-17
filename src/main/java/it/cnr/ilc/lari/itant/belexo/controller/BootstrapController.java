@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.belexo.om.GetDocumentSystemResponse;
 import it.cnr.ilc.lari.itant.belexo.om.GetUsersResponse;
@@ -25,7 +26,7 @@ public class BootstrapController {
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
 		try {
-			toret.setDocumentSystem(DocumentSystemNode.populateTree());
+			toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 			toret.setRequestUUID(requestUUID);
 			toret.setResults(toret.getDocumentSystem().size());
 		} catch (Exception e) {

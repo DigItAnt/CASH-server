@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS `belexo`.`fsnodes` ;
 CREATE TABLE IF NOT EXISTS `belexo`.`fsnodes` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(1024) NOT NULL,
+  `type` VARCHAR(1) NOT NULL, -- 'F' for file, 'D' for directory
   `created` DATETIME NULL,
   `modified` DATETIME NULL,
   `father` INT NULL,
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`str_fs_props` (
   `name` VARCHAR(256) NOT NULL,
   `value` TEXT NULL,
   `node` INT NULL,
+  `meta` TINYINT(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `sn_node_idx` (`node` ASC) VISIBLE,
   INDEX `sn_name_idx` (`name` ASC) VISIBLE,

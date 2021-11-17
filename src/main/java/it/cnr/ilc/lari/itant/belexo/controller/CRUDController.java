@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.JcrManager;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderResponse;
@@ -55,8 +56,8 @@ public class CRUDController {
 		//AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
 		AddFolderResponse toret = new AddFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
-		JcrManager.addFolder(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.addFolder(request.getElementId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -65,8 +66,8 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RenameFolderResponse toret = factory.manufacturePojo(RenameFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
-		JcrManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.renameNode(request.getElementId(), request.getRenameString());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -75,8 +76,8 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
-		JcrManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.removeNode(request.getElementId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -84,8 +85,8 @@ public class CRUDController {
 	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFolderResponse toret = factory.manufacturePojo(MoveFolderResponse.class);
-		JcrManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.moveNode(request.getElementId(), request.getTargetId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -94,8 +95,8 @@ public class CRUDController {
 	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFileResponse toret = factory.manufacturePojo(RemoveFileResponse.class);
-		JcrManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.removeNode(request.getElementId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -104,8 +105,8 @@ public class CRUDController {
 	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		RenameFileResponse toret = factory.manufacturePojo(RenameFileResponse.class);
-		JcrManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.renameNode(request.getElementId(), request.getRenameString());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -114,8 +115,8 @@ public class CRUDController {
 	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		CopyFileToResponse toret = factory.manufacturePojo(CopyFileToResponse.class);
-		JcrManager.copyNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.copyNode(request.getElementId(), request.getTargetId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -124,8 +125,8 @@ public class CRUDController {
 	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFileToResponse toret = factory.manufacturePojo(MoveFileToResponse.class);
-		JcrManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.moveNode(request.getElementId(), request.getTargetId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -134,8 +135,8 @@ public class CRUDController {
 	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		UpdateMetadataResponse toret = factory.manufacturePojo(UpdateMetadataResponse.class);
-		JcrManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -144,8 +145,8 @@ public class CRUDController {
 	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request) throws Exception {
 		PodamFactory factory = new PodamFactoryImpl();
 		DeleteMetadataResponse toret = factory.manufacturePojo(DeleteMetadataResponse.class);
-		JcrManager.deleteNodeMetadata(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree());
+		DBManager.deleteNodeMetadata(request.getElementId());
+		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
