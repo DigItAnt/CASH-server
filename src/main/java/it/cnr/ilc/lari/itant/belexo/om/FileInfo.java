@@ -116,7 +116,16 @@ public class FileInfo {
         } catch ( Exception e ) {
             return false;
         }
-            
-            
+    }
+
+    @JsonIgnore
+    public String printAll() {
+        // print this node
+        StringBuffer sb = new StringBuffer("");
+        sb.append(this.elementId + " "  + this.name + "\n");
+        for (String k: this.getMetadata().keySet() ) {
+            sb.append(k + ": " + this.getMetadata().get(k) + "\n");
+        }
+        return sb.toString();
     }
 }
