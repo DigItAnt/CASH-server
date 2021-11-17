@@ -50,9 +50,8 @@ public class BelexoApplication {
         log.info("Query executed.");
         */
         // QUERY TEST END
-	JcrManager.init();
 
-	//JcrManager.test2(JcrManager.getRepository());
+	    //JcrManager.test2(JcrManager.getRepository());
         DBManager.init();
      }
 

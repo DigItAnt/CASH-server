@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import it.cnr.ilc.lari.itant.belexo.DBManager;
-import it.cnr.ilc.lari.itant.belexo.JcrManager;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.belexo.om.AddFolderResponse;
 import it.cnr.ilc.lari.itant.belexo.om.CopyFileToRequest;
@@ -27,6 +26,7 @@ import it.cnr.ilc.lari.itant.belexo.om.DeleteMetadataResponse;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileResponse;
+import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFileToRequest;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFileToResponse;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFolderRequest;
@@ -57,7 +57,7 @@ public class CRUDController {
 		AddFolderResponse toret = new AddFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.addFolder(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -67,7 +67,7 @@ public class CRUDController {
 		RenameFolderResponse toret = factory.manufacturePojo(RenameFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -77,7 +77,7 @@ public class CRUDController {
 		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		return toret;
 	}
 
@@ -86,7 +86,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFolderResponse toret = factory.manufacturePojo(MoveFolderResponse.class);
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -96,7 +96,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RemoveFileResponse toret = factory.manufacturePojo(RemoveFileResponse.class);
 		DBManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -106,7 +106,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		RenameFileResponse toret = factory.manufacturePojo(RenameFileResponse.class);
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -116,7 +116,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		CopyFileToResponse toret = factory.manufacturePojo(CopyFileToResponse.class);
 		DBManager.copyNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -126,7 +126,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		MoveFileToResponse toret = factory.manufacturePojo(MoveFileToResponse.class);
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -136,7 +136,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		UpdateMetadataResponse toret = factory.manufacturePojo(UpdateMetadataResponse.class);
 		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -146,7 +146,7 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		DeleteMetadataResponse toret = factory.manufacturePojo(DeleteMetadataResponse.class);
 		DBManager.deleteNodeMetadata(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -161,9 +161,10 @@ public class CRUDController {
 		PodamFactory factory = new PodamFactoryImpl();
 		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
 		InputStream fis = file.getInputStream();
-		JcrManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
-		//toret.setDocumentSystem(DocumentSystemNode.populateTree());
-		toret.setDocumentSystem(DocumentSystemNode.empty());
+		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
+		log.info("File created as node with id: " + fid);
+		toret.setDocumentSystem(DocumentSystemNode.populateTree(fid));
+		//toret.setDocumentSystem(DocumentSystemNode.empty());
 		toret.setRequestUUID(requestUUID);
 		return toret;
 	}
@@ -171,8 +172,7 @@ public class CRUDController {
 	@PostMapping("/api/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request) throws Exception {
 		// TODO: Return File!!
-		Node node = JcrManager.getNodeById(request.getElementId());
-		JcrManager.logFileNode(node);
+		FileInfo node = DBManager.getNodeById(request.getElementId());
 		PodamFactory factory = new PodamFactoryImpl();
 		DownloadFileResponse toret = factory.manufacturePojo(DownloadFileResponse.class);
 		// TODO

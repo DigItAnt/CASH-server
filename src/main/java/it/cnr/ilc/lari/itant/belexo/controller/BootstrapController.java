@@ -26,7 +26,7 @@ public class BootstrapController {
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
 		try {
-			toret.setDocumentSystem(DocumentSystemNode.populateTreeDB(DBManager.getRootNodeId()));
+			toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 			toret.setRequestUUID(requestUUID);
 			toret.setResults(toret.getDocumentSystem().size());
 		} catch (Exception e) {

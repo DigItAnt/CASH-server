@@ -105,7 +105,8 @@ DROP TABLE IF EXISTS `belexo`.`blob_fs_props` ;
 CREATE TABLE IF NOT EXISTS `belexo`.`blob_fs_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
-  `value` BLOB NULL,
+  `value` MEDIUMBLOB NULL,
+  `content_type` VARCHAR(256),
   `node` INT NULL,
   PRIMARY KEY (`id`),
   INDEX `bn_node_idx` (`node` ASC) VISIBLE,
