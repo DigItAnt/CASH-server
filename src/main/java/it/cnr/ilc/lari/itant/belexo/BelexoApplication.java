@@ -2,6 +2,7 @@ package it.cnr.ilc.lari.itant.belexo;
 
 import java.io.File;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.jcr.Repository;
 
@@ -33,6 +34,13 @@ public class BelexoApplication {
 
 	public BelexoApplication() throws Exception {
 		log.info("Starting Application");
+	}
+
+    @PostConstruct
+    void postInit() throws Exception {
+        //int result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
+        //System.out.println("sssssssssssssssssssssssssssssssssssssss  " + result);
+
         // QUERY TEST BEGIN
         log.info("Running query");
         MyQuery.doQuery("SELECT * FROM [ns:FileNode] as p " +
@@ -46,12 +54,10 @@ public class BelexoApplication {
 
 		//JcrManager.test2(JcrManager.getRepository());
 
-	}
+    }
 
 	@PreDestroy
 	public void onDestroy() {
-        int result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
-        System.out.println("sssssssssssssssssssssssssssssssssssssss  " + result);
 		log.info("Stopping Application");
 		//JcrManager.stop();
 	}
