@@ -2,8 +2,6 @@ package it.cnr.ilc.lari.itant.belexo.controller;
 
 import java.io.InputStream;
 
-import javax.jcr.Node;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;

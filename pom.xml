@@ -12,7 +12,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<name>belexo</name>
-	<description>Demo project for Spring Boot</description>
+	<description>Text Annotation Backend</description>
 	<properties>
 		<java.version>11</java.version>
 		<javax.jcr.version>2.0</javax.jcr.version>
@@ -34,42 +34,6 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<version>8.0.27</version>
 			<scope>runtime</scope>
-		</dependency>
-
-
-		<dependency>
-			<groupId>javax.jcr</groupId>
-			<artifactId>jcr</artifactId>
-			<version>${javax.jcr.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-core</artifactId>
-			<version>${jackrabbit.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>commons-logging</groupId>
-					<artifactId>commons-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-jcr-server</artifactId>
-			<version>${jackrabbit.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-jcr-servlet</artifactId>
-			<version>${jackrabbit.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.jackrabbit</groupId>
-			<artifactId>jackrabbit-jcr2dav</artifactId>
-			<version>${jackrabbit.version}</version>
 		</dependency>
 
 		<dependency>
