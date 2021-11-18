@@ -36,6 +36,14 @@ public class FileInfo {
     long father = DBManager.NO_FATHER; // elementid of the father node
 
     public String getPath() {
+        log.info("Getting path for " + name);
+        try {
+            if ( path == null ) {
+                this.path = DBManager.getNodePath(this.elementId);
+            }
+        } catch ( Exception e ) {
+            log.error("Error recreating path for file", e);
+        }
         return path;
     }
     public void setPath(String path) {

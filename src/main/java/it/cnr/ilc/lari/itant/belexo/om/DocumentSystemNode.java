@@ -80,7 +80,7 @@ public class DocumentSystemNode {
         this.type = node.getType();
         this.children = new ArrayList<DocumentSystemNode>();
         // WTF is path??
-        this.path = ""; // TODO
+        this.path = node.getPath();  // TODO
         this.metadata = new HashMap<String, String>();
         this.metadata = node.getMetadata();
         if ( recur ) recurChildren(this, node);
@@ -110,6 +110,14 @@ public class DocumentSystemNode {
             log.info("Adding " + dsn.getName());
             toret.add(dsn);
         }
+        return toret;
+    }
+
+    public static List<DocumentSystemNode> populateNode(long root) throws Exception {
+        log.info("Populating Tree");
+        ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();
+        FileInfo node = DBManager.getNodeById(root);
+        toret.add(new DocumentSystemNode(node, true));
         return toret;
     }
 

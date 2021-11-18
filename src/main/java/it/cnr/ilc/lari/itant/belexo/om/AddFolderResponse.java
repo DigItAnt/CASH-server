@@ -1,13 +1,11 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AddFolderResponse {
    String requestUUID;
    int responseStatus = ResponseStatus.OK; // by default
-   private List<DocumentSystemNode> documentSystem;
+   private DocumentSystemNode node;
 
 
 public String getRequestUUID() {
@@ -26,11 +24,11 @@ public int getResponseStatus() {
 public void setResponseStatus(int responseStatus) {
     this.responseStatus = responseStatus;
 }
-public List<DocumentSystemNode> getDocumentSystem() {
-    return documentSystem;
+public DocumentSystemNode getNode() {
+    return node;
 }
-public void setDocumentSystem(List<DocumentSystemNode> documentSystem) {
-    this.documentSystem = documentSystem;
+public void setNode(DocumentSystemNode documentSystem) {
+    this.node = documentSystem;
 }
    
    

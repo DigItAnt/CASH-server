@@ -50,12 +50,10 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/addFolder")
 	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) throws Exception {
-		//PodamFactory factory = new PodamFactoryImpl();
-		//AddFolderResponse toret = factory.manufacturePojo(AddFolderResponse.class);
 		AddFolderResponse toret = new AddFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
-		DBManager.addFolder(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
+		long fid = DBManager.addFolder(request.getElementId());
+		toret.setNode(DocumentSystemNode.populateNode(fid));
 		return toret;
 	}
 
@@ -91,60 +89,48 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/removeFile")
 	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		RemoveFileResponse toret = factory.manufacturePojo(RemoveFileResponse.class);
+		RemoveFileResponse toret = new RemoveFileResponse();
 		DBManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
 
 	@PostMapping("/api/crud/renameFile")
 	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		RenameFileResponse toret = factory.manufacturePojo(RenameFileResponse.class);
+		RenameFileResponse toret = new RenameFileResponse();
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
 
 	@PostMapping("/api/crud/copyFileTo")
 	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		CopyFileToResponse toret = factory.manufacturePojo(CopyFileToResponse.class);
+		CopyFileToResponse toret = new CopyFileToResponse();
 		DBManager.copyNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
 
 	@PostMapping("/api/crud/moveFileTo")
 	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		MoveFileToResponse toret = factory.manufacturePojo(MoveFileToResponse.class);
+		MoveFileToResponse toret = new MoveFileToResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
 
 	@PostMapping("/api/crud/updateMetadata")
 	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		UpdateMetadataResponse toret = factory.manufacturePojo(UpdateMetadataResponse.class);
+		UpdateMetadataResponse toret = new UpdateMetadataResponse();
 		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
 
 	@PostMapping("/api/crud/deleteMetadata")
 	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		DeleteMetadataResponse toret = factory.manufacturePojo(DeleteMetadataResponse.class);
+		DeleteMetadataResponse toret = new DeleteMetadataResponse();
 		DBManager.deleteNodeMetadata(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -156,12 +142,11 @@ public class CRUDController {
 	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
 										 @RequestParam("element-id") Integer elementID, 
 										 @RequestParam("file") MultipartFile file) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		UploadFileResponse toret = factory.manufacturePojo(UploadFileResponse.class);
+		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
 		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
 		log.info("File created as node with id: " + fid);
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(fid));
+		toret.setNode(DocumentSystemNode.populateTree(fid));
 		//toret.setDocumentSystem(DocumentSystemNode.empty());
 		toret.setRequestUUID(requestUUID);
 		return toret;

@@ -1,3 +1,3 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
-public class UploadFileResponse extends RemoveFileResponse {}
+public class UploadFileResponse extends AddFolderResponse {}

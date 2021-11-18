@@ -8,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -482,6 +484,23 @@ public class DBManager {
     public static String printNode(long nodeId) throws Exception {
         FileInfo node = getNodeById(nodeId);
         return node.printAll();
+    }
+
+    public static String getNodePath(long nodeId) throws Exception {
+        List<String> path = new ArrayList<String>();
+        boolean toRoot = false;
+        PreparedStatement stmt = connection.prepareStatement("select name, father from fsnodes where id=?");
+        while ( !toRoot ) {
+            stmt.setLong(1, nodeId);
+            ResultSet rs = stmt.executeQuery();
+            if ( rs.next() ) {
+                path.add(rs.getString("name"));
+                nodeId = rs.getLong("father");
+                toRoot = rs.wasNull();
+            } else toRoot = true; 
+        }
+        Collections.reverse(path);
+        return "/" + String.join("/", path);
     }
 
 }
