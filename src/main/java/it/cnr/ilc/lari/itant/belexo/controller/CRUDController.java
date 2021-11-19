@@ -59,30 +59,24 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/renameFolder")
 	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		RenameFolderResponse toret = factory.manufacturePojo(RenameFolderResponse.class);
+		RenameFolderResponse toret = new RenameFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		return toret;
 	}
 
 	@PostMapping("/api/crud/removeFolder")
 	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		RemoveFolderResponse toret = factory.manufacturePojo(RemoveFolderResponse.class);
+		RemoveFolderResponse toret = new RemoveFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.removeNode(request.getElementId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		return toret;
 	}
 
 	@PostMapping("/api/crud/moveFolder")
 	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request) throws Exception {
-		PodamFactory factory = new PodamFactoryImpl();
-		MoveFolderResponse toret = factory.manufacturePojo(MoveFolderResponse.class);
+		MoveFolderResponse toret = new MoveFolderResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
-		toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
@@ -146,8 +140,7 @@ public class CRUDController {
 		InputStream fis = file.getInputStream();
 		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
 		log.info("File created as node with id: " + fid);
-		toret.setNode(DocumentSystemNode.populateTree(fid));
-		//toret.setDocumentSystem(DocumentSystemNode.empty());
+		toret.setNode(DocumentSystemNode.populateNode(fid));
 		toret.setRequestUUID(requestUUID);
 		return toret;
 	}

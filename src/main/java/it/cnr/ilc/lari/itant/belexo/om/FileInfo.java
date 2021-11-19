@@ -27,7 +27,7 @@ public class FileInfo {
 
     @JsonProperty("element-id")
     long elementId;
-    Map<String, String> metadata;
+    Map<String, Object> metadata;
 
     @JsonIgnore
     Map<String, Object> internalProperties;
@@ -81,7 +81,7 @@ public class FileInfo {
     }
 
     //@JsonSerialize(using = MetadataSerializer.class)
-    public Map<String, String> getMetadata() {
+    public Map<String, Object> getMetadata() {
         if ( metadata == null ) {
             // populate it!
             try {
@@ -94,7 +94,7 @@ public class FileInfo {
     }
 
     //@JsonDeserialize(using = MetadataDeserializer.class)
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 

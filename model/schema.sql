@@ -34,6 +34,8 @@ CREATE TABLE IF NOT EXISTS `belexo`.`fsnodes` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
   INDEX `father_idx` (`father` ASC) VISIBLE,
+  INDEX `fs_name_idx` (`name` ASC) VISIBLE,
+  INDEX `fs_father_name_idx` (`father` ASC, `name` ASC) VISIBLE,
   CONSTRAINT `father_fk`
     FOREIGN KEY (`father`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -170,20 +172,28 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`annotations`
 -- -----------------------------------------------------
+-- TODO: gestire annotazioni multispan usando l'attributo sameas
 CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `layer` VARCHAR(1024) NOT NULL,
   `value` VARCHAR(1024) NULL,
+  `author` VARCHAR(255) NULL,
+  `note` TEXT NULL,
+  `valid` TINYINT(1) NOT NULL DEFAULT 1, -- deleted annotations are 'invalid'
+  `created` DATETIME NOT NULL,
+  `confidence` FLOAT NOT NULL DEFAULT 1,
+  `externalRef` VARCHAR(1024) NULL,
   `begin` INT NOT NULL,
   `end` INT NOT NULL,
   `node` INT NOT NULL,
-  `sameas` INT NULL,
+  `sameas` INT NULL, -- used to link together different rows for multispan annotations
   PRIMARY KEY (`id`),
   INDEX `ann_value_idx` (`value`(256) ASC) VISIBLE,
   INDEX `ann_node_idx` (`node` ASC) VISIBLE,
   INDEX `ann_layer_node_idx` (`layer`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_node_idx` (`value`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_layer_node_idx` (`value`(256) ASC, `layer`(256) ASC, `node` ASC) VISIBLE,
+  INDEX `ann_sameas` (`sameas` ASC) VISIBLE,
   CONSTRAINT `ann_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -223,7 +233,6 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
 
-
 -- -----------------------------------------------------
 -- Table `belexo`.`int_ann_props`
 -- -----------------------------------------------------
@@ -245,6 +254,36 @@ CREATE TABLE IF NOT EXISTS `belexo`.`int_ann_props` (
     REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = UTF8MB4
+COLLATE = UTF8MB4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Table `belexo`.`lnk_ann_props`
+-- Link between an annotation and another
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `belexo`.`lnk_ann_props` ;
+
+CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `layer` VARCHAR(1024) NOT NULL,
+  `sourceann` INT NULL,
+  `targetann` INT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `sa_srcann_idx` (`sourceann` ASC) VISIBLE,
+  INDEX `sa_targetann_idx` (`targetann` ASC) VISIBLE,
+  INDEX `sa_layer_idx` (`layer`(256) ASC) VISIBLE,
+  CONSTRAINT `sa_srcann_fk`
+    FOREIGN KEY (`sourceann`)
+    REFERENCES `belexo`.`annotations` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION,
+  CONSTRAINT `sa_trgann_fk`
+    FOREIGN KEY (`targetann`)
+    REFERENCES `belexo`.`annotations` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION    
+    )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;

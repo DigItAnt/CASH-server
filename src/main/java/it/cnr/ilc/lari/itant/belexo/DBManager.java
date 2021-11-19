@@ -11,6 +11,7 @@ import java.sql.Types;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
@@ -209,19 +211,33 @@ public class DBManager {
         }
     }
 
-    private synchronized static void replaceNodeMetadata(long elementId, Map<String, String> metadata) throws Exception {
+    private static int nValuesInMetadata(Map<String, Object> metadata) {
+        int i = 0;
+        for ( String k: metadata.keySet() ) {
+            Object v = metadata.get(k);
+            if ( v instanceof String ) i++;
+            else i+=((List<String>) v).size();
+        }
+        return i;
+    }
+
+    private synchronized static void replaceNodeMetadata(long elementId, Map<String, Object> metadata) throws Exception {
         connection.setAutoCommit(false);
         try {
             // remove the old metadata first, then update it. This should be done in a 'softer' way
             PreparedStatement stmt = connection.prepareStatement("delete from str_fs_props where node=? and meta=1");
             stmt.setLong(1, elementId);
             stmt.execute();
-            stmt = connection.prepareStatement("INSERT INTO str_fs_props (name, value, node, meta) values " + StringUtils.n(metadata.size(), "(?,?,?,1)", ","));
+            stmt = connection.prepareStatement("INSERT INTO str_fs_props (name, value, node, meta) values " +
+                                               StringUtils.n(nValuesInMetadata(metadata), "(?,?,?,1)", ","));
             int i = 1;
             for ( String k: metadata.keySet() ) {
-                stmt.setString(i++, k);
-                stmt.setString(i++, metadata.get(k));
-                stmt.setLong(i++, elementId);
+                Object v = metadata.get(k);
+                for ( String value: (v instanceof String)?Arrays.asList(new String[]{(String) v}):(List<String>) v ) {
+                    stmt.setString(i++, k);
+                    stmt.setString(i++, value);
+                    stmt.setLong(i++, elementId);
+                }
             }
             stmt.executeUpdate();
             connection.commit();
@@ -248,18 +264,40 @@ public class DBManager {
             connection.setAutoCommit(true);
         }
     } 
+
+    private static List<String> mergeMetadataEntry(Object m1, Object m2) {
+        // 4 cases: SS, SL, LS, LL
+        if ( m1 instanceof String && m2 instanceof String )
+        return Arrays.asList(new String[]{(String) m1, (String) m2});
+        if ( m2 instanceof String ) { // m1 must be List<String>
+            ((List<String>) m1).add((String) m2);
+            return (List<String>) m1;
+        }
+        if ( m1 instanceof String ) { // m2 must be List
+            List<String> ret = Arrays.asList(new String[]{(String) m1});
+            ret.addAll((List<String>) m2);
+            return ret;
+        }
+        // both lists
+        ((List<String>) m1).addAll((List<String>) m2);
+        return (List<String>) m1;
+    }
     
-    public static void updateNodeMetadata(long elementId, Map<String, String> props) throws Exception {
+    public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
         try {
             FileInfo node = getNodeById(connection, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
 
-            Map<String, String> metadata = getNodeMetadata(elementId);
+            Map<String, Object> metadata = getNodeMetadata(elementId);
 
             log.info("Setting node metadata for " + elementId);
-            for (Map.Entry<String, String> prop: props.entrySet()) {
-                metadata.put(prop.getKey(), prop.getValue());
+            for (Map.Entry<String, Object> prop: props.entrySet()) {
+                if ( !metadata.containsKey(prop.getKey()) )
+                    metadata.put(prop.getKey(), prop.getValue());
+                else { // must merge... huge PITA
+                    metadata.put(prop.getKey(), mergeMetadataEntry(metadata.get(prop.getKey()), prop.getValue()));
+                }
             }
             replaceNodeMetadata(elementId, metadata);
 
@@ -270,8 +308,6 @@ public class DBManager {
             throw e;
         }
     }
-
-
 
     public static FileInfo getRootNode() throws Exception {
         log.info("Trying to get root node ");
@@ -394,13 +430,23 @@ public class DBManager {
         }
     }
 
-    public static Map<String, String> getNodeMetadata(long nodeId) throws Exception {
+    public static Map<String, Object> getNodeMetadata(long nodeId) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("SELECT name, value from str_fs_props where node=? and meta=1");
         stmt.setLong(1, nodeId);
         ResultSet rs = stmt.executeQuery();
-        Map<String, String> ret = new HashMap<String, String>();
+        Map<String, Object> ret = new HashMap<String, Object>();
         while ( rs.next() ) {
-            ret.put(rs.getString("name"), rs.getString("value"));
+            String key = rs.getString("name");
+            String value = rs.getString("value");
+            if ( !ret.containsKey(key) )
+                ret.put(key, value);
+            else { // we aleady have a value. A string or a List<String> already?
+                Object entry = ret.get(key);
+                if ( entry instanceof String ) // create a List
+                    ret.put(key, Arrays.asList(new String[]{(String) entry, value}));
+                else // add to the list
+                    ((List<String>) entry).add(value);
+            }
         }
         return ret;
     }
@@ -432,7 +478,7 @@ public class DBManager {
         return ret;
     }
 
-
+    @Transactional
     public synchronized static long addFile(long parentId, String filename, InputStream contentStream, String contentType) throws Exception {
         log.info("Creating file under parent " + parentId);
         FileInfo node = null;
@@ -503,4 +549,19 @@ public class DBManager {
         return "/" + String.join("/", path);
     }
 
+    public static FileInfo findByAbsolutePath(String path) throws Exception {
+        String[] elements = path.strip().split("/");
+        if ( !elements[0].equals("root") ) throw new InvalidParamException();
+        long nodeId = getRootNodeId();
+        int i = 1;
+        while ( i < elements.length ) {
+            PreparedStatement stmt = connection.prepareStatement("SELECT id from fsnodes where father=? and name=?");
+            stmt.setLong(1, nodeId);
+            stmt.setString(2, elements[i++]);
+            ResultSet rs = stmt.executeQuery();
+            if ( !rs.next() ) throw new NodeNotFoundException();
+            nodeId = rs.getLong("id");
+        }
+        return getNodeById(nodeId);
+    }
 }

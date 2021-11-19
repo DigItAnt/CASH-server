@@ -18,7 +18,7 @@ public class DocumentSystemNode {
     private String path;
     private List<DocumentSystemNode> children;
     private long elementId;
-    private Map<String, String> metadata;
+    private Map<String, Object> metadata;
     // private String key_meta;  // TODO ripensare con value_meta, vedi doc
 
     static public enum FileDirectory {
@@ -64,12 +64,12 @@ public class DocumentSystemNode {
     }
     
     //@JsonSerialize(using = MetadataSerializer.class)
-    public Map<String, String> getMetadata() {
+    public Map<String, Object> getMetadata() {
         return metadata;
     }
 
     //@JsonDeserialize(using = MetadataDeserializer.class)
-    public void setMetadata(Map<String, String> metadata) {
+    public void setMetadata(Map<String, Object> metadata) {
         this.metadata = metadata;
     }
 
@@ -81,7 +81,7 @@ public class DocumentSystemNode {
         this.children = new ArrayList<DocumentSystemNode>();
         // WTF is path??
         this.path = node.getPath();  // TODO
-        this.metadata = new HashMap<String, String>();
+        this.metadata = new HashMap<String, Object>();
         this.metadata = node.getMetadata();
         if ( recur ) recurChildren(this, node);
     }
@@ -113,12 +113,10 @@ public class DocumentSystemNode {
         return toret;
     }
 
-    public static List<DocumentSystemNode> populateNode(long root) throws Exception {
-        log.info("Populating Tree");
-        ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();
+    public static DocumentSystemNode populateNode(long root) throws Exception {
+        log.info("Populating Node");
         FileInfo node = DBManager.getNodeById(root);
-        toret.add(new DocumentSystemNode(node, true));
-        return toret;
+        return new DocumentSystemNode(node, true);
     }
 
 }
