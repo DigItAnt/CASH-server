@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +32,7 @@ import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 
 public class DBManager {
+    static ObjectMapper mapper = new ObjectMapper();
     public final static String TYPE_FOLDER = "D";
     public final static String TYPE_FILE = "F"; // this node represents a file
     public final static String TEXT_PROPERTY = "text"; // property of usntructured holding the extracted text
@@ -215,8 +217,8 @@ public class DBManager {
         int i = 0;
         for ( String k: metadata.keySet() ) {
             Object v = metadata.get(k);
-            if ( v instanceof String ) i++;
-            else i+=((List<String>) v).size();
+            if ( v instanceof List ) i+=((List) v).size();
+            else i++;
         }
         return i;
     }
@@ -233,9 +235,10 @@ public class DBManager {
             int i = 1;
             for ( String k: metadata.keySet() ) {
                 Object v = metadata.get(k);
-                for ( String value: (v instanceof String)?Arrays.asList(new String[]{(String) v}):(List<String>) v ) {
+                for ( Object value: (v instanceof List)?((List) v):Arrays.asList(new Object[]{v}) ) {
+                    String toWrite = mapper.writeValueAsString(value);
                     stmt.setString(i++, k);
-                    stmt.setString(i++, value);
+                    stmt.setString(i++, toWrite);
                     stmt.setLong(i++, elementId);
                 }
             }
@@ -265,22 +268,22 @@ public class DBManager {
         }
     } 
 
-    private static List<String> mergeMetadataEntry(Object m1, Object m2) {
-        // 4 cases: SS, SL, LS, LL
-        if ( m1 instanceof String && m2 instanceof String )
-        return Arrays.asList(new String[]{(String) m1, (String) m2});
-        if ( m2 instanceof String ) { // m1 must be List<String>
-            ((List<String>) m1).add((String) m2);
-            return (List<String>) m1;
+    private static List mergeMetadataEntry(Object m1, Object m2) {
+        // 4 cases: OO, OL, LO, LL: strings or objects we do not merge but make into a list
+        if ( !(m1 instanceof List) && !(m2 instanceof List) )
+        return new ArrayList(Arrays.asList(new Object[]{m1, m2}));
+        if ( !(m2 instanceof List) ) { // m1 must be List
+            ((List) m1).add(m2);
+            return (List) m1;
         }
-        if ( m1 instanceof String ) { // m2 must be List
-            List<String> ret = Arrays.asList(new String[]{(String) m1});
-            ret.addAll((List<String>) m2);
+        if ( !(m1 instanceof List) ) { // m2 must be List
+            List ret = new ArrayList(Arrays.asList(new Object[]{m1}));
+            ret.addAll((List) m2);
             return ret;
         }
         // both lists
-        ((List<String>) m1).addAll((List<String>) m2);
-        return (List<String>) m1;
+        ((List) m1).addAll((List) m2);
+        return (List) m1;
     }
     
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
@@ -431,23 +434,31 @@ public class DBManager {
     }
 
     public static Map<String, Object> getNodeMetadata(long nodeId) throws Exception {
+        log.info("Getting metadata for " + nodeId);
         PreparedStatement stmt = connection.prepareStatement("SELECT name, value from str_fs_props where node=? and meta=1");
         stmt.setLong(1, nodeId);
         ResultSet rs = stmt.executeQuery();
         Map<String, Object> ret = new HashMap<String, Object>();
         while ( rs.next() ) {
             String key = rs.getString("name");
-            String value = rs.getString("value");
+            Object value = mapper.readValue(rs.getString("value"), Object.class); 
+            log.info("Type of value " + value.getClass().getName());
+            //String value = rs.getString("value");
             if ( !ret.containsKey(key) )
                 ret.put(key, value);
             else { // we aleady have a value. A string or a List<String> already?
                 Object entry = ret.get(key);
-                if ( entry instanceof String ) // create a List
-                    ret.put(key, Arrays.asList(new String[]{(String) entry, value}));
-                else // add to the list
-                    ((List<String>) entry).add(value);
+                log.info("Type of entry " + entry.getClass().getName());
+                if ( !(entry instanceof List) ) { // create a List
+                    log.info("Generating new list");
+                    ret.put(key, new ArrayList(Arrays.asList(new Object[]{entry, value})));
+                } else {// add to the list
+                    log.info("Adding to the list");
+                    ((ArrayList) entry).add(value);
+                }
             }
         }
+        log.info("Metadata found: " + ret.keySet().toString());
         return ret;
     }
 

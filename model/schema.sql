@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS `belexo`.`fsnodes` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
   INDEX `father_idx` (`father` ASC) VISIBLE,
-  INDEX `fs_name_idx` (`name` ASC) VISIBLE,
-  INDEX `fs_father_name_idx` (`father` ASC, `name` ASC) VISIBLE,
+  INDEX `fs_name_idx` (`name`(256) ASC) VISIBLE,
+  INDEX `fs_father_name_idx` (`father` ASC, `name`(256) ASC) VISIBLE,
   CONSTRAINT `father_fk`
     FOREIGN KEY (`father`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -54,15 +54,18 @@ DROP TABLE IF EXISTS `belexo`.`str_fs_props` ;
 CREATE TABLE IF NOT EXISTS `belexo`.`str_fs_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
-  `value` TEXT NULL,
-  `node` INT NULL,
+  `value` JSON NULL,
+  `value_str` TEXT GENERATED ALWAYS as ( value ->> "$" ) STORED NULL,
+  `value_type` VARCHAR(32) GENERATED ALWAYS as (JSON_TYPE(value)) NULL,
+  `node` INT NOT NULL,
   `meta` TINYINT(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `sn_node_idx` (`node` ASC) VISIBLE,
   INDEX `sn_name_idx` (`name` ASC) VISIBLE,
-  INDEX `sn_value_idx` (`value`(256) ASC) VISIBLE,
+  INDEX `sn_value_idx` (`value_str`(256) ASC) VISIBLE,
   INDEX `sn_name_node_idx` (`name` ASC, `node` ASC) VISIBLE,
-  INDEX `sn_value_node_idx` (`value`(256) ASC, `node` ASC) VISIBLE,
+  INDEX `sn_value_node_idx` (`value_str`(256) ASC, `node` ASC) VISIBLE,
+  FULLTEXT `sn_value_ftx` (`value_str`),
   CONSTRAINT `str_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -75,6 +78,7 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`int_fs_props`
+-- This might actually be unused...
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`int_fs_props` ;
 
@@ -135,6 +139,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`unstructured` (
   `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `u_node_idx` (`node` ASC) VISIBLE,
+  FULLTEXT `un_text_ftx` (`text`),  
   CONSTRAINT `u_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -224,6 +229,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`str_ann_props` (
   INDEX `sa_value_idx` (`value`(256) ASC) VISIBLE,
   INDEX `sa_name_ann_idx` (`name` ASC, `ann` ASC) VISIBLE,
   INDEX `sa_value_ann_idx` (`value`(256) ASC, `ann` ASC) VISIBLE,
+  FULLTEXT `sa_value_ftx` (`value`),  
   CONSTRAINT `sa_ann_fk`
     FOREIGN KEY (`ann`)
     REFERENCES `belexo`.`annotations` (`id`)

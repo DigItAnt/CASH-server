@@ -82,7 +82,12 @@ public class DocumentSystemNode {
         // WTF is path??
         this.path = node.getPath();  // TODO
         this.metadata = new HashMap<String, Object>();
-        this.metadata = node.getMetadata();
+        try {
+            this.metadata = node.getMetadata();
+        } catch (Exception e) {
+            log.error("Metadata error", e);
+            e.printStackTrace();
+        } 
         if ( recur ) recurChildren(this, node);
     }
 
