@@ -21,6 +21,7 @@ USE `belexo` ;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`fsnodes`
+-- This table contains the "file system nodes": files and directories
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`fsnodes` ;
 
@@ -48,6 +49,8 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`str_fs_props`
+-- Properties of an fsnode. These could be metadata (meta=1)
+-- or whatever we might need on the server side.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`str_fs_props` ;
 
@@ -79,6 +82,9 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`int_fs_props`
 -- This might actually be unused...
+-- These are integer properties, but seeing as the str_fs_props
+-- supports JSON (and therefore, numerical values), this
+-- might never be used.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`int_fs_props` ;
 
@@ -86,7 +92,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`int_fs_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
   `value` INT NULL,
-  `node` INT NULL,
+  `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `in_node_idx` (`node` ASC) VISIBLE,
   INDEX `in_name_idx` (`name` ASC) VISIBLE,
@@ -105,6 +111,8 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`blob_fs_props`
+-- 'blob' properties -- namely, the content data of the file,
+-- along with its mime type.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`blob_fs_props` ;
 
@@ -113,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`blob_fs_props` (
   `name` VARCHAR(256) NOT NULL,
   `value` MEDIUMBLOB NULL,
   `content_type` VARCHAR(256),
-  `node` INT NULL,
+  `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `bn_node_idx` (`node` ASC) VISIBLE,
   INDEX `bn_name_idx` (`name` ASC) VISIBLE,
@@ -130,6 +138,14 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`unstructured`
+-- This table holds the 'plain text' extracted from the
+-- file. The uses for this table are:
+-- 1. a means to perform fast searches on a fulltext index;
+-- 2. a reference for the spans relative to an annotation
+-- NOTE: the last bit might be problematic. Spans are more
+-- likely to be produced on the frontend side. We should
+-- probably think of returning the text ourselves to the
+-- frontend.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`unstructured` ;
 
@@ -151,6 +167,10 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`tokens`
+-- Tokens are a special kind of annotation. Not clear
+-- whether they should be so special that they need
+-- to be on a dedicated table. There are issues with the
+-- span definition (see 'unstructured' table).
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`tokens` ;
 
@@ -176,6 +196,9 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`annotations`
+-- Annotations are imported from a file and/or added via API
+-- They are identified by a span (see 'todo' here), but the
+-- span must somehow be coherent with that used to define tokens.
 -- -----------------------------------------------------
 -- TODO: gestire annotazioni multispan usando l'attributo sameas
 CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
@@ -215,6 +238,10 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`str_ann_props`
+-- Properties of annotations.
+-- TODO: make similar to str_fs_props perhaps?
+-- Skip the first level and just go with a JSON column
+-- in an annotation?
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`str_ann_props` ;
 
@@ -222,7 +249,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`str_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
   `value` TEXT NULL,
-  `ann` INT NULL,
+  `ann` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_ann_idx` (`ann` ASC) VISIBLE,
   INDEX `sa_name_idx` (`name` ASC) VISIBLE,
@@ -241,6 +268,9 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`int_ann_props`
+-- Integer properties of an annotation. This should
+-- Probably be removed if `str_ann_props` is made to support
+-- JSON values.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`int_ann_props` ;
 
@@ -248,7 +278,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`int_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
   `value` INT NULL,
-  `ann` INT NULL,
+  `ann` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `ia_ann_idx` (`ann` ASC) VISIBLE,
   INDEX `ia_name_idx` (`name` ASC) VISIBLE,
@@ -267,14 +297,18 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`lnk_ann_props`
 -- Link between an annotation and another
+-- This is a special property type representing the
+-- link between two annotations. What we're really
+-- missing here is a link between annotations and a
+-- TOKEN.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`lnk_ann_props` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `layer` VARCHAR(1024) NOT NULL,
-  `sourceann` INT NULL,
-  `targetann` INT NULL,
+  `sourceann` INT NOT NULL,
+  `targetann` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_srcann_idx` (`sourceann` ASC) VISIBLE,
   INDEX `sa_targetann_idx` (`targetann` ASC) VISIBLE,
