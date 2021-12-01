@@ -152,6 +152,7 @@ DROP TABLE IF EXISTS `belexo`.`unstructured` ;
 CREATE TABLE IF NOT EXISTS `belexo`.`unstructured` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `text` MEDIUMTEXT NULL,
+  `type` VARCHAR(256) NULL, -- interpretative, ...
   `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `u_node_idx` (`node` ASC) VISIBLE,
@@ -169,8 +170,10 @@ COLLATE = UTF8MB4_unicode_ci;
 -- Table `belexo`.`tokens`
 -- Tokens are a special kind of annotation. Not clear
 -- whether they should be so special that they need
--- to be on a dedicated table. There are issues with the
--- span definition (see 'unstructured' table).
+-- to be on a dedicated table. There might be issues with the
+-- span definition (see 'unstructured' table). We need to
+-- decide whether to link the token to a specific type of
+-- extraction (a specific row in the 'unstructured' text)
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`tokens` ;
 
@@ -181,15 +184,23 @@ CREATE TABLE IF NOT EXISTS `belexo`.`tokens` (
   `begin` INT NOT NULL,
   `end` INT NOT NULL,
   `node` INT NOT NULL,
+  `srctxt` INT NULL, -- the actual text (unstructured) it refers to
+  -- This makes the reference to 'node' redundant
   PRIMARY KEY (`id`),
   INDEX `tok_text_idx` (`text`(256) ASC) VISIBLE,
   INDEX `tok_node_idx` (`node` ASC) VISIBLE,
+  INDEX `tok_srctxt_idx` (`srctxt` ASC) VISIBLE,
   INDEX `tok_text_node_idx` (`text`(256) ASC, `node` ASC) VISIBLE,
   CONSTRAINT `tok_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
     ON DELETE CASCADE
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION,
+  CONSTRAINT `tok_srctxt_fk`
+    FOREIGN KEY (`srctxt`)
+    REFERENCES `belexo`.`unstructured` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION    )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
@@ -197,10 +208,8 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`annotations`
 -- Annotations are imported from a file and/or added via API
--- They are identified by a span (see 'todo' here), but the
--- span must somehow be coherent with that used to define tokens.
+-- Spans are in a separate table referring to this one.
 -- -----------------------------------------------------
--- TODO: gestire annotazioni multispan usando l'attributo sameas
 CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `layer` VARCHAR(1024) NOT NULL,
@@ -210,26 +219,19 @@ CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `valid` TINYINT(1) NOT NULL DEFAULT 1, -- deleted annotations are 'invalid'
   `created` DATETIME NOT NULL,
   `confidence` FLOAT NOT NULL DEFAULT 1,
+  -- `begin` INT NOT NULL, -- spans are in a separate table,
+  -- `end` INT NOT NULL,   -- but they could be added here for speed
   `externalRef` VARCHAR(1024) NULL,
-  `begin` INT NOT NULL,
-  `end` INT NOT NULL,
   `node` INT NOT NULL,
-  `sameas` INT NULL, -- used to link together different rows for multispan annotations
   PRIMARY KEY (`id`),
   INDEX `ann_value_idx` (`value`(256) ASC) VISIBLE,
   INDEX `ann_node_idx` (`node` ASC) VISIBLE,
   INDEX `ann_layer_node_idx` (`layer`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_node_idx` (`value`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_layer_node_idx` (`value`(256) ASC, `layer`(256) ASC, `node` ASC) VISIBLE,
-  INDEX `ann_sameas` (`sameas` ASC) VISIBLE,
   CONSTRAINT `ann_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION,
-  CONSTRAINT `ann_ann_fk`
-    FOREIGN KEY (`sameas`)
-    REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -306,13 +308,12 @@ DROP TABLE IF EXISTS `belexo`.`lnk_ann_props` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(1024) NOT NULL,
   `sourceann` INT NOT NULL,
-  `targetann` INT NOT NULL,
+  `targetann` INT NULL,
+  `targettok` INT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_srcann_idx` (`sourceann` ASC) VISIBLE,
   INDEX `sa_targetann_idx` (`targetann` ASC) VISIBLE,
-  INDEX `sa_layer_idx` (`layer`(256) ASC) VISIBLE,
   CONSTRAINT `sa_srcann_fk`
     FOREIGN KEY (`sourceann`)
     REFERENCES `belexo`.`annotations` (`id`)
@@ -322,13 +323,69 @@ CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
     FOREIGN KEY (`targetann`)
     REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
-    ON UPDATE NO ACTION    
+    ON UPDATE NO ACTION,
+  CONSTRAINT `sa_trgtok_fk`
+    FOREIGN KEY (`targettok`)
+    REFERENCES `belexo`.`tokens` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION
     )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
 
+-- -----------------------------------------------------
+-- Table `belexo`.`ann_spans`
+-- This is the list of spans it featured by an annotation.
+-- There could be multiple spans for an annotation.
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `belexo`.`ann_spans` ;
+
+CREATE TABLE IF NOT EXISTS `belexo`.`ann_spans` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ann` INT NOT NULL,
+  `begin` INT NOT NULL,
+  `end` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `as_ann_idx` (`ann` ASC) VISIBLE,
+  INDEX `as_ann_begin_end_idx` (`ann` ASC, `begin` ASC, `end` ASC) VISIBLE,
+  CONSTRAINT `as_ann_fk`
+    FOREIGN KEY (`ann`)
+    REFERENCES `belexo`.`annotations` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION
+    )
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = UTF8MB4
+COLLATE = UTF8MB4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Function `belexo`.`SpanMatch`
+-- The SpanMatch function tells whether an annotation
+-- features a span (of its potentially multiple)
+-- matching the area.
+-- -----------------------------------------------------
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `belexo`.`SpanMatch`;
+
+CREATE FUNCTION `belexo`.`SpanMatch`(
+       `annotation` INT,
+       `lft` INT,
+       `rgt` INT
+) RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE ret INT;
+	SET ret = 0;
+	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a WHERE a.ann=annotation AND a.`begin`<=lft AND a.`end`>=rgt LIMIT 1;
+
+	RETURN ret;
+END$$
+DELIMITER ;
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+

@@ -27,6 +27,7 @@ import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
+import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.FakeTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
@@ -394,6 +395,7 @@ public class DBManager {
         PreparedStatement stmt = connection.prepareStatement("SELECT * from fsnodes where father=? and name=? LIMIT 1");
         stmt.setLong(1, parent);
         stmt.setString(2, name);
+        log.info("PS: " + stmt.toString());
         ResultSet rSet = stmt.executeQuery();
         if ( rSet.next() ) return true;
         return false;
@@ -416,8 +418,9 @@ public class DBManager {
         try {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO fsnodes (name, father, type) values (?,?,?)",
                                                                   Statement.RETURN_GENERATED_KEYS);
+            if ( parent == 0 ) parent = getRootNodeId();
             stmt.setString(1, getNewFolderName(parent));
-            stmt.setLong(2, parent);
+            stmt.setLong(2, parent); // it's a first level folder
             stmt.setString(3, TYPE_FOLDER);
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();  
@@ -471,22 +474,30 @@ public class DBManager {
             stmt.execute();
     }
 
-    private static void insertTextEntry(long nodeId, String text) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node) values (?,?)");
+    private static long insertTextEntry(long nodeId, String text, String tType) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) values (?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, text);
         stmt.setLong(2, nodeId);
-        stmt.execute();
+        stmt.setString(3, tType);
+        stmt.executeUpdate();
+        ResultSet rs = stmt.getGeneratedKeys();
+        return rs.next()?rs.getLong(1):0;
     }
 
-    private static int insertTokenNode(long nodeId, String token, int position, int begin, int end) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,position,begin,end) values (?,?,?,?,?)");
+    private static long insertTokenNode(long nodeId, long srcTxt,
+                                       String token, int position, int begin, int end) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end) values (?,?,?,?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, token);
         stmt.setLong(2, nodeId);
-        stmt.setInt(3, position);
-        stmt.setInt(4, begin);
-        stmt.setInt(5, end);
-        int ret = stmt.executeUpdate();
-        return ret;
+        stmt.setLong(3, srcTxt);
+        stmt.setInt(4, position);
+        stmt.setInt(5, begin);
+        stmt.setInt(6, end);
+        stmt.executeUpdate();
+        ResultSet rs = stmt.getGeneratedKeys();
+        return rs.next()?rs.getLong(1):0;
     }
 
     @Transactional
@@ -499,7 +510,7 @@ public class DBManager {
                 log.error("A file with the same name already exists in this directory");
                 throw new InvalidParamException();
             }
-            //byte[] contentBytes = contentStream.readAllBytes();
+            byte[] contentBytes = contentStream.readAllBytes();
             node = new FileInfo();
             node.setFather(parentId);
             node.setName(filename);
@@ -512,17 +523,18 @@ public class DBManager {
 
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
                 log.info("MYID: " + nid);
-                TextExtractorInterface extractor = new FakeTextExtractor(); // TODO: replace with actual extractor
-                String text = String.join(" ", extractor.extract((InputStream) null)); // must read the bytes here...
-                insertTextEntry(nid, text);
+                ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
+                TextExtractorInterface extractor = new EpiDocTextExtractor();
+                String text = extractor.read(bais).extract(); // must read the bytes here...
+                long srcTxt = insertTextEntry(nid, text, "interpretative");
                 log.info("Added text");
                 int ti = 1;
                 int begin = 0;
                 int end = -1;
-                for (String token: text.split(" ")) {
+                for (String token: extractor.tokens() ) {
                     begin = end + 1; // TODO This assumes a space
                     end = begin + token.length();
-                    long tid = insertTokenNode(nid, token, ti++, begin, end);
+                    long tid = insertTokenNode(nid, srcTxt, token, ti++, begin, end);
                     log.info("Added token node " + tid);
                 }
             }

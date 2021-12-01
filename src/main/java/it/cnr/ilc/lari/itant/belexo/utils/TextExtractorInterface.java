@@ -4,5 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 
 public interface TextExtractorInterface {
-    List<String> extract(InputStream content);
+    TextExtractorInterface read(InputStream is);
+    List<String> tokens();
+    String extract();
 }
