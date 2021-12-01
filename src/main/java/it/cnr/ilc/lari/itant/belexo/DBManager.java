@@ -587,4 +587,35 @@ public class DBManager {
         }
         return getNodeById(nodeId);
     }
+
+    /**
+     * This is mostly for testing a query...
+     * @param query
+     * @return
+     */
+    public static List<Long> findNodesByTextQuery(String query) throws Exception {
+        String[] tokens = query.split(" ");
+        int ntokens = tokens.length;
+
+        String sql = "SELECT DISTINCT n.id from fsnodes n";
+        for ( int ti = 1; ti <= ntokens; ti++ ) {
+            sql += ", tokens t" + ti + " ";
+        }
+        sql += "WHERE ";
+        for (int ti = 1; ti <= ntokens; ti++ ) {
+            String t = "t" + ti;
+            if ( ti > 1 ) sql += " AND ";
+            sql += t + ".node=n.id AND ";
+            sql += t + ".text='" + StringUtils.sqlEscapeString(tokens[ti-1]) + "'";
+            if ( ti > 1 )
+                sql += " AND " + t + ".position=t" + (ti-1) + ".position+1";
+        }
+        log.info("Search query: " + sql);
+        PreparedStatement stmt = connection.prepareStatement(sql); // actually no params
+        ResultSet rs = stmt.executeQuery();
+        ArrayList<Long> ret = new ArrayList<Long>();
+        while ( rs.next() )
+            ret.add(rs.getLong("n.id"));
+        return ret;
+    }
 }
