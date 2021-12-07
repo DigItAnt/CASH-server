@@ -16,7 +16,7 @@ public class FakeTextExtractor implements TextExtractorInterface {
     int differentChars = 5;
     int nRep = 3;
 
-    List<String> tokenList;
+    List<TokenInfo> tokenList;
 
 
     public FakeTextExtractor() {
@@ -32,8 +32,8 @@ public class FakeTextExtractor implements TextExtractorInterface {
         this.maxTokens = maxtokens;
     }
 
-    private List<String> generateTokens() {
-        List<String> toret = new ArrayList<>();
+    private List<TokenInfo> generateTokens() {
+        List<TokenInfo> toret = new ArrayList<>();
         int numTokens = new Random().nextInt(maxTokens);
         char[] token = new char[nRep * differentChars];
         for (int i= 0; i < numTokens; i++) {
@@ -44,23 +44,23 @@ public class FakeTextExtractor implements TextExtractorInterface {
                     token[j*nRep+k] = c;
                 }
             }
-            toret.add(new String(token));
+            toret.add(new TokenInfo("" + token));
         }
         return toret;
     }
 
     @Override
-    public List<String> tokens() {
+    public List<TokenInfo> tokens() {
         return this.tokenList;
     }
 
     @Override
     public String extract() {
-        return String.join(" ", this.tokenList);
+        return String.join(" ", TokenInfo.allWordTokens(tokenList));
     }
 
     public static void main(String[] args) {
-        for (String token: new FakeTextExtractor().read(null).tokens() )
-            System.out.println(token);
+        for (TokenInfo token: new FakeTextExtractor().read(null).tokens() )
+            System.out.println(token.text);
     }
 }

@@ -28,9 +28,10 @@ import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
-import it.cnr.ilc.lari.itant.belexo.utils.FakeTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
+import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo;
+import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
 public class DBManager {
     static ObjectMapper mapper = new ObjectMapper();
@@ -510,6 +511,11 @@ public class DBManager {
                 log.error("A file with the same name already exists in this directory");
                 throw new InvalidParamException();
             }
+            if ( parentId > 0 && getNodeById(parentId) == null ) {
+                log.error("Specified parent directory does not exist");
+                throw new InvalidParamException();
+            }
+            if ( parentId == 0 ) parentId = getRootNodeId();
             byte[] contentBytes = contentStream.readAllBytes();
             node = new FileInfo();
             node.setFather(parentId);
@@ -529,12 +535,9 @@ public class DBManager {
                 long srcTxt = insertTextEntry(nid, text, "interpretative");
                 log.info("Added text");
                 int ti = 1;
-                int begin = 0;
-                int end = -1;
-                for (String token: extractor.tokens() ) {
-                    begin = end + 1; // TODO This assumes a space
-                    end = begin + token.length();
-                    long tid = insertTokenNode(nid, srcTxt, token, ti++, begin, end);
+                for (TokenInfo token: extractor.tokens() ) {
+                    if ( token.tokenType != TokenType.WORD ) continue;
+                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end);
                     log.info("Added token node " + tid);
                 }
             }

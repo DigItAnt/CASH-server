@@ -17,22 +17,25 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
+
 public class EpiDocTextExtractor implements TextExtractorInterface {
+
     private static final Logger log = LoggerFactory.getLogger(EpiDocTextExtractor.class);
-    List<String> tokenList;
+    List<TokenInfo> tokenList;
 
     public EpiDocTextExtractor() {
-        tokenList = new ArrayList<String>();
+        tokenList = new ArrayList<TokenInfo>();
     }
 
     @Override
     public String extract() {
         // Non considera newlines etc.
-        return String.join(" ", tokenList);
+        return String.join("", TokenInfo.allTokens(tokenList));
     }
 
     @Override
-    public List<String> tokens() {
+    public List<TokenInfo> tokens() {
         return tokenList;
     }
 
@@ -44,19 +47,26 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             Document doc = db.parse(is);
             NodeList list = doc.getElementsByTagName("tei:ab"); // ???
             log.info("NLINES: " + list.getLength());
+            int begin = 0;
             for ( int nl = 0; nl < list.getLength(); nl++ ) {
                 Node lineNode = list.item(nl);
                 NodeList lc = lineNode.getChildNodes();
                 for ( int ni = 0; ni < lc.getLength(); ni ++ ) {
                     Node item = lc.item(ni);
                     String name = item.getNodeName();
+                    String tokenStr = item.getTextContent();
+                    tokenStr = tokenStr.replaceAll("\\s+", ""); // TODO: NOOOOOOO!!!!
+                    TokenType ttype = TokenType.WORD;
+                    int end = begin + tokenStr.length() - 1;
+                    if ( end < begin ) continue;
                     switch ( name ) {
                         case "tei:name":
                         case "tei:w":
-                        String token = item.getTextContent();
-                        token = token.replaceAll("\\s+", ""); // TODO: NOOOOOOO!!!!
-                        log.info("Found token: "+ token);
-                        tokenList.add(token);
+                        case "tei:pc":
+                        log.info("Found token: "+ tokenStr);
+                        if ( name.equals("tei:pc") ) ttype = TokenType.PUNCT;
+                        tokenList.add(new TokenInfo(tokenStr, begin, end, ttype));
+                        begin = end + 1;
                     }
                 }
             }
@@ -70,7 +80,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
 
 
     public static void main(String[] args) {
-        for (String token: new EpiDocTextExtractor().read(null).tokens() )
-            System.out.println(token);
+        for (TokenInfo token: new EpiDocTextExtractor().read(null).tokens() )
+            System.out.println(token.text);
     }
 }

@@ -5,6 +5,6 @@ import java.util.List;
 
 public interface TextExtractorInterface {
     TextExtractorInterface read(InputStream is);
-    List<String> tokens();
+    List<TokenInfo> tokens();
     String extract();
 }

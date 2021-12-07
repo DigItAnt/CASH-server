@@ -80,36 +80,6 @@ COLLATE = UTF8MB4_unicode_ci;
 
 
 -- -----------------------------------------------------
--- Table `belexo`.`int_fs_props`
--- This might actually be unused...
--- These are integer properties, but seeing as the str_fs_props
--- supports JSON (and therefore, numerical values), this
--- might never be used.
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `belexo`.`int_fs_props` ;
-
-CREATE TABLE IF NOT EXISTS `belexo`.`int_fs_props` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(256) NOT NULL,
-  `value` INT NULL,
-  `node` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `in_node_idx` (`node` ASC) VISIBLE,
-  INDEX `in_name_idx` (`name` ASC) VISIBLE,
-  INDEX `in_value_idx` (`value` ASC) VISIBLE,
-  INDEX `in_name_node_idx` (`name` ASC, `node` ASC) VISIBLE,
-  INDEX `in_value_node_idx` (`value` ASC, `node` ASC) VISIBLE,
-  CONSTRAINT `in_node_fk`
-    FOREIGN KEY (`node`)
-    REFERENCES `belexo`.`fsnodes` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = UTF8MB4
-COLLATE = UTF8MB4_unicode_ci;
-
-
--- -----------------------------------------------------
 -- Table `belexo`.`blob_fs_props`
 -- 'blob' properties -- namely, the content data of the file,
 -- along with its mime type.
@@ -185,7 +155,8 @@ CREATE TABLE IF NOT EXISTS `belexo`.`tokens` (
   `end` INT NOT NULL,
   `node` INT NOT NULL,
   `srctxt` INT NULL, -- the actual text (unstructured) it refers to
-  -- This makes the reference to 'node' redundant
+  -- This makes the reference to 'node' redundant and not normal,
+  -- but it saves us from an extra join at query time
   PRIMARY KEY (`id`),
   INDEX `tok_text_idx` (`text`(256) ASC) VISIBLE,
   INDEX `tok_node_idx` (`node` ASC) VISIBLE,
@@ -209,6 +180,7 @@ COLLATE = UTF8MB4_unicode_ci;
 -- Table `belexo`.`annotations`
 -- Annotations are imported from a file and/or added via API
 -- Spans are in a separate table referring to this one.
+-- annref and tokref are references to tokens and annotations
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `id` INT NOT NULL AUTO_INCREMENT,
@@ -250,44 +222,18 @@ DROP TABLE IF EXISTS `belexo`.`str_ann_props` ;
 CREATE TABLE IF NOT EXISTS `belexo`.`str_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
-  `value` TEXT NULL,
+  `value` JSON NULL,
+  `value_str` TEXT GENERATED ALWAYS as ( value ->> "$" ) STORED NULL,
+  `value_type` VARCHAR(32) GENERATED ALWAYS as (JSON_TYPE(value)) NULL,
   `ann` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_ann_idx` (`ann` ASC) VISIBLE,
   INDEX `sa_name_idx` (`name` ASC) VISIBLE,
-  INDEX `sa_value_idx` (`value`(256) ASC) VISIBLE,
+  INDEX `sa_value_idx` (`value_str`(256) ASC) VISIBLE,
   INDEX `sa_name_ann_idx` (`name` ASC, `ann` ASC) VISIBLE,
-  INDEX `sa_value_ann_idx` (`value`(256) ASC, `ann` ASC) VISIBLE,
-  FULLTEXT `sa_value_ftx` (`value`),  
+  INDEX `sa_value_ann_idx` (`value_str`(256) ASC, `ann` ASC) VISIBLE,
+  FULLTEXT `sa_value_ftx` (`value_str`),
   CONSTRAINT `sa_ann_fk`
-    FOREIGN KEY (`ann`)
-    REFERENCES `belexo`.`annotations` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = UTF8MB4
-COLLATE = UTF8MB4_unicode_ci;
-
--- -----------------------------------------------------
--- Table `belexo`.`int_ann_props`
--- Integer properties of an annotation. This should
--- Probably be removed if `str_ann_props` is made to support
--- JSON values.
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `belexo`.`int_ann_props` ;
-
-CREATE TABLE IF NOT EXISTS `belexo`.`int_ann_props` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(256) NOT NULL,
-  `value` INT NULL,
-  `ann` INT NOT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `ia_ann_idx` (`ann` ASC) VISIBLE,
-  INDEX `ia_name_idx` (`name` ASC) VISIBLE,
-  INDEX `ia_value_idx` (`value` ASC) VISIBLE,
-  INDEX `ia_name_ann_idx` (`name` ASC, `ann` ASC) VISIBLE,
-  INDEX `ia_value_ann_idx` (`value` ASC, `ann` ASC) VISIBLE,
-  CONSTRAINT `ia_ann_fk`
     FOREIGN KEY (`ann`)
     REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
