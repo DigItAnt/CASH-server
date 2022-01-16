@@ -153,12 +153,14 @@ CREATE TABLE IF NOT EXISTS `belexo`.`tokens` (
   `position` INT NOT NULL,
   `begin` INT NOT NULL,
   `end` INT NOT NULL,
+  `xmlid` varchar(256) NULL,
   `node` INT NOT NULL,
   `srctxt` INT NULL, -- the actual text (unstructured) it refers to
   -- This makes the reference to 'node' redundant and not normal,
   -- but it saves us from an extra join at query time
   PRIMARY KEY (`id`),
   INDEX `tok_text_idx` (`text`(256) ASC) VISIBLE,
+  INDEX `tok_xmlid_idx` (`xmlid`(256) ASC) VISIBLE,
   INDEX `tok_node_idx` (`node` ASC) VISIBLE,
   INDEX `tok_srctxt_idx` (`srctxt` ASC) VISIBLE,
   INDEX `tok_text_node_idx` (`text`(256) ASC, `node` ASC) VISIBLE,
@@ -213,7 +215,6 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`str_ann_props`
 -- Properties of annotations.
--- TODO: make similar to str_fs_props perhaps?
 -- Skip the first level and just go with a JSON column
 -- in an annotation?
 -- -----------------------------------------------------
@@ -325,6 +326,30 @@ BEGIN
 	DECLARE ret INT;
 	SET ret = 0;
 	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a WHERE a.ann=annotation AND a.`begin`<=lft AND a.`end`>=rgt LIMIT 1;
+
+	RETURN ret;
+END$$
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- Function `belexo`.`TokenMatch`
+-- The SpanMatch function tells whether an annotation
+-- features a span (of its potentially multiple)
+-- matching a token's.
+-- -----------------------------------------------------
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `belexo`.`TokenMatch`;
+
+CREATE FUNCTION `belexo`.`TokenMatch`(
+       `annotation` INT,
+       `token` INT
+) RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE ret INT;
+	SET ret = 0;
+	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a, `belexo`.`tokens` as t, `belexo`.`annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND a.`begin`<=t.`begin` AND a.`end`>=t.`end` LIMIT 1;
 
 	RETURN ret;
 END$$

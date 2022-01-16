@@ -487,8 +487,9 @@ public class DBManager {
     }
 
     private static long insertTokenNode(long nodeId, long srcTxt,
-                                       String token, int position, int begin, int end) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end) values (?,?,?,?,?,?)",
+                                       String token, int position, int begin, int end,
+                                       String xmlid) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid) values (?,?,?,?,?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, token);
         stmt.setLong(2, nodeId);
@@ -496,6 +497,8 @@ public class DBManager {
         stmt.setInt(4, position);
         stmt.setInt(5, begin);
         stmt.setInt(6, end);
+        if ( xmlid != null ) stmt.setString(7, xmlid);
+        else stmt.setNull(7, Types.VARCHAR);
         stmt.executeUpdate();
         ResultSet rs = stmt.getGeneratedKeys();
         return rs.next()?rs.getLong(1):0;
@@ -515,7 +518,6 @@ public class DBManager {
                 log.error("Specified parent directory does not exist");
                 throw new InvalidParamException();
             }
-            if ( parentId == 0 ) parentId = getRootNodeId();
             byte[] contentBytes = contentStream.readAllBytes();
             node = new FileInfo();
             node.setFather(parentId);
@@ -537,7 +539,7 @@ public class DBManager {
                 int ti = 1;
                 for (TokenInfo token: extractor.tokens() ) {
                     if ( token.tokenType != TokenType.WORD ) continue;
-                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end);
+                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid);
                     log.info("Added token node " + tid);
                 }
             }
