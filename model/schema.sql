@@ -34,8 +34,8 @@ CREATE TABLE IF NOT EXISTS `belexo`.`fsnodes` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
   INDEX `father_idx` (`father` ASC) VISIBLE,
-  INDEX `fs_name_idx` (`name` ASC) VISIBLE,
-  INDEX `fs_father_name_idx` (`father` ASC, `name` ASC) VISIBLE,
+  INDEX `fs_name_idx` (`name`(512) ASC) VISIBLE,
+  INDEX `fs_father_name_idx` (`father` ASC, `name`(512) ASC) VISIBLE,
   CONSTRAINT `father_fk`
     FOREIGN KEY (`father`)
     REFERENCES `belexo`.`fsnodes` (`id`)
