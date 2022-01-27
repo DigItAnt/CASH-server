@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,14 @@ import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
-import it.cnr.ilc.lari.itant.belexo.utils.FakeTextExtractor;
+import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
+import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo;
+import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
 public class DBManager {
+    static ObjectMapper mapper = new ObjectMapper();
     public final static String TYPE_FOLDER = "D";
     public final static String TYPE_FILE = "F"; // this node represents a file
     public final static String TEXT_PROPERTY = "text"; // property of usntructured holding the extracted text
@@ -215,8 +219,8 @@ public class DBManager {
         int i = 0;
         for ( String k: metadata.keySet() ) {
             Object v = metadata.get(k);
-            if ( v instanceof String ) i++;
-            else i+=((List<String>) v).size();
+            if ( v instanceof List ) i+=((List) v).size();
+            else i++;
         }
         return i;
     }
@@ -233,9 +237,10 @@ public class DBManager {
             int i = 1;
             for ( String k: metadata.keySet() ) {
                 Object v = metadata.get(k);
-                for ( String value: (v instanceof String)?Arrays.asList(new String[]{(String) v}):(List<String>) v ) {
+                for ( Object value: (v instanceof List)?((List) v):Arrays.asList(new Object[]{v}) ) {
+                    String toWrite = mapper.writeValueAsString(value);
                     stmt.setString(i++, k);
-                    stmt.setString(i++, value);
+                    stmt.setString(i++, toWrite);
                     stmt.setLong(i++, elementId);
                 }
             }
@@ -265,22 +270,22 @@ public class DBManager {
         }
     } 
 
-    private static List<String> mergeMetadataEntry(Object m1, Object m2) {
-        // 4 cases: SS, SL, LS, LL
-        if ( m1 instanceof String && m2 instanceof String )
-        return Arrays.asList(new String[]{(String) m1, (String) m2});
-        if ( m2 instanceof String ) { // m1 must be List<String>
-            ((List<String>) m1).add((String) m2);
-            return (List<String>) m1;
+    private static List mergeMetadataEntry(Object m1, Object m2) {
+        // 4 cases: OO, OL, LO, LL: strings or objects we do not merge but make into a list
+        if ( !(m1 instanceof List) && !(m2 instanceof List) )
+        return new ArrayList(Arrays.asList(new Object[]{m1, m2}));
+        if ( !(m2 instanceof List) ) { // m1 must be List
+            ((List) m1).add(m2);
+            return (List) m1;
         }
-        if ( m1 instanceof String ) { // m2 must be List
-            List<String> ret = Arrays.asList(new String[]{(String) m1});
-            ret.addAll((List<String>) m2);
+        if ( !(m1 instanceof List) ) { // m2 must be List
+            List ret = new ArrayList(Arrays.asList(new Object[]{m1}));
+            ret.addAll((List) m2);
             return ret;
         }
         // both lists
-        ((List<String>) m1).addAll((List<String>) m2);
-        return (List<String>) m1;
+        ((List) m1).addAll((List) m2);
+        return (List) m1;
     }
     
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
@@ -391,6 +396,7 @@ public class DBManager {
         PreparedStatement stmt = connection.prepareStatement("SELECT * from fsnodes where father=? and name=? LIMIT 1");
         stmt.setLong(1, parent);
         stmt.setString(2, name);
+        log.info("PS: " + stmt.toString());
         ResultSet rSet = stmt.executeQuery();
         if ( rSet.next() ) return true;
         return false;
@@ -413,8 +419,9 @@ public class DBManager {
         try {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO fsnodes (name, father, type) values (?,?,?)",
                                                                   Statement.RETURN_GENERATED_KEYS);
+            if ( parent == 0 ) parent = getRootNodeId();
             stmt.setString(1, getNewFolderName(parent));
-            stmt.setLong(2, parent);
+            stmt.setLong(2, parent); // it's a first level folder
             stmt.setString(3, TYPE_FOLDER);
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();  
@@ -431,23 +438,31 @@ public class DBManager {
     }
 
     public static Map<String, Object> getNodeMetadata(long nodeId) throws Exception {
+        log.info("Getting metadata for " + nodeId);
         PreparedStatement stmt = connection.prepareStatement("SELECT name, value from str_fs_props where node=? and meta=1");
         stmt.setLong(1, nodeId);
         ResultSet rs = stmt.executeQuery();
         Map<String, Object> ret = new HashMap<String, Object>();
         while ( rs.next() ) {
             String key = rs.getString("name");
-            String value = rs.getString("value");
+            Object value = mapper.readValue(rs.getString("value"), Object.class); 
+            log.info("Type of value " + value.getClass().getName());
+            //String value = rs.getString("value");
             if ( !ret.containsKey(key) )
                 ret.put(key, value);
             else { // we aleady have a value. A string or a List<String> already?
                 Object entry = ret.get(key);
-                if ( entry instanceof String ) // create a List
-                    ret.put(key, Arrays.asList(new String[]{(String) entry, value}));
-                else // add to the list
-                    ((List<String>) entry).add(value);
+                log.info("Type of entry " + entry.getClass().getName());
+                if ( !(entry instanceof List) ) { // create a List
+                    log.info("Generating new list");
+                    ret.put(key, new ArrayList(Arrays.asList(new Object[]{entry, value})));
+                } else {// add to the list
+                    log.info("Adding to the list");
+                    ((ArrayList) entry).add(value);
+                }
             }
         }
+        log.info("Metadata found: " + ret.keySet().toString());
         return ret;
     }
 
@@ -460,22 +475,33 @@ public class DBManager {
             stmt.execute();
     }
 
-    private static void insertTextEntry(long nodeId, String text) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node) values (?,?)");
+    private static long insertTextEntry(long nodeId, String text, String tType) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) values (?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, text);
         stmt.setLong(2, nodeId);
-        stmt.execute();
+        stmt.setString(3, tType);
+        stmt.executeUpdate();
+        ResultSet rs = stmt.getGeneratedKeys();
+        return rs.next()?rs.getLong(1):0;
     }
 
-    private static int insertTokenNode(long nodeId, String token, int position, int begin, int end) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,position,begin,end) values (?,?,?,?,?)");
+    private static long insertTokenNode(long nodeId, long srcTxt,
+                                       String token, int position, int begin, int end,
+                                       String xmlid) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid) values (?,?,?,?,?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, token);
         stmt.setLong(2, nodeId);
-        stmt.setInt(3, position);
-        stmt.setInt(4, begin);
-        stmt.setInt(5, end);
-        int ret = stmt.executeUpdate();
-        return ret;
+        stmt.setLong(3, srcTxt);
+        stmt.setInt(4, position);
+        stmt.setInt(5, begin);
+        stmt.setInt(6, end);
+        if ( xmlid != null ) stmt.setString(7, xmlid);
+        else stmt.setNull(7, Types.VARCHAR);
+        stmt.executeUpdate();
+        ResultSet rs = stmt.getGeneratedKeys();
+        return rs.next()?rs.getLong(1):0;
     }
 
     @Transactional
@@ -488,7 +514,11 @@ public class DBManager {
                 log.error("A file with the same name already exists in this directory");
                 throw new InvalidParamException();
             }
-            //byte[] contentBytes = contentStream.readAllBytes();
+            if ( parentId > 0 && getNodeById(parentId) == null ) {
+                log.error("Specified parent directory does not exist");
+                throw new InvalidParamException();
+            }
+            byte[] contentBytes = contentStream.readAllBytes();
             node = new FileInfo();
             node.setFather(parentId);
             node.setName(filename);
@@ -501,17 +531,15 @@ public class DBManager {
 
             if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
                 log.info("MYID: " + nid);
-                TextExtractorInterface extractor = new FakeTextExtractor(); // TODO: replace with actual extractor
-                String text = String.join(" ", extractor.extract((InputStream) null)); // must read the bytes here...
-                insertTextEntry(nid, text);
+                ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
+                TextExtractorInterface extractor = new EpiDocTextExtractor();
+                String text = extractor.read(bais).extract(); // must read the bytes here...
+                long srcTxt = insertTextEntry(nid, text, "interpretative");
                 log.info("Added text");
                 int ti = 1;
-                int begin = 0;
-                int end = -1;
-                for (String token: text.split(" ")) {
-                    begin = end + 1; // TODO This assumes a space
-                    end = begin + token.length();
-                    long tid = insertTokenNode(nid, token, ti++, begin, end);
+                for (TokenInfo token: extractor.tokens() ) {
+                    if ( token.tokenType != TokenType.WORD ) continue;
+                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid);
                     log.info("Added token node " + tid);
                 }
             }
@@ -563,5 +591,36 @@ public class DBManager {
             nodeId = rs.getLong("id");
         }
         return getNodeById(nodeId);
+    }
+
+    /**
+     * This is mostly for testing a query...
+     * @param query
+     * @return
+     */
+    public static List<Long> findNodesByTextQuery(String query) throws Exception {
+        String[] tokens = query.split(" ");
+        int ntokens = tokens.length;
+
+        String sql = "SELECT DISTINCT n.id from fsnodes n";
+        for ( int ti = 1; ti <= ntokens; ti++ ) {
+            sql += ", tokens t" + ti + " ";
+        }
+        sql += "WHERE ";
+        for (int ti = 1; ti <= ntokens; ti++ ) {
+            String t = "t" + ti;
+            if ( ti > 1 ) sql += " AND ";
+            sql += t + ".node=n.id AND ";
+            sql += t + ".text='" + StringUtils.sqlEscapeString(tokens[ti-1]) + "'";
+            if ( ti > 1 )
+                sql += " AND " + t + ".position=t" + (ti-1) + ".position+1";
+        }
+        log.info("Search query: " + sql);
+        PreparedStatement stmt = connection.prepareStatement(sql); // actually no params
+        ResultSet rs = stmt.executeQuery();
+        ArrayList<Long> ret = new ArrayList<Long>();
+        while ( rs.next() )
+            ret.add(rs.getLong("n.id"));
+        return ret;
     }
 }

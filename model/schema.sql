@@ -21,6 +21,7 @@ USE `belexo` ;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`fsnodes`
+-- This table contains the "file system nodes": files and directories
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`fsnodes` ;
 
@@ -34,8 +35,8 @@ CREATE TABLE IF NOT EXISTS `belexo`.`fsnodes` (
   PRIMARY KEY (`id`),
   UNIQUE INDEX `id_UNIQUE` (`id` ASC) VISIBLE,
   INDEX `father_idx` (`father` ASC) VISIBLE,
-  INDEX `fs_name_idx` (`name`(512) ASC) VISIBLE,
-  INDEX `fs_father_name_idx` (`father` ASC, `name`(512) ASC) VISIBLE,
+  INDEX `fs_name_idx` (`name`(256) ASC) VISIBLE,
+  INDEX `fs_father_name_idx` (`father` ASC, `name`(256) ASC) VISIBLE,
   CONSTRAINT `father_fk`
     FOREIGN KEY (`father`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -48,21 +49,26 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`str_fs_props`
+-- Properties of an fsnode. These could be metadata (meta=1)
+-- or whatever we might need on the server side.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`str_fs_props` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`str_fs_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
-  `value` TEXT NULL,
-  `node` INT NULL,
+  `value` JSON NULL,
+  `value_str` TEXT GENERATED ALWAYS as ( value ->> "$" ) STORED NULL,
+  `value_type` VARCHAR(32) GENERATED ALWAYS as (JSON_TYPE(value)) NULL,
+  `node` INT NOT NULL,
   `meta` TINYINT(1) DEFAULT 0,
   PRIMARY KEY (`id`),
   INDEX `sn_node_idx` (`node` ASC) VISIBLE,
   INDEX `sn_name_idx` (`name` ASC) VISIBLE,
-  INDEX `sn_value_idx` (`value`(256) ASC) VISIBLE,
+  INDEX `sn_value_idx` (`value_str`(256) ASC) VISIBLE,
   INDEX `sn_name_node_idx` (`name` ASC, `node` ASC) VISIBLE,
-  INDEX `sn_value_node_idx` (`value`(256) ASC, `node` ASC) VISIBLE,
+  INDEX `sn_value_node_idx` (`value_str`(256) ASC, `node` ASC) VISIBLE,
+  FULLTEXT `sn_value_ftx` (`value_str`),
   CONSTRAINT `str_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -74,33 +80,9 @@ COLLATE = UTF8MB4_unicode_ci;
 
 
 -- -----------------------------------------------------
--- Table `belexo`.`int_fs_props`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `belexo`.`int_fs_props` ;
-
-CREATE TABLE IF NOT EXISTS `belexo`.`int_fs_props` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(256) NOT NULL,
-  `value` INT NULL,
-  `node` INT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `in_node_idx` (`node` ASC) VISIBLE,
-  INDEX `in_name_idx` (`name` ASC) VISIBLE,
-  INDEX `in_value_idx` (`value` ASC) VISIBLE,
-  INDEX `in_name_node_idx` (`name` ASC, `node` ASC) VISIBLE,
-  INDEX `in_value_node_idx` (`value` ASC, `node` ASC) VISIBLE,
-  CONSTRAINT `in_node_fk`
-    FOREIGN KEY (`node`)
-    REFERENCES `belexo`.`fsnodes` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = UTF8MB4
-COLLATE = UTF8MB4_unicode_ci;
-
-
--- -----------------------------------------------------
 -- Table `belexo`.`blob_fs_props`
+-- 'blob' properties -- namely, the content data of the file,
+-- along with its mime type.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`blob_fs_props` ;
 
@@ -109,7 +91,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`blob_fs_props` (
   `name` VARCHAR(256) NOT NULL,
   `value` MEDIUMBLOB NULL,
   `content_type` VARCHAR(256),
-  `node` INT NULL,
+  `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `bn_node_idx` (`node` ASC) VISIBLE,
   INDEX `bn_name_idx` (`name` ASC) VISIBLE,
@@ -126,15 +108,25 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`unstructured`
+-- This table holds the 'plain text' extracted from the
+-- file. The uses for this table are:
+-- 1. a means to perform fast searches on a fulltext index;
+-- 2. a reference for the spans relative to an annotation
+-- NOTE: the last bit might be problematic. Spans are more
+-- likely to be produced on the frontend side. We should
+-- probably think of returning the text ourselves to the
+-- frontend.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`unstructured` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`unstructured` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `text` MEDIUMTEXT NULL,
+  `type` VARCHAR(256) NULL, -- interpretative, ...
   `node` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `u_node_idx` (`node` ASC) VISIBLE,
+  FULLTEXT `un_text_ftx` (`text`),  
   CONSTRAINT `u_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
@@ -146,6 +138,12 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`tokens`
+-- Tokens are a special kind of annotation. Not clear
+-- whether they should be so special that they need
+-- to be on a dedicated table. There might be issues with the
+-- span definition (see 'unstructured' table). We need to
+-- decide whether to link the token to a specific type of
+-- extraction (a specific row in the 'unstructured' text)
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`tokens` ;
 
@@ -155,24 +153,37 @@ CREATE TABLE IF NOT EXISTS `belexo`.`tokens` (
   `position` INT NOT NULL,
   `begin` INT NOT NULL,
   `end` INT NOT NULL,
+  `xmlid` varchar(256) NULL,
   `node` INT NOT NULL,
+  `srctxt` INT NULL, -- the actual text (unstructured) it refers to
+  -- This makes the reference to 'node' redundant and not normal,
+  -- but it saves us from an extra join at query time
   PRIMARY KEY (`id`),
   INDEX `tok_text_idx` (`text`(256) ASC) VISIBLE,
+  INDEX `tok_xmlid_idx` (`xmlid`(256) ASC) VISIBLE,
   INDEX `tok_node_idx` (`node` ASC) VISIBLE,
+  INDEX `tok_srctxt_idx` (`srctxt` ASC) VISIBLE,
   INDEX `tok_text_node_idx` (`text`(256) ASC, `node` ASC) VISIBLE,
   CONSTRAINT `tok_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
     ON DELETE CASCADE
-    ON UPDATE NO ACTION)
+    ON UPDATE NO ACTION,
+  CONSTRAINT `tok_srctxt_fk`
+    FOREIGN KEY (`srctxt`)
+    REFERENCES `belexo`.`unstructured` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION    )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`annotations`
+-- Annotations are imported from a file and/or added via API
+-- Spans are in a separate table referring to this one.
+-- annref and tokref are references to tokens and annotations
 -- -----------------------------------------------------
--- TODO: gestire annotazioni multispan usando l'attributo sameas
 CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `layer` VARCHAR(1024) NOT NULL,
@@ -182,26 +193,19 @@ CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   `valid` TINYINT(1) NOT NULL DEFAULT 1, -- deleted annotations are 'invalid'
   `created` DATETIME NOT NULL,
   `confidence` FLOAT NOT NULL DEFAULT 1,
+  -- `begin` INT NOT NULL, -- spans are in a separate table,
+  -- `end` INT NOT NULL,   -- but they could be added here for speed
   `externalRef` VARCHAR(1024) NULL,
-  `begin` INT NOT NULL,
-  `end` INT NOT NULL,
   `node` INT NOT NULL,
-  `sameas` INT NULL, -- used to link together different rows for multispan annotations
   PRIMARY KEY (`id`),
   INDEX `ann_value_idx` (`value`(256) ASC) VISIBLE,
   INDEX `ann_node_idx` (`node` ASC) VISIBLE,
   INDEX `ann_layer_node_idx` (`layer`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_node_idx` (`value`(256) ASC, `node` ASC) VISIBLE,
   INDEX `ann_value_layer_node_idx` (`value`(256) ASC, `layer`(256) ASC, `node` ASC) VISIBLE,
-  INDEX `ann_sameas` (`sameas` ASC) VISIBLE,
   CONSTRAINT `ann_node_fk`
     FOREIGN KEY (`node`)
     REFERENCES `belexo`.`fsnodes` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION,
-  CONSTRAINT `ann_ann_fk`
-    FOREIGN KEY (`sameas`)
-    REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
@@ -210,46 +214,27 @@ COLLATE = UTF8MB4_unicode_ci;
 
 -- -----------------------------------------------------
 -- Table `belexo`.`str_ann_props`
+-- Properties of annotations.
+-- Skip the first level and just go with a JSON column
+-- in an annotation?
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`str_ann_props` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`str_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(256) NOT NULL,
-  `value` TEXT NULL,
-  `ann` INT NULL,
+  `value` JSON NULL,
+  `value_str` TEXT GENERATED ALWAYS as ( value ->> "$" ) STORED NULL,
+  `value_type` VARCHAR(32) GENERATED ALWAYS as (JSON_TYPE(value)) NULL,
+  `ann` INT NOT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_ann_idx` (`ann` ASC) VISIBLE,
   INDEX `sa_name_idx` (`name` ASC) VISIBLE,
-  INDEX `sa_value_idx` (`value`(256) ASC) VISIBLE,
+  INDEX `sa_value_idx` (`value_str`(256) ASC) VISIBLE,
   INDEX `sa_name_ann_idx` (`name` ASC, `ann` ASC) VISIBLE,
-  INDEX `sa_value_ann_idx` (`value`(256) ASC, `ann` ASC) VISIBLE,
+  INDEX `sa_value_ann_idx` (`value_str`(256) ASC, `ann` ASC) VISIBLE,
+  FULLTEXT `sa_value_ftx` (`value_str`),
   CONSTRAINT `sa_ann_fk`
-    FOREIGN KEY (`ann`)
-    REFERENCES `belexo`.`annotations` (`id`)
-    ON DELETE CASCADE
-    ON UPDATE NO ACTION)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = UTF8MB4
-COLLATE = UTF8MB4_unicode_ci;
-
--- -----------------------------------------------------
--- Table `belexo`.`int_ann_props`
--- -----------------------------------------------------
-DROP TABLE IF EXISTS `belexo`.`int_ann_props` ;
-
-CREATE TABLE IF NOT EXISTS `belexo`.`int_ann_props` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(256) NOT NULL,
-  `value` INT NULL,
-  `ann` INT NULL,
-  PRIMARY KEY (`id`),
-  INDEX `ia_ann_idx` (`ann` ASC) VISIBLE,
-  INDEX `ia_name_idx` (`name` ASC) VISIBLE,
-  INDEX `ia_value_idx` (`value` ASC) VISIBLE,
-  INDEX `ia_name_ann_idx` (`name` ASC, `ann` ASC) VISIBLE,
-  INDEX `ia_value_ann_idx` (`value` ASC, `ann` ASC) VISIBLE,
-  CONSTRAINT `ia_ann_fk`
     FOREIGN KEY (`ann`)
     REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
@@ -261,18 +246,21 @@ COLLATE = UTF8MB4_unicode_ci;
 -- -----------------------------------------------------
 -- Table `belexo`.`lnk_ann_props`
 -- Link between an annotation and another
+-- This is a special property type representing the
+-- link between two annotations. What we're really
+-- missing here is a link between annotations and a
+-- TOKEN.
 -- -----------------------------------------------------
 DROP TABLE IF EXISTS `belexo`.`lnk_ann_props` ;
 
 CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `layer` VARCHAR(1024) NOT NULL,
-  `sourceann` INT NULL,
+  `sourceann` INT NOT NULL,
   `targetann` INT NULL,
+  `targettok` INT NULL,
   PRIMARY KEY (`id`),
   INDEX `sa_srcann_idx` (`sourceann` ASC) VISIBLE,
   INDEX `sa_targetann_idx` (`targetann` ASC) VISIBLE,
-  INDEX `sa_layer_idx` (`layer`(256) ASC) VISIBLE,
   CONSTRAINT `sa_srcann_fk`
     FOREIGN KEY (`sourceann`)
     REFERENCES `belexo`.`annotations` (`id`)
@@ -282,13 +270,93 @@ CREATE TABLE IF NOT EXISTS `belexo`.`lnk_ann_props` (
     FOREIGN KEY (`targetann`)
     REFERENCES `belexo`.`annotations` (`id`)
     ON DELETE CASCADE
-    ON UPDATE NO ACTION    
+    ON UPDATE NO ACTION,
+  CONSTRAINT `sa_trgtok_fk`
+    FOREIGN KEY (`targettok`)
+    REFERENCES `belexo`.`tokens` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION
     )
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
 
+-- -----------------------------------------------------
+-- Table `belexo`.`ann_spans`
+-- This is the list of spans it featured by an annotation.
+-- There could be multiple spans for an annotation.
+-- -----------------------------------------------------
+DROP TABLE IF EXISTS `belexo`.`ann_spans` ;
+
+CREATE TABLE IF NOT EXISTS `belexo`.`ann_spans` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ann` INT NOT NULL,
+  `begin` INT NOT NULL,
+  `end` INT NOT NULL,
+  PRIMARY KEY (`id`),
+  INDEX `as_ann_idx` (`ann` ASC) VISIBLE,
+  INDEX `as_ann_begin_end_idx` (`ann` ASC, `begin` ASC, `end` ASC) VISIBLE,
+  CONSTRAINT `as_ann_fk`
+    FOREIGN KEY (`ann`)
+    REFERENCES `belexo`.`annotations` (`id`)
+    ON DELETE CASCADE
+    ON UPDATE NO ACTION
+    )
+ENGINE = InnoDB
+DEFAULT CHARACTER SET = UTF8MB4
+COLLATE = UTF8MB4_unicode_ci;
+
+-- -----------------------------------------------------
+-- Function `belexo`.`SpanMatch`
+-- The SpanMatch function tells whether an annotation
+-- features a span (of its potentially multiple)
+-- matching the area.
+-- -----------------------------------------------------
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `belexo`.`SpanMatch`;
+
+CREATE FUNCTION `belexo`.`SpanMatch`(
+       `annotation` INT,
+       `lft` INT,
+       `rgt` INT
+) RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE ret INT;
+	SET ret = 0;
+	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a WHERE a.ann=annotation AND a.`begin`<=lft AND a.`end`>=rgt LIMIT 1;
+
+	RETURN ret;
+END$$
+DELIMITER ;
+
+-- -----------------------------------------------------
+-- Function `belexo`.`TokenMatch`
+-- The SpanMatch function tells whether an annotation
+-- features a span (of its potentially multiple)
+-- matching a token's.
+-- -----------------------------------------------------
+DELIMITER $$
+
+DROP FUNCTION IF EXISTS `belexo`.`TokenMatch`;
+
+CREATE FUNCTION `belexo`.`TokenMatch`(
+       `annotation` INT,
+       `token` INT
+) RETURNS INT
+DETERMINISTIC
+BEGIN
+	DECLARE ret INT;
+	SET ret = 0;
+	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a, `belexo`.`tokens` as t, `belexo`.`annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND a.`begin`<=t.`begin` AND a.`end`>=t.`end` LIMIT 1;
+
+	RETURN ret;
+END$$
+DELIMITER ;
+
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+

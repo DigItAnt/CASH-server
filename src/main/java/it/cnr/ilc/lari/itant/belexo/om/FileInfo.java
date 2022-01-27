@@ -87,7 +87,7 @@ public class FileInfo {
             try {
                 this.metadata = DBManager.getNodeMetadata(this.elementId);
             } catch (Exception e) {
-                log.error("Could not fetch metadata for node " + this.name);
+                log.error("Could not fetch metadata for node " + this.name, e);
             }
         }
         return metadata;
