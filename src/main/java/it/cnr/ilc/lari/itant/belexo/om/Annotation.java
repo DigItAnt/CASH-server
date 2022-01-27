@@ -1,5 +1,6 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
+import java.util.List;
 import java.util.Map;
 
 public class Annotation {
@@ -7,6 +8,26 @@ public class Annotation {
     String layer;
     String value;
     Map<String, String> attributes;
+
+    public static class Span {
+        int start;
+        int end;
+        public int getStart() {
+            return start;
+        }
+        public void setStart(int start) {
+            this.start = start;
+        }
+        public int getEnd() {
+            return end;
+        }
+        public void setEnd(int end) {
+            this.end = end;
+        }
+        
+    }
+
+    List<Span> spans;
     
     public int getID() {
         return ID;
@@ -31,6 +52,13 @@ public class Annotation {
     }
     public void setAttributes(Map<String, String> attributes) {
         this.attributes = attributes;
+    }
+    
+    public List<Span> getSpans() {
+        return spans;
+    }
+    public void setSpans(List<Span> spans) {
+        this.spans = spans;
     }
     
     
