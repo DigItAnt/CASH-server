@@ -565,7 +565,7 @@ public class DBManager {
     }
 
     public static Map<String, Object> getAnnotationAttributes(long annId) throws Exception {
-        return getRowAttributes(annId, "select name, value from annotations where id=?");
+        return getRowAttributes(annId, "select name, value from str_ann_props where ann=?");
     }
 
     private static void saveFileData(FileInfo node, String contentType, InputStream contentStream) throws Exception {
