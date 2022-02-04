@@ -74,6 +74,14 @@ public class Annotation {
     }
     
     public List<Span> getSpans() {
+        if ( spans == null ) {
+            // populate it!
+            try {
+                this.spans = DBManager.getAnnotationSpans(this.ID);
+            } catch (Exception e) {
+                log.error("Could not fetch spans for annotation " + this.ID, e);
+            }
+        }
         return spans;
     }
     public void setSpans(List<Span> spans) {

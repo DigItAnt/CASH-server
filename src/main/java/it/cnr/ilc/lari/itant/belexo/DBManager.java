@@ -568,6 +568,20 @@ public class DBManager {
         return getRowAttributes(annId, "select name, value from str_ann_props where ann=?");
     }
 
+    public static List<Annotation.Span> getAnnotationSpans(long annid) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("SELECT  begin,end from ann_spans where ann=?");
+        stmt.setLong(1, annid);
+        ResultSet rs = stmt.executeQuery();
+        List<Annotation.Span> ret = new ArrayList<Annotation.Span>();
+        while ( rs.next() ) {
+            Annotation.Span span = new Annotation.Span();
+            span.setStart(rs.getInt("begin"));
+            span.setEnd(rs.getInt("end"));
+            ret.add(span);
+        }
+        return ret;
+    }
+
     private static void saveFileData(FileInfo node, String contentType, InputStream contentStream) throws Exception {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) values (?,?,?,?)");
             stmt.setString(1, ORIGINAL_CONTENT);
