@@ -14,7 +14,7 @@ import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 
 public class FileInfo {
-    private static final Logger log = LoggerFactory.getLogger(DocumentSystemNode.class);
+    private static final Logger log = LoggerFactory.getLogger(FileInfo.class);
     String path;
     String name;
     DocumentSystemNode.FileDirectory type;

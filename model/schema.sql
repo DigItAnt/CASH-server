@@ -158,6 +158,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`tokens` (
   `srctxt` INT NULL, -- the actual text (unstructured) it refers to
   -- This makes the reference to 'node' redundant and not normal,
   -- but it saves us from an extra join at query time
+  `imported` BOOLEAN NOT NULL DEFAULT 0, -- autom. generated?  
   PRIMARY KEY (`id`),
   INDEX `tok_text_idx` (`text`(256) ASC) VISIBLE,
   INDEX `tok_xmlid_idx` (`xmlid`(256) ASC) VISIBLE,
@@ -197,6 +198,7 @@ CREATE TABLE IF NOT EXISTS `belexo`.`annotations` (
   -- `end` INT NOT NULL,   -- but they could be added here for speed
   `externalRef` VARCHAR(1024) NULL,
   `node` INT NOT NULL,
+  `imported` BOOLEAN NOT NULL DEFAULT 0, -- whether this is autom. generated
   PRIMARY KEY (`id`),
   INDEX `ann_value_idx` (`value`(256) ASC) VISIBLE,
   INDEX `ann_node_idx` (`node` ASC) VISIBLE,

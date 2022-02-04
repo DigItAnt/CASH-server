@@ -17,6 +17,7 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
+import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
+import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
@@ -225,7 +228,7 @@ public class DBManager {
         return i;
     }
 
-    private synchronized static void replaceNodeMetadata(long elementId, Map<String, Object> metadata) throws Exception {
+    private synchronized static void OLD_replaceNodeMetadata(long elementId, Map<String, Object> metadata) throws Exception {
         connection.setAutoCommit(false);
         try {
             // remove the old metadata first, then update it. This should be done in a 'softer' way
@@ -254,6 +257,35 @@ public class DBManager {
         }
     }
 
+    private synchronized static void replaceRowAttributes(long id, Map<String, Object> attributes,
+                                                          String deleteQuery, String insertQuery, boolean inheritTransaction) throws Exception {
+        if ( !inheritTransaction ) connection.setAutoCommit(false);
+        try {
+            // remove the old ATTRIBUTES first, then update it. This should be done in a 'softer' way
+            PreparedStatement stmt = connection.prepareStatement(deleteQuery);
+            stmt.setLong(1, id);
+            stmt.execute();
+            stmt = connection.prepareStatement(insertQuery);
+            int i = 1;
+            for ( String k: attributes.keySet() ) {
+                Object v = attributes.get(k);
+                for ( Object value: (v instanceof List)?((List) v):Arrays.asList(new Object[]{v}) ) {
+                    String toWrite = mapper.writeValueAsString(value);
+                    stmt.setString(i++, k);
+                    stmt.setString(i++, toWrite);
+                    stmt.setLong(i++, id);
+                }
+            }
+            stmt.executeUpdate();
+            if (!inheritTransaction) connection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            if (!inheritTransaction) connection.rollback();
+        } finally {
+            if ( !inheritTransaction) connection.setAutoCommit(true);
+        }
+    }
+
     public synchronized static void deleteNodeMetadata(long elementId) throws Exception {
         connection.setAutoCommit(false);
         try {
@@ -270,7 +302,7 @@ public class DBManager {
         }
     } 
 
-    private static List mergeMetadataEntry(Object m1, Object m2) {
+    private static List mergeAttributesEntry(Object m1, Object m2) {
         // 4 cases: OO, OL, LO, LL: strings or objects we do not merge but make into a list
         if ( !(m1 instanceof List) && !(m2 instanceof List) )
         return new ArrayList(Arrays.asList(new Object[]{m1, m2}));
@@ -287,7 +319,47 @@ public class DBManager {
         ((List) m1).addAll((List) m2);
         return (List) m1;
     }
-    
+ 
+    public synchronized static void deleteRowAttributes(long id, String table) throws Exception {
+        deleteRowAttributes(id, table, true);
+    }
+
+    public synchronized static void deleteRowAttributes(long id, String query, boolean autocommit) throws Exception {
+        if ( !autocommit ) connection.setAutoCommit(false);
+        try {
+            PreparedStatement stmt = connection.prepareStatement(query);
+            stmt.setLong(1, id);
+            stmt.execute();
+            if ( !autocommit ) connection.commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            if ( !autocommit ) connection.rollback();
+        } finally {
+            if ( !autocommit ) connection.setAutoCommit(true);
+        }
+    } 
+
+    protected static void updateRowAttributes(long rowId, Map<String, Object> attributes, Map<String, Object> newAttrs,
+                                              String deleteQuery, String insertQuery,
+                                              String extras, boolean inheritTransaction) throws Exception {
+        try {
+            log.info("Setting attributes for " + rowId);
+            for (Map.Entry<String, Object> prop: newAttrs.entrySet()) {
+                if ( !attributes.containsKey(prop.getKey()) )
+                    attributes.put(prop.getKey(), prop.getValue());
+                else { // must merge... huge PITA
+                    attributes.put(prop.getKey(), mergeAttributesEntry(attributes.get(prop.getKey()), prop.getValue()));
+                }
+            }
+            String iq = insertQuery + " values " + StringUtils.n(nValuesInMetadata(attributes), "(?,?,?" + extras + ")", ",");
+            replaceRowAttributes(rowId, attributes, deleteQuery, iq, inheritTransaction);
+            //logProperties(node);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        }
+    }
+
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
         try {
             FileInfo node = getNodeById(connection, elementId);
@@ -296,15 +368,8 @@ public class DBManager {
 
             Map<String, Object> metadata = getNodeMetadata(elementId);
 
-            log.info("Setting node metadata for " + elementId);
-            for (Map.Entry<String, Object> prop: props.entrySet()) {
-                if ( !metadata.containsKey(prop.getKey()) )
-                    metadata.put(prop.getKey(), prop.getValue());
-                else { // must merge... huge PITA
-                    metadata.put(prop.getKey(), mergeMetadataEntry(metadata.get(prop.getKey()), prop.getValue()));
-                }
-            }
-            replaceNodeMetadata(elementId, metadata);
+            updateRowAttributes(elementId, metadata, props, "delete from str_fs_props where node=? and meta=1",
+                                                            "INSERT INTO str_fs_props (name, value, node, meta)", ",1", false);
 
             log.info("Properties set on node with id: " + elementId);
             //logProperties(node);
@@ -322,7 +387,7 @@ public class DBManager {
         while ( res.next() ) {
             log.info("Found.");
             ret = new FileInfo();
-            ret.setElementId((int) res.getLong("id"));
+            ret.setElementId(res.getLong("id"));
             ret.setName(res.getString("name"));
             ret.setType(res.getString("type"));
         }
@@ -346,7 +411,7 @@ public class DBManager {
         while ( res.next() ) {
             log.info("Found.");
             ret = new FileInfo();
-            ret.setElementId((int) res.getLong("id"));
+            ret.setElementId(res.getLong("id"));
             ret.setName(res.getString("name"));
             ret.setType(res.getString("type"));
             long father = res.getLong("father");
@@ -437,7 +502,7 @@ public class DBManager {
         }
     }
 
-    public static Map<String, Object> getNodeMetadata(long nodeId) throws Exception {
+    public static Map<String, Object> OLD__getNodeMetadata(long nodeId) throws Exception {
         log.info("Getting metadata for " + nodeId);
         PreparedStatement stmt = connection.prepareStatement("SELECT name, value from str_fs_props where node=? and meta=1");
         stmt.setLong(1, nodeId);
@@ -466,6 +531,43 @@ public class DBManager {
         return ret;
     }
 
+    public static Map<String, Object> getNodeMetadata(long nodeId) throws Exception {
+        return getRowAttributes(nodeId, "SELECT name, value from str_fs_props where node=? and meta=1");
+    }
+
+    private static Map<String, Object> getRowAttributes(long id, final String query) throws Exception {
+        log.info("Getting metadata for " + id + " in " + query);
+        PreparedStatement stmt = connection.prepareStatement(query);
+        stmt.setLong(1, id);
+        ResultSet rs = stmt.executeQuery();
+        Map<String, Object> ret = new HashMap<String, Object>();
+        while ( rs.next() ) {
+            String key = rs.getString("name");
+            Object value = mapper.readValue(rs.getString("value"), Object.class); 
+            log.info("Type of value " + ((value == null)?"null":value.getClass().getName()));
+            //String value = rs.getString("value");
+            if ( !ret.containsKey(key) )
+                ret.put(key, value);
+            else { // we aleady have a value. A string or a List<String> already?
+                Object entry = ret.get(key);
+                log.info("Type of entry " + entry.getClass().getName());
+                if ( !(entry instanceof List) ) { // create a List
+                    log.info("Generating new list");
+                    ret.put(key, new ArrayList(Arrays.asList(new Object[]{entry, value})));
+                } else {// add to the list
+                    log.info("Adding to the list");
+                    ((ArrayList) entry).add(value);
+                }
+            }
+        }
+        log.info("Metadata found: " + ret.keySet().toString());
+        return ret;
+    }
+
+    public static Map<String, Object> getAnnotationAttributes(long annId) throws Exception {
+        return getRowAttributes(annId, "select name, value from annotations where id=?");
+    }
+
     private static void saveFileData(FileInfo node, String contentType, InputStream contentStream) throws Exception {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) values (?,?,?,?)");
             stmt.setString(1, ORIGINAL_CONTENT);
@@ -488,8 +590,8 @@ public class DBManager {
 
     private static long insertTokenNode(long nodeId, long srcTxt,
                                        String token, int position, int begin, int end,
-                                       String xmlid) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid) values (?,?,?,?,?,?,?)",
+                                       String xmlid, boolean imported) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, token);
         stmt.setLong(2, nodeId);
@@ -499,6 +601,7 @@ public class DBManager {
         stmt.setInt(6, end);
         if ( xmlid != null ) stmt.setString(7, xmlid);
         else stmt.setNull(7, Types.VARCHAR);
+        stmt.setBoolean(8, imported);
         stmt.executeUpdate();
         ResultSet rs = stmt.getGeneratedKeys();
         return rs.next()?rs.getLong(1):0;
@@ -539,7 +642,7 @@ public class DBManager {
                 int ti = 1;
                 for (TokenInfo token: extractor.tokens() ) {
                     if ( token.tokenType != TokenType.WORD ) continue;
-                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid);
+                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
                     log.info("Added token node " + tid);
                 }
             }
@@ -622,5 +725,180 @@ public class DBManager {
         while ( rs.next() )
             ret.add(rs.getLong("n.id"));
         return ret;
+    }
+
+    // @TODO: there are missing columns here
+    protected static Annotation getAnnotationById(Connection connection, long annId) throws Exception {
+        log.info("Trying to get annotation " + annId);
+        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value FROM annotations where id=?");
+        stmt.setLong(1, annId);
+        ResultSet res = stmt.executeQuery();
+        Annotation ret = null;
+        while ( res.next() ) {
+            log.info("Found.");
+            ret = new Annotation();
+            ret.setID(res.getLong("id"));
+            ret.setLayer(res.getString("layer"));
+            ret.setValue(res.getString("value"));
+        }
+        return ret;
+    }
+
+    // @TODO: there are missing columns here
+    public static List<Annotation> getNodeAnnotations(long nodeId) throws Exception {
+        log.info("Trying to get annotations of node " + nodeId);
+        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value FROM annotations where node=?");
+        stmt.setLong(1, nodeId);
+        ResultSet res = stmt.executeQuery();
+        List<Annotation> ret = new ArrayList<Annotation>();
+        while ( res.next() ) {
+            log.info("Found.");
+            Annotation ann = new Annotation();
+            ann.setID(res.getLong("id"));
+            ann.setLayer(res.getString("layer"));
+            ann.setValue(res.getString("value"));
+            ret.add(ann);
+        }
+        return ret;
+    }
+
+    public static Annotation getAnnotationById(long annId) throws Exception {
+        return getAnnotationById(connection, annId);
+    }
+
+    // @TODO: Should not return just the first one
+    public static String getNodeText(long nodeId) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("SELECT text FROM unstructured where node=? limit 1");
+        stmt.setLong(1, nodeId);
+        ResultSet res = stmt.executeQuery();
+        while ( res.next() )
+            return res.getString(1);
+        return null;
+    }
+
+    private synchronized static long insertAnnotaton(long nodeId, Annotation ann) throws Exception {
+        connection.setAutoCommit(false);
+        long ret = 0;
+        try {
+            ret = insertAnnotationInternal(nodeId, ann);
+        } catch ( Exception e ) {
+            connection.rollback();
+        } finally {
+            connection.setAutoCommit(true);
+        }
+        return ret;
+    }
+
+    private synchronized static long insertAnnotationInternal(long nodeId, Annotation ann) throws Exception {
+        try {
+            PreparedStatement stmt;
+            int coli = 1;
+            if ( ann.getID() <= 0 ) {
+                stmt = connection.prepareStatement("INSERT INTO annotations (layer, value, node, created) values (?,?,?,?);",
+                                                                    Statement.RETURN_GENERATED_KEYS);
+            } else {
+                stmt = connection.prepareStatement("INSERT INTO annotations (id,layer, value, node, created) values (?,?,?,?,?);");
+                stmt.setLong(coli++, ann.getID());
+            }
+            stmt.setString(coli++, ann.getLayer());
+            stmt.setString(coli++, ann.getValue());
+            stmt.setLong(coli++, nodeId);
+            java.util.Date date = new java.util.Date();
+            stmt.setTimestamp(coli++, new java.sql.Timestamp(date.getTime()));
+            stmt.executeUpdate();
+            long ret = ann.getID();
+            if ( ann.getID() <= 0 ) {
+                ResultSet rs = stmt.getGeneratedKeys();  
+                ret = rs.next() ? rs.getLong(1) : 0;
+            }
+            connection.commit();
+            return ret;
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    protected synchronized static void addAnnotationSpans(long annid, List<Annotation.Span> spans) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO ann_spans (ann, begin, end) values " +
+                                                             StringUtils.n(spans.size(), "(?,?,?)", ","));
+        int i = 1;
+        for ( Annotation.Span span: spans ) {
+            stmt.setLong(i++, annid);
+            stmt.setInt(i++, span.getStart());
+            stmt.setInt(i++, span.getEnd());
+        }
+        stmt.execute();
+    }
+
+    protected synchronized static void addAnnotationAttributes(long annid, Map<String, Object> attributes) throws Exception {
+        try {
+            updateRowAttributes(annid, new HashMap<String, Object>(),
+                                attributes, "delete from str_ann_props where ann=?",
+                                            "INSERT INTO str_ann_props (name, value, ann)", "", true);
+
+            log.info("Properties set on annotation with id: " + annid);
+            //logProperties(node);
+        } catch (Exception e) {
+            log.error(e.toString());
+            throw e;
+        }
+    }
+
+
+    @Transactional
+    public synchronized static Annotation addAnnotation(long nodeId, Annotation ann) throws Exception {
+        log.info("Creating annotation for node " + nodeId);
+        FileInfo node = getNodeById(nodeId);
+        if ( node == null ) {
+            log.error("Invalid node " + nodeId);
+            throw new InvalidParamException();
+        }
+        if ( ann.spansOverlap() ) {
+            log.error("Spans overlap!" + Strings.join(ann.getSpans(), ';'));
+            throw new InvalidParamException();
+        }
+        connection.setAutoCommit(false);
+        try {
+            long annid = insertAnnotationInternal(nodeId, ann);
+            ann.setID(annid);
+            log.info("ANN1");
+            // save spans
+            addAnnotationSpans(annid, ann.getSpans());
+            log.info("ANN2");
+
+            // save attributes
+            addAnnotationAttributes(annid, ann.getAttributes());
+            log.info("ANN3");
+
+            connection.commit();
+            log.info("ANN4");
+
+            return ann;
+        } catch (Exception e) {
+            log.error(e.toString());
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+    }
+
+    public synchronized static void deleteAnnotation(long annid) throws Exception {
+        log.info("Deleting annotation " + annid);
+        getAnnotationById(annid);
+        PreparedStatement stmt = connection.prepareStatement("delete from annotations where id=?");
+        stmt.setLong(1, annid);
+        stmt.execute();
+    }
+
+    public static long getAnnotationNodeId(long annid) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("select node from annotations where id=?");
+        stmt.setLong(1, annid);
+        ResultSet res = stmt.executeQuery();
+        while ( res.next() )
+            return res.getLong(1);
+        log.error("Annotation " + annid + " not found");
+        throw new InvalidParamException();
     }
 }

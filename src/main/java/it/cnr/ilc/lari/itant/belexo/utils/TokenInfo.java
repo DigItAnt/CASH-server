@@ -11,6 +11,7 @@ public class TokenInfo {
     public int begin;
     public int end;
     public String xmlid;
+    public boolean imported = false;
 
     public TokenInfo(String t, int b, int e, TokenType ttype, String xmlid) {
         text = t;

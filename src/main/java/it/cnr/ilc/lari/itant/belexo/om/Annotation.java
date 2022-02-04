@@ -3,11 +3,17 @@ package it.cnr.ilc.lari.itant.belexo.om;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import it.cnr.ilc.lari.itant.belexo.DBManager;
+
 public class Annotation {
-    int ID;
+    private static final Logger log = LoggerFactory.getLogger(Annotation.class);
+    long ID = -1;
     String layer;
     String value;
-    Map<String, String> attributes;
+    Map<String, Object> attributes;
 
     public static class Span {
         int start;
@@ -29,12 +35,13 @@ public class Annotation {
 
     List<Span> spans;
     
-    public int getID() {
+    public long getID() {
         return ID;
     }
-    public void setID(int iD) {
+    public void setID(long iD) {
         ID = iD;
     }
+
     public String getLayer() {
         return layer;
     }
@@ -47,10 +54,22 @@ public class Annotation {
     public void setValue(String value) {
         this.value = value;
     }
-    public Map<String, String> getAttributes() {
+
+    //@JsonSerialize(using = MetadataSerializer.class)
+    public Map<String, Object> getAttributes() {
+        if ( attributes == null ) {
+            // populate it!
+            try {
+                this.attributes = DBManager.getAnnotationAttributes(this.ID);
+            } catch (Exception e) {
+                log.error("Could not fetch attributes for annotation " + this.ID, e);
+            }
+        }
         return attributes;
     }
-    public void setAttributes(Map<String, String> attributes) {
+
+    //@JsonDeserialize(using = MetadataDeserializer.class)
+    public void setAttributes(Map<String, Object> attributes) {
         this.attributes = attributes;
     }
     
@@ -61,5 +80,7 @@ public class Annotation {
         this.spans = spans;
     }
     
-    
+    public boolean spansOverlap() {
+        return false; // @TODO implement this
+    }    
 }

@@ -70,7 +70,9 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
                         String xmlid = null;
                         if ( xid != null )
                             xmlid = xid.getNodeValue();
-                        tokenList.add(new TokenInfo(tokenStr, begin, end, ttype, xmlid));
+                        TokenInfo tinfo = new TokenInfo(tokenStr, begin, end, ttype, xmlid);
+                        tinfo.imported = true;
+                        tokenList.add(tinfo);
                         begin = end + 1;
                     }
                 }
