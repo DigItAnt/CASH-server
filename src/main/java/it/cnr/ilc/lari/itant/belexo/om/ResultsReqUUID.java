@@ -1,4 +1,4 @@
-﻿package it.cnr.ilc.lari.itant.belexo.om;
+package it.cnr.ilc.lari.itant.belexo.om;
 
 // Bean di utilità per tutte le volte che serve results e requestUUID
 public class ResultsReqUUID {

@@ -1,4 +1,4 @@
-﻿package it.cnr.ilc.lari.itant.belexo.om;
+package it.cnr.ilc.lari.itant.belexo.om;
 
 public class ResponseStatus {
     public static int OK = 0;

@@ -1,4 +1,4 @@
-﻿package it.cnr.ilc.lari.itant.belexo.om;
+package it.cnr.ilc.lari.itant.belexo.om;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
