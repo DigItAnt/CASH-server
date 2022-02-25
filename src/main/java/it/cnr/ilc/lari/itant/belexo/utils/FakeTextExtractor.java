@@ -44,7 +44,7 @@ public class FakeTextExtractor implements TextExtractorInterface {
                     token[j*nRep+k] = c;
                 }
             }
-            toret.add(new TokenInfo("" + token));
+            toret.add(new TokenInfo(new String(token)));
         }
         return toret;
     }

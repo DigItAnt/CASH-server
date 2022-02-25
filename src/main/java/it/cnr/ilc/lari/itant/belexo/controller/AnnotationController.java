@@ -1,6 +1,5 @@
 package it.cnr.ilc.lari.itant.belexo.controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
+import it.cnr.ilc.lari.itant.belexo.om.Token;
 
 @CrossOrigin
 @RestController
@@ -30,6 +30,11 @@ public class AnnotationController {
     @GetMapping(value="/api/v1/annotation")
     public List<Annotation> getAnnotations(@RequestParam long nodeid) throws Exception {
         return DBManager.getNodeAnnotations(nodeid);
+    }
+
+    @GetMapping(value="/api/v1/token")
+    public List<Token> getTokens(@RequestParam long nodeid) throws Exception {
+        return DBManager.getNodeTokens(nodeid);
     }
 
     @PostMapping(value="/api/v1/annotation")
