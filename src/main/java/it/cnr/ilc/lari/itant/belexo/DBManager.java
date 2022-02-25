@@ -28,6 +28,7 @@ import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
+import it.cnr.ilc.lari.itant.belexo.om.Token;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
@@ -758,6 +759,33 @@ public class DBManager {
         return ret;
     }
 
+    private static String TOKENS_QUERY = "" + 
+    "SELECT t.id, t.text, position, begin, end, xmlid, u.type, imported " +
+    "FROM tokens t, unstructured u WHERE t.srctxt=u.id and t.node=? ORDER BY t.position";
+
+    public static List<Token> getNodeTokens(long nodeId) throws Exception {
+        log.info("Trying to get tokens of node " + nodeId);
+        PreparedStatement stmt = connection.prepareStatement(TOKENS_QUERY);
+        stmt.setLong(1, nodeId);
+        ResultSet res = stmt.executeQuery();
+        List<Token> ret = new ArrayList<Token>();
+        while ( res.next() ) {
+            log.info("Found.");
+            Token tok = new Token();
+            tok.setID(res.getLong("t.id"));
+            tok.setNode(nodeId);
+            tok.setText(res.getString("t.text"));
+            tok.setPosition(res.getInt("position"));
+            tok.setBegin(res.getInt("begin"));
+            tok.setEnd(res.getInt("end"));
+            tok.setXmlid(res.getString("xmlid"));
+            tok.setSource(res.getString("u.type"));
+            tok.setImported(res.getBoolean("imported"));
+            ret.add(tok);
+        }
+        return ret;
+    }
+
     // @TODO: there are missing columns here
     public static List<Annotation> getNodeAnnotations(long nodeId) throws Exception {
         log.info("Trying to get annotations of node " + nodeId);
@@ -773,6 +801,7 @@ public class DBManager {
             ann.setValue(res.getString("value"));
             ret.add(ann);
         }
+
         return ret;
     }
 
