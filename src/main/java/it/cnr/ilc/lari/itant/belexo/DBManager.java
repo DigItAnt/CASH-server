@@ -1,7 +1,11 @@
 package it.cnr.ilc.lari.itant.belexo;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileReader;
 import java.io.InputStream;
+import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -17,18 +21,21 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 import it.cnr.ilc.lari.itant.belexo.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
-import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
@@ -47,6 +54,12 @@ public class DBManager {
     public final static String TOKEN_POSITION_PROPERTY = "token_position"; // ordinal position of the token in the text
     public final static long NO_FATHER = -1;
 
+    public final static String ENV_MYSQL_URL = "MYSQL_URL";
+    public final static String ENV_MYSQL_USER = "MYSQL_USER";
+    public final static String ENV_MYSQL_PASS = "MYSQL_PASSWORD";
+
+    public final static String DB_SCHEMA_PATH = "/model/schema.sql";
+
     private static final Logger log = LoggerFactory.getLogger(DBManager.class);
     private static Connection connection;
 
@@ -55,11 +68,51 @@ public class DBManager {
 
     public static void init() throws Exception {
         if ( jdbcTemplate == null ) {
-            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/belexo", "test", "test");
+            String mysqlUrl = "jdbc:mysql://localhost:3306/belexo";
+            String mysqlUser = "test";
+            String mysqlPassword = "test";
+            if (System.getenv(ENV_MYSQL_URL) != null)
+                mysqlUrl = System.getenv(ENV_MYSQL_URL);
+            if (System.getenv(ENV_MYSQL_USER) != null)
+                mysqlUser = System.getenv(ENV_MYSQL_USER);
+            if (System.getenv(ENV_MYSQL_PASS) != null)
+                mysqlPassword = System.getenv(ENV_MYSQL_PASS);
+            log.info("Connecting to DB {}, user {}", mysqlUrl, mysqlUser);
+            connection = DriverManager.getConnection(mysqlUrl, mysqlUser, mysqlPassword);
+            log.info("connected to DB");
         } else {
             connection = jdbcTemplate.getDataSource().getConnection();
         }
+
+        checkDBInitialized(connection);
+
         createRootNodeIfNeeded();
+    }
+
+    private static int getNumTablesInDB(Connection connection) throws Exception {
+        String dbname = connection.getCatalog();
+        PreparedStatement stmt = connection.prepareStatement("SELECT COUNT(DISTINCT `TABLE_NAME`) AS numtables FROM `INFORMATION_SCHEMA`.`COLUMNS` WHERE `table_schema` = ?");
+        stmt.setString(1, dbname);
+        ResultSet res = stmt.executeQuery();
+        res.next();
+        int numtables = res.getInt("numtables");
+        return numtables;
+    }
+
+    private static void checkDBInitialized(Connection connection) throws Exception {
+        if (getNumTablesInDB(connection) > 0) {
+            log.info("DB already initialized");
+            return;
+        }
+        log.info("DB is empty, need to be initialized");
+
+        ScriptUtils.executeSqlScript(connection, new ClassPathResource(DB_SCHEMA_PATH));
+
+        ResourceDatabasePopulator rdp = new ResourceDatabasePopulator();
+        rdp.addScript(new ClassPathResource("/model/functions.sql"));
+        rdp.setSeparator(";;");
+        rdp.populate(connection);
+
     }
 
     private synchronized static long insertFileInfo(FileInfo f) throws Exception {

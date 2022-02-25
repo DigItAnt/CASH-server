@@ -1,0 +1,32 @@
+# Use root/example as user/password credentials
+version: '3.1'
+
+services:
+
+  # mysql -u pippo -p --host=127.0.0.1 -P 13306
+  dbmysql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: belexo
+      #MYSQL_USER: pippo
+      #MYSQL_PASSWORD: pippo
+    ports:
+      - 13306:3306
+    volumes:
+      - /tmp/dbcash:/var/lib/mysql
+
+  cash:
+    image: openjdk:16
+    ports:
+      - 8080:8080
+    volumes:
+      - ../target/belexo-0.0.1-SNAPSHOT.jar:/cash.jar
+    restart: always
+    environment:
+      MYSQL_URL: jdbc:mysql://dbmysql:3306/belexo
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    entrypoint: java -jar /cash.jar
