@@ -24,7 +24,6 @@ import it.cnr.ilc.lari.itant.belexo.om.DeleteMetadataResponse;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileRequest;
 import it.cnr.ilc.lari.itant.belexo.om.DownloadFileResponse;
-import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFileToRequest;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFileToResponse;
 import it.cnr.ilc.lari.itant.belexo.om.MoveFolderRequest;
@@ -148,7 +147,7 @@ public class CRUDController {
 	@PostMapping("/api/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request) throws Exception {
 		// TODO: Return File!!
-		FileInfo node = DBManager.getNodeById(request.getElementId());
+		/* FileInfo node = */ DBManager.getNodeById(request.getElementId());
 		PodamFactory factory = new PodamFactoryImpl();
 		DownloadFileResponse toret = factory.manufacturePojo(DownloadFileResponse.class);
 		// TODO

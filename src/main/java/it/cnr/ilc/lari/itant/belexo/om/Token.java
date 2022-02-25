@@ -1,17 +1,7 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
-import java.util.List;
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import it.cnr.ilc.lari.itant.belexo.DBManager;
-
 public class Token {
     public static final String TOKENIZATION_LAYER = "tokenization";
-    private static final Logger log = LoggerFactory.getLogger(Annotation.class);
-
 
     long ID = -1;
     String text;

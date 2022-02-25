@@ -521,10 +521,10 @@ public class DBManager {
                 log.info("Type of entry " + entry.getClass().getName());
                 if ( !(entry instanceof List) ) { // create a List
                     log.info("Generating new list");
-                    ret.put(key, new ArrayList(Arrays.asList(new Object[]{entry, value})));
+                    ret.put(key, new ArrayList<Object>(Arrays.asList(new Object[]{entry, value})));
                 } else {// add to the list
                     log.info("Adding to the list");
-                    ((ArrayList) entry).add(value);
+                    ((ArrayList<Object>) entry).add(value);
                 }
             }
         }
@@ -554,10 +554,10 @@ public class DBManager {
                 log.info("Type of entry " + entry.getClass().getName());
                 if ( !(entry instanceof List) ) { // create a List
                     log.info("Generating new list");
-                    ret.put(key, new ArrayList(Arrays.asList(new Object[]{entry, value})));
+                    ret.put(key, new ArrayList<Object>(Arrays.asList(new Object[]{entry, value})));
                 } else {// add to the list
                     log.info("Adding to the list");
-                    ((ArrayList) entry).add(value);
+                    ((ArrayList<Object>) entry).add(value);
                 }
             }
         }
@@ -819,6 +819,7 @@ public class DBManager {
         return null;
     }
 
+    /*
     private synchronized static long insertAnnotaton(long nodeId, Annotation ann) throws Exception {
         connection.setAutoCommit(false);
         long ret = 0;
@@ -831,6 +832,7 @@ public class DBManager {
         }
         return ret;
     }
+    */
 
     private synchronized static long insertAnnotationInternal(long nodeId, Annotation ann) throws Exception {
         try {
