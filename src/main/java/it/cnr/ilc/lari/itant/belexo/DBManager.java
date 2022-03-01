@@ -682,6 +682,7 @@ public class DBManager {
         FileInfo node = null;
         connection.setAutoCommit(false);
         try {
+            if ( parentId == 0 ) parentId = getRootNodeId();
             if ( fileExists(parentId, filename) ) {
                 log.error("A file with the same name already exists in this directory");
                 throw new InvalidParamException();
