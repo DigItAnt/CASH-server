@@ -26,7 +26,7 @@ services:
       - ../target/belexo-0.0.1-SNAPSHOT.jar:/cash.jar
     restart: always
     environment:
-      MYSQL_URL: jdbc:mysql://dbmysql:3306/belexo
+      MYSQL_URL: jdbc:mysql://dbmysql:3306/belexo?connectTimeout=0&socketTimeout=0&autoReconnect=true
       MYSQL_USER: root
       MYSQL_PASSWORD: root
     entrypoint: java -jar /cash.jar
