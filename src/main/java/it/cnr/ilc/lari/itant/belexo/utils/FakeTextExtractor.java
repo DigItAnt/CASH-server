@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import it.cnr.ilc.lari.itant.belexo.om.Annotation;
+
 /*
 generate a list of differentChars * (nrep * char)
 es. aajjff, hhkkee
@@ -26,6 +28,11 @@ public class FakeTextExtractor implements TextExtractorInterface {
     public TextExtractorInterface read(InputStream content) {
         this.tokenList = generateTokens();
         return this;
+    }
+
+    @Override
+    public List<Annotation> annotations() {
+        return new ArrayList<Annotation>();
     }
 
     public FakeTextExtractor(int maxtokens) {
