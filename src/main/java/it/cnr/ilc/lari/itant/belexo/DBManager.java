@@ -916,7 +916,7 @@ public class DBManager {
             stmt.setLong(coli++, nodeId);
             java.util.Date date = new java.util.Date();
             stmt.setTimestamp(coli++, new java.sql.Timestamp(date.getTime()));
-            stmt.setBoolean(coli++, ann.isImported());
+            stmt.setBoolean(coli++, ann.getImported());
             stmt.executeUpdate();
             long ret = ann.getID();
             if ( ann.getID() <= 0 ) {

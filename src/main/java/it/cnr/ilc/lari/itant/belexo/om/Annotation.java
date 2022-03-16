@@ -5,6 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.NamedNodeMap;
@@ -17,6 +20,8 @@ public class Annotation {
     long ID = -1;
     String layer;
     String value;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     boolean imported = false;
     Map<String, Object> attributes;
 
@@ -64,7 +69,7 @@ public class Annotation {
         imported = imp;
     }
 
-    public boolean isImported() { return imported; }
+    public boolean getImported() { return imported; }
 
     //@JsonSerialize(using = MetadataSerializer.class)
     public Map<String, Object> getAttributes() {

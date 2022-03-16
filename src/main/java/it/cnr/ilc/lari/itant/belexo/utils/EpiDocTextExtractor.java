@@ -25,7 +25,9 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
     private static final Logger log = LoggerFactory.getLogger(EpiDocTextExtractor.class);
     List<TokenInfo> tokenList;
     List<Annotation> annotationList;
-    
+
+    private static final String LAYER = "epidoc";
+
     public EpiDocTextExtractor() {
         tokenList = new ArrayList<TokenInfo>();
         annotationList = new ArrayList<Annotation>();
@@ -51,6 +53,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         String nodeName = annNode.getNodeName();
         switch ( nodeName ) {
             case "tei:name":
+            case "tei:pc":
             case "tei:lb":
             case "tei:gap":
             case "tei:supplied":
@@ -61,7 +64,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         }
         // create annotation
         Annotation ann = new Annotation();
-        ann.setLayer("epidoc");
+        ann.setLayer(LAYER);
         ann.setValue(nodeName);
         NamedNodeMap nmap = annNode.getAttributes();
         ann.attributesFromNodeMap(nmap);
@@ -111,7 +114,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
                 return null;
         }
         String tokenStr = parseSubItems(item, begin);
-        if ( name.equals("tei:name") ) {
+        if ( name.equals("tei:name") || name.equals("tei:pc") ) {
             checkAnnotation(item, tokenStr, begin);
         }
         int end = begin + tokenStr.length();
@@ -127,25 +130,92 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         return tinfo;
     }
 
+    private Node getDivInBody(Document doc, String type) {
+        NodeList bodys = doc.getElementsByTagName("tei:body");
+        Node body = bodys.item(0);
+        // Inside the body, look for 'div type="edition"'
+        NodeList divs = body.getChildNodes();
+        for ( int nl = 0; nl < divs.getLength(); nl++ ) {
+            Node div = divs.item(nl);
+            NamedNodeMap attrs = div.getAttributes();
+            if ( attrs == null ) continue;
+            Node xid = attrs.getNamedItem("type");
+            if ( xid == null ) continue;
+            if ( xid.getNodeValue().equals(type) ) return div;
+        }
+        
+        return null;
+    }
+
+    protected List<Node> getParts(Node edition) {
+        List<Node> ret = new ArrayList<Node>();
+        NodeList divs = edition.getChildNodes();
+        for ( int nl = 0; nl < divs.getLength(); nl++ ) {
+            Node div = divs.item(nl);
+            if ( !div.getNodeName().equals("tei:div") ) continue;
+            NamedNodeMap attrs = div.getAttributes();
+            Node xid = attrs.getNamedItem("type");
+            if ( xid == null || (!xid.getNodeValue().equals("textpart")) ) continue;
+            ret.add(div);
+        }
+
+        return ret;
+    }
+
+    protected Node getChildByName(Node node, String name) {
+        NodeList children = node.getChildNodes();
+        for ( int nl = 0; nl < children.getLength(); nl++ ) {
+            Node child = children.item(nl);
+            if ( child.getNodeName().equals(name) ) return child;
+        }
+
+        return null;
+    }
+
+    protected int processPart(Node part, int begin) throws BadFormatException {
+        int offset = begin;
+        Node abNode = getChildByName(part, "tei:ab");
+        if ( abNode == null ) throw new BadFormatException();
+        NodeList lc = abNode.getChildNodes();
+        for ( int ni = 0; ni < lc.getLength(); ni ++ ) {
+            Node item = lc.item(ni);
+            TokenInfo tinfo = processCandidateToken(item, begin);
+            if ( tinfo == null ) continue;
+            begin += tinfo.text.length();
+        }
+
+        return begin-offset;
+    }
+
     @Override
-    public TextExtractorInterface read(InputStream is) {
+    public TextExtractorInterface read(InputStream is) throws BadFormatException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(is);
-            NodeList list = doc.getElementsByTagName("tei:ab"); // TODO: There's stuff BEFORE ab!!
-            log.info("NABS: " + list.getLength());
+            Node div = getDivInBody(doc, "edition");
+            if ( div == null ) throw new BadFormatException();
+            List<Node> parts = getParts(div);
             int begin = 0;
-            for ( int nl = 0; nl < list.getLength(); nl++ ) {
-                Node abNode = list.item(nl);
-                NodeList lc = abNode.getChildNodes();
-                for ( int ni = 0; ni < lc.getLength(); ni ++ ) {
-                    Node item = lc.item(ni);
-                    TokenInfo tinfo = processCandidateToken(item, begin);
-                    if ( tinfo == null ) continue;
-                    begin += tinfo.text.length();
-                }
+            for ( Node part: parts ) {
+                int length = processPart(part, begin);
+                // annotate part
+                Annotation ann = new Annotation();
+                ann.setLayer(LAYER);
+                ann.setValue(part.getNodeName());
+                NamedNodeMap nmap = part.getAttributes();
+                ann.attributesFromNodeMap(nmap);
+                Annotation.Span span = new Annotation.Span();
+                span.setStart(begin);
+                span.setEnd(begin+length);
+                ann.addSpan(span);
+                ann.setImported(true);
+                log.info("Added annotation: " + ann.toString());
+                annotationList.add(ann);
+                
+                begin += length;
             }
+
             log.info("TOKENS: " + extract());
         } catch (ParserConfigurationException | SAXException | IOException e) {
             e.printStackTrace();
@@ -155,7 +225,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
 
 
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         for (TokenInfo token: new EpiDocTextExtractor().read(null).tokens() )
             System.out.println(token.text);
     }
