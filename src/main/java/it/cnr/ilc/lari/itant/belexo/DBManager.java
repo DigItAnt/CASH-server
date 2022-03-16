@@ -416,6 +416,11 @@ public class DBManager {
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
+        updateNodeMetadata(elementId, props, false);
+    }
+
+    public static void updateNodeMetadata(long elementId, Map<String, Object> props, boolean inheritTransaction) throws Exception {
+        if ( props == null ) return;
         try {
             FileInfo node = getNodeById(connection, elementId);
             if (node == null)
@@ -424,7 +429,8 @@ public class DBManager {
             Map<String, Object> metadata = getNodeMetadata(elementId);
 
             updateRowAttributes(elementId, metadata, props, "delete from str_fs_props where node=? and meta=1",
-                                                            "INSERT INTO str_fs_props (name, value, node, meta)", ",1", false);
+                                                            "INSERT INTO str_fs_props (name, value, node, meta)", ",1",
+                                                            inheritTransaction);
 
             log.info("Properties set on node with id: " + elementId);
             //logProperties(node);
@@ -724,11 +730,14 @@ public class DBManager {
                     addAnnotationAttributes(aid, ann.getAttributes());
                     log.info("Added annotation " + aid);
                 }
+                // add metadata
+                updateNodeMetadata(nid, extractor.metadata(), true);
             }
 
             connection.commit();
             return nid;
         } catch (Exception e) {
+            e.printStackTrace();
             connection.rollback();
             log.error(e.toString());
             throw e;

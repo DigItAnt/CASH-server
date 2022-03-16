@@ -4,10 +4,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,16 +26,24 @@ import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
 public class EpiDocTextExtractor implements TextExtractorInterface {
 
+    private static final String MDATA = "fieldID\tstring(//tei:TEI/@xml:id)";
+
     private static final Logger log = LoggerFactory.getLogger(EpiDocTextExtractor.class);
     List<TokenInfo> tokenList;
     List<Annotation> annotationList;
-
+    Map<String, Object> mdata;
+    XpathMetadataImporter mimporter;
     private static final String LAYER = "epidoc";
 
     public EpiDocTextExtractor() {
         tokenList = new ArrayList<TokenInfo>();
         annotationList = new ArrayList<Annotation>();
+        mdata = null;
+        mimporter = new XpathMetadataImporter(MDATA);
     }
+
+    @Override
+    public Map<String, Object> metadata() { return mdata; }
 
     @Override
     public String extract() {
@@ -193,6 +205,11 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(is);
+
+            // metadata
+            mdata = mimporter.extract(doc);
+
+            // text, tokens and annotations
             Node div = getDivInBody(doc, "edition");
             if ( div == null ) throw new BadFormatException();
             List<Node> parts = getParts(div);
