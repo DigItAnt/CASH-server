@@ -2,7 +2,10 @@ package it.cnr.ilc.lari.itant.belexo.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,6 +18,7 @@ import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -26,7 +30,18 @@ import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
 public class EpiDocTextExtractor implements TextExtractorInterface {
 
-    private static final String MDATA = "fieldID\tstring(//tei:TEI/@xml:id)";
+    private static final String MDATAPATH = "/importer/epidoc.tsv";
+    private static final String MDATA = "fieldID\t//tei:TEI/@xml:id\n" +
+    "trismegistos.trismegistosID\t//tei:altIdentifier[@type='trismegistos']/tei:idno/text()\n" +
+    "trismegistos.trismegistosID_url\t//tei:altIdentifier[@type='trismegistos']/tei:idno/@source\n"+
+    "__START__traditionalID\t//tei:altIdentifier[@type='traditionalID']/tei:idno\n" +
+    "traditionalID.traditionalID\ttext()\n" +
+    "traditionalID.traditionalID_url\t@source\n" +
+    "__END__";
+    private static final Map<String, String> NSPS = new HashMap<String, String>() {{
+        put("dcr", "http://www.isocat.org/ns/dcr");
+        put("tei", "http://www.tei-c.org/ns/1.0");
+    }};
 
     private static final Logger log = LoggerFactory.getLogger(EpiDocTextExtractor.class);
     List<TokenInfo> tokenList;
@@ -39,7 +54,16 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         tokenList = new ArrayList<TokenInfo>();
         annotationList = new ArrayList<Annotation>();
         mdata = null;
-        mimporter = new XpathMetadataImporter(MDATA);
+        ClassPathResource cpr = new ClassPathResource(MDATAPATH);
+        try {
+            String mdata = Files.readString(Path.of(cpr.getFile().getPath()));
+            mdata = mdata.substring(mdata.indexOf('\n'));
+            mimporter = new XpathMetadataImporter(mdata);
+            mimporter.setContext(new SimpleNamespaceContext(NSPS));
+        } catch (Exception e) {
+            e.printStackTrace();
+            log.error("Cannot read importer: ", e.getMessage());
+        }
     }
 
     @Override
@@ -202,6 +226,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
     @Override
     public TextExtractorInterface read(InputStream is) throws BadFormatException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
         try {
             DocumentBuilder db = dbf.newDocumentBuilder();
             Document doc = db.parse(is);
