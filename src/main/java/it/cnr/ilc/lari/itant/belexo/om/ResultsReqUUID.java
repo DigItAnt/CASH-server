@@ -18,8 +18,8 @@ public class ResultsReqUUID {
         return results;
     }
 
-    public void setResults(int userId) {
-        this.results = userId;
+    public void setResults(int results) {
+        this.results = results;
     }
 
     

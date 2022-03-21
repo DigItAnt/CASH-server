@@ -15,6 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import it.cnr.ilc.lari.itant.belexo.DBManager;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
+import it.cnr.ilc.lari.itant.belexo.om.CreateAnnotationResponse;
+import it.cnr.ilc.lari.itant.belexo.om.GetAnnotationsResponse;
+import it.cnr.ilc.lari.itant.belexo.om.GetTextResponse;
+import it.cnr.ilc.lari.itant.belexo.om.GetTokensResponse;
+import it.cnr.ilc.lari.itant.belexo.om.ModifyAnnotationResponse;
 import it.cnr.ilc.lari.itant.belexo.om.Token;
 
 @CrossOrigin
@@ -23,24 +28,37 @@ public class AnnotationController {
     private static final Logger log = LoggerFactory.getLogger(AnnotationController.class);
 
     @GetMapping(value="/api/v1/gettext")
-    public String getText(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
-        return DBManager.getNodeText(nodeid);
+    public GetTextResponse getText(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+        GetTextResponse resp = new GetTextResponse();
+        resp.setRequestUUID(requestUUID);
+        resp.setText(DBManager.getNodeText(nodeid));
+        return resp;
     }
 
     @GetMapping(value="/api/v1/annotation")
-    public List<Annotation> getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
-        return DBManager.getNodeAnnotations(nodeid);
+    public GetAnnotationsResponse getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+        GetAnnotationsResponse resp = new GetAnnotationsResponse();
+        resp.setRequestUUID(requestUUID);
+        resp.setAnnotations(DBManager.getNodeAnnotations(nodeid));
+        return resp;
     }
 
     @GetMapping(value="/api/v1/token")
-    public List<Token> getTokens(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
-        return DBManager.getNodeTokens(nodeid);
+    public GetTokensResponse getTokens(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+        GetTokensResponse resp = new GetTokensResponse();
+        resp.setRequestUUID(requestUUID);
+        resp.setTokens(DBManager.getNodeTokens(nodeid));
+        return resp;
     }
 
     @PostMapping(value="/api/v1/annotation")
-    public Annotation createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation) throws Exception {
+    public CreateAnnotationResponse createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation) throws Exception {
+        CreateAnnotationResponse resp = new CreateAnnotationResponse();
         annotation.setID(-1);
-        return DBManager.addAnnotation(nodeid, annotation);
+
+        resp.setRequestUUID(requestUUID);
+        resp.setAnnotation(DBManager.addAnnotation(nodeid, annotation));
+        return resp;
     }
 
     @DeleteMapping(value="/api/v1/annotate")
@@ -50,11 +68,16 @@ public class AnnotationController {
     }
 
     @PutMapping(value="/api/v1/annotation")
-    public Annotation modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation) throws Exception {
+    public ModifyAnnotationResponse modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation) throws Exception {
+        ModifyAnnotationResponse resp = new ModifyAnnotationResponse();
+
         long nid = DBManager.getAnnotationNodeId(annotation.getID());
         DBManager.deleteAnnotation(annotation.getID());
         DBManager.addAnnotation(nid, annotation);
-        return annotation;
+
+        resp.setRequestUUID(requestUUID);
+        resp.setAnnotation(annotation);
+        return resp;
     }
 
 
