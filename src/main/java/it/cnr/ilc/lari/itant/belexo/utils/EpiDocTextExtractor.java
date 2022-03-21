@@ -94,6 +94,10 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             case "tei:gap":
             case "tei:supplied":
             case "tei:unclear":
+            case "tei:ex":
+            case "tei:abbr":
+            case "tei:del":
+            case "tei:expan":
                 break;
             default:
                 return;
@@ -123,8 +127,9 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             Node child = lc.item(ni);
             log.info("Processing child node: " + child.getNodeName());
             String text = child.getTextContent();
-            text = text.replaceAll("\\s+", "");
-            checkAnnotation(child, text, begin);
+            text = text.replaceAll("\\s+", ""); // TODO: this probably shouldn't exist
+            checkAnnotation(child, text, begin+ret.length());
+            parseSubItems(child, begin+ret.length());
             ret += text;
         }
 
