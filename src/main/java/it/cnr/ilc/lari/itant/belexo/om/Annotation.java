@@ -1,10 +1,17 @@
 package it.cnr.ilc.lari.itant.belexo.om;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 import it.cnr.ilc.lari.itant.belexo.DBManager;
 
@@ -13,6 +20,9 @@ public class Annotation {
     long ID = -1;
     String layer;
     String value;
+
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    boolean imported = false;
     Map<String, Object> attributes;
 
     public static class Span {
@@ -55,6 +65,12 @@ public class Annotation {
         this.value = value;
     }
 
+    public void setImported(boolean imp) {
+        imported = imp;
+    }
+
+    public boolean getImported() { return imported; }
+
     //@JsonSerialize(using = MetadataSerializer.class)
     public Map<String, Object> getAttributes() {
         if ( attributes == null ) {
@@ -73,6 +89,14 @@ public class Annotation {
         this.attributes = attributes;
     }
     
+    public void attributesFromNodeMap(NamedNodeMap nmap) {
+        this.attributes = new HashMap<String, Object>();
+        for ( int i=0; i<nmap.getLength(); i++ ) {
+            Node attr = nmap.item(i);
+            this.attributes.put(attr.getNodeName(), attr.getNodeValue());
+        }
+    }
+
     public List<Span> getSpans() {
         if ( spans == null ) {
             // populate it!
@@ -88,7 +112,34 @@ public class Annotation {
         this.spans = spans;
     }
     
+    public void addSpan(Span span) {
+        if ( spans == null ) {
+            spans = new ArrayList<Span>();
+        }
+
+        spans.add(span);
+    }
+
     public boolean spansOverlap() {
         return false; // @TODO implement this
-    }    
+    } 
+
+    protected Span firstSpan() {
+        if ( spans.size() > 0 ) return spans.get(0);
+        Span ret = new Span();
+        ret.setStart(-1);
+        ret.setEnd(-1);
+        return ret;
+    }
+
+    public String toString() {
+        StringBuffer ret = new StringBuffer("ANN: ");
+        ret.append(layer).append("#").append(value);
+        ret.append("(@").append(firstSpan().start).append("-").append(firstSpan().end).append(",");
+        for (String k: getAttributes().keySet()) {
+            ret.append(k).append("=").append(getAttributes().get(k)).append(",");
+        }
+        ret.append(")");
+        return ret.toString();
+    }
 }

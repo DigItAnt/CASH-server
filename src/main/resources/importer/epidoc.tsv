@@ -1,0 +1,9 @@
+metadata	xpath	postprocessing
+fieldID	//tei:TEI/@xml:id	
+trismegistos.trismegistosID	//tei:altIdentifier[@type='trismegistos']/tei:idno/text()	
+trismegistos.trismegistosID_url	//tei:altIdentifier[@type='trismegistos']/tei:idno/@source	
+		
+__START__traditionalIDs	//tei:altIdentifier[@type='traditionalID']/tei:idno	
+traditionalID.traditionalID	text()	
+traditionalID.traditionalID_URL	@source	
+__END__		

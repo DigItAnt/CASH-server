@@ -40,6 +40,7 @@ import it.cnr.ilc.lari.itant.belexo.om.Token;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
+import it.cnr.ilc.lari.itant.belexo.utils.TxtTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo;
@@ -331,7 +332,7 @@ public class DBManager {
                     stmt.setLong(i++, id);
                 }
             }
-            stmt.executeUpdate();
+            if ( i > 1 ) stmt.executeUpdate(); // otherwise where was nothing to insert!
             if (!inheritTransaction) connection.commit();
         } catch (Exception e) {
             e.printStackTrace();
@@ -416,6 +417,11 @@ public class DBManager {
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
+        updateNodeMetadata(elementId, props, false);
+    }
+
+    public static void updateNodeMetadata(long elementId, Map<String, Object> props, boolean inheritTransaction) throws Exception {
+        if ( props == null ) return;
         try {
             FileInfo node = getNodeById(connection, elementId);
             if (node == null)
@@ -424,7 +430,8 @@ public class DBManager {
             Map<String, Object> metadata = getNodeMetadata(elementId);
 
             updateRowAttributes(elementId, metadata, props, "delete from str_fs_props where node=? and meta=1",
-                                                            "INSERT INTO str_fs_props (name, value, node, meta)", ",1", false);
+                                                            "INSERT INTO str_fs_props (name, value, node, meta)", ",1",
+                                                            inheritTransaction);
 
             log.info("Properties set on node with id: " + elementId);
             //logProperties(node);
@@ -516,7 +523,7 @@ public class DBManager {
         PreparedStatement stmt = connection.prepareStatement("SELECT * from fsnodes where father=? and name=? LIMIT 1");
         stmt.setLong(1, parent);
         stmt.setString(2, name);
-        log.info("PS: " + stmt.toString());
+        //log.info("PS: " + stmt.toString());
         ResultSet rSet = stmt.executeQuery();
         if ( rSet.next() ) return true;
         return false;
@@ -710,21 +717,50 @@ public class DBManager {
                 long srcTxt = insertTextEntry(nid, text, "interpretative");
                 log.info("Added text");
                 int ti = 1;
-                for (TokenInfo token: extractor.tokens() ) {
+                for (TokenInfo token: extractor.tokens() ) { // adds tokens
                     if ( token.tokenType != TokenType.WORD ) continue;
                     long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
                     log.info("Added token node " + tid);
                 }
+                for (Annotation ann: extractor.annotations()) { // adds annotations
+                    long aid = insertAnnotationInternal(nid, ann);
+                    ann.setID(aid);
+                    // save spans
+                    addAnnotationSpans(aid, ann.getSpans());
+                    // save attributes
+                    addAnnotationAttributes(aid, ann.getAttributes());
+                    log.info("Added annotation " + aid);
+                }
+                // add metadata
+                updateNodeMetadata(nid, extractor.metadata(), true);
+            } else if ( filename.endsWith(".txt") ) {
+                importTxt(nid, contentBytes);
             }
 
             connection.commit();
             return nid;
         } catch (Exception e) {
+            e.printStackTrace();
             connection.rollback();
             log.error(e.toString());
             throw e;
         } finally {
             connection.setAutoCommit(true);
+        }
+    }
+
+    private static void importTxt(long nid, byte[] contentBytes) throws Exception {
+        log.info("MYID: " + nid);
+        ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
+        TextExtractorInterface extractor = new TxtTextExtractor();
+        String text = extractor.read(bais).extract(); // must read the bytes here...
+        long srcTxt = insertTextEntry(nid, text, "plain");
+        log.info("Added text");
+        int ti = 1;
+        for (TokenInfo token: extractor.tokens() ) { // adds tokens
+            if ( token.tokenType != TokenType.WORD ) continue;
+            long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
+            log.info("Added token node " + tid);
         }
     }
 
@@ -800,7 +836,7 @@ public class DBManager {
     // @TODO: there are missing columns here
     protected static Annotation getAnnotationById(Connection connection, long annId) throws Exception {
         log.info("Trying to get annotation " + annId);
-        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value FROM annotations where id=?");
+        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value, imported FROM annotations where id=?");
         stmt.setLong(1, annId);
         ResultSet res = stmt.executeQuery();
         Annotation ret = null;
@@ -810,6 +846,7 @@ public class DBManager {
             ret.setID(res.getLong("id"));
             ret.setLayer(res.getString("layer"));
             ret.setValue(res.getString("value"));
+            ret.setImported(res.getBoolean("imported"));
         }
         return ret;
     }
@@ -844,7 +881,7 @@ public class DBManager {
     // @TODO: there are missing columns here
     public static List<Annotation> getNodeAnnotations(long nodeId) throws Exception {
         log.info("Trying to get annotations of node " + nodeId);
-        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value FROM annotations where node=?");
+        PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value, imported FROM annotations where node=?");
         stmt.setLong(1, nodeId);
         ResultSet res = stmt.executeQuery();
         List<Annotation> ret = new ArrayList<Annotation>();
@@ -854,6 +891,7 @@ public class DBManager {
             ann.setID(res.getLong("id"));
             ann.setLayer(res.getString("layer"));
             ann.setValue(res.getString("value"));
+            ann.setImported(res.getBoolean("imported"));
             ret.add(ann);
         }
 
@@ -894,10 +932,10 @@ public class DBManager {
             PreparedStatement stmt;
             int coli = 1;
             if ( ann.getID() <= 0 ) {
-                stmt = connection.prepareStatement("INSERT INTO annotations (layer, value, node, created) values (?,?,?,?);",
+                stmt = connection.prepareStatement("INSERT INTO annotations (layer, value, node, created, imported) values (?,?,?,?,?);",
                                                                     Statement.RETURN_GENERATED_KEYS);
             } else {
-                stmt = connection.prepareStatement("INSERT INTO annotations (id,layer, value, node, created) values (?,?,?,?,?);");
+                stmt = connection.prepareStatement("INSERT INTO annotations (id,layer, value, node, created, imported) values (?,?,?,?,?,?);");
                 stmt.setLong(coli++, ann.getID());
             }
             stmt.setString(coli++, ann.getLayer());
@@ -905,6 +943,7 @@ public class DBManager {
             stmt.setLong(coli++, nodeId);
             java.util.Date date = new java.util.Date();
             stmt.setTimestamp(coli++, new java.sql.Timestamp(date.getTime()));
+            stmt.setBoolean(coli++, ann.getImported());
             stmt.executeUpdate();
             long ret = ann.getID();
             if ( ann.getID() <= 0 ) {

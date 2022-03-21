@@ -3,7 +3,10 @@ package it.cnr.ilc.lari.itant.belexo.utils;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 
 /*
 generate a list of differentChars * (nrep * char)
@@ -18,14 +21,21 @@ public class FakeTextExtractor implements TextExtractorInterface {
 
     List<TokenInfo> tokenList;
 
-
     public FakeTextExtractor() {
     }
+
+    @Override
+    public Map<String, Object> metadata() { return null; }
 
     @Override
     public TextExtractorInterface read(InputStream content) {
         this.tokenList = generateTokens();
         return this;
+    }
+
+    @Override
+    public List<Annotation> annotations() {
+        return new ArrayList<Annotation>();
     }
 
     public FakeTextExtractor(int maxtokens) {
