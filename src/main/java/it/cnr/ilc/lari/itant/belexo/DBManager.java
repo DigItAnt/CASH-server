@@ -718,7 +718,8 @@ public class DBManager {
                 log.info("Added text");
                 int ti = 1;
                 for (TokenInfo token: extractor.tokens() ) { // adds tokens
-                    if ( token.tokenType != TokenType.WORD ) continue;
+                    // if ( token.tokenType != TokenType.WORD ) continue; // NO: keep punct as tokens...
+                    // TODO: probably requires adding token type to the DB!
                     long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
                     log.info("Added token node " + tid);
                 }
