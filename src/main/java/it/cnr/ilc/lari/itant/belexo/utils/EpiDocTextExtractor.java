@@ -2,6 +2,7 @@ package it.cnr.ilc.lari.itant.belexo.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,7 +57,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         mdata = null;
         ClassPathResource cpr = new ClassPathResource(MDATAPATH);
         try {
-            String mdata = Files.readString(Path.of(cpr.getFile().getPath()));
+            String mdata = new String(cpr.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
             mdata = mdata.substring(mdata.indexOf('\n'));
             mimporter = new XpathMetadataImporter(mdata);
             mimporter.setContext(new SimpleNamespaceContext(NSPS));
