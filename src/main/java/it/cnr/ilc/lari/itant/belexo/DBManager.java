@@ -40,6 +40,7 @@ import it.cnr.ilc.lari.itant.belexo.om.Token;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
+import it.cnr.ilc.lari.itant.belexo.utils.TxtTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo;
@@ -732,6 +733,8 @@ public class DBManager {
                 }
                 // add metadata
                 updateNodeMetadata(nid, extractor.metadata(), true);
+            } else if ( filename.endsWith(".txt") ) {
+                importTxt(nid, contentBytes);
             }
 
             connection.commit();
@@ -743,6 +746,21 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+        }
+    }
+
+    private static void importTxt(long nid, byte[] contentBytes) throws Exception {
+        log.info("MYID: " + nid);
+        ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
+        TextExtractorInterface extractor = new TxtTextExtractor();
+        String text = extractor.read(bais).extract(); // must read the bytes here...
+        long srcTxt = insertTextEntry(nid, text, "plain");
+        log.info("Added text");
+        int ti = 1;
+        for (TokenInfo token: extractor.tokens() ) { // adds tokens
+            if ( token.tokenType != TokenType.WORD ) continue;
+            long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
+            log.info("Added token node " + tid);
         }
     }
 
