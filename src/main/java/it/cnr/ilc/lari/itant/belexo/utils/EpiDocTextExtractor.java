@@ -26,6 +26,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import it.cnr.ilc.lari.itant.belexo.exc.BadFormatException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
@@ -176,6 +177,8 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         NodeList bodys = doc.getElementsByTagName("tei:body");
         Node body = bodys.item(0);
         // Inside the body, look for 'div type="edition"'
+        if ( body == null )
+            return null;
         NodeList divs = body.getChildNodes();
         for ( int nl = 0; nl < divs.getLength(); nl++ ) {
             Node div = divs.item(nl);

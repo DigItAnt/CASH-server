@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 
+import it.cnr.ilc.lari.itant.belexo.exc.BadFormatException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 
 public interface TextExtractorInterface {

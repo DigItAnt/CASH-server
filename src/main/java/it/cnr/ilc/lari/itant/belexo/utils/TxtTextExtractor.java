@@ -9,6 +9,7 @@ import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 
+import it.cnr.ilc.lari.itant.belexo.exc.BadFormatException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
