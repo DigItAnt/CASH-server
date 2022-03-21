@@ -23,34 +23,34 @@ public class AnnotationController {
     private static final Logger log = LoggerFactory.getLogger(AnnotationController.class);
 
     @GetMapping(value="/api/v1/gettext")
-    public String getText(@RequestParam long nodeid) throws Exception {
+    public String getText(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
         return DBManager.getNodeText(nodeid);
     }
 
     @GetMapping(value="/api/v1/annotation")
-    public List<Annotation> getAnnotations(@RequestParam long nodeid) throws Exception {
+    public List<Annotation> getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
         return DBManager.getNodeAnnotations(nodeid);
     }
 
     @GetMapping(value="/api/v1/token")
-    public List<Token> getTokens(@RequestParam long nodeid) throws Exception {
+    public List<Token> getTokens(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
         return DBManager.getNodeTokens(nodeid);
     }
 
     @PostMapping(value="/api/v1/annotation")
-    public Annotation createAnnotation(@RequestParam long nodeid, @RequestBody Annotation annotation) throws Exception {
+    public Annotation createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation) throws Exception {
         annotation.setID(-1);
         return DBManager.addAnnotation(nodeid, annotation);
     }
 
     @DeleteMapping(value="/api/v1/annotate")
-    public void deleteAnnotation(@RequestParam long annotationID) throws Exception {
+    public void deleteAnnotation(@RequestParam String requestUUID, @RequestParam long annotationID) throws Exception {
         log.info("delete annotation " + annotationID);
         DBManager.deleteAnnotation(annotationID);
     }
 
     @PutMapping(value="/api/v1/annotation")
-    public Annotation modifyAnnotation(@RequestBody Annotation annotation) throws Exception {
+    public Annotation modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation) throws Exception {
         long nid = DBManager.getAnnotationNodeId(annotation.getID());
         DBManager.deleteAnnotation(annotation.getID());
         DBManager.addAnnotation(nid, annotation);
