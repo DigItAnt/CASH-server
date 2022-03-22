@@ -1,11 +1,7 @@
 package it.cnr.ilc.lari.itant.belexo;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileReader;
 import java.io.InputStream;
-import java.io.Reader;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -21,7 +17,6 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,14 +32,12 @@ import it.cnr.ilc.lari.itant.belexo.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.belexo.om.Annotation;
 import it.cnr.ilc.lari.itant.belexo.om.FileInfo;
 import it.cnr.ilc.lari.itant.belexo.om.Token;
-import it.cnr.ilc.lari.itant.belexo.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.belexo.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.belexo.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.TxtTextExtractor;
 import it.cnr.ilc.lari.itant.belexo.utils.StringUtils;
 import it.cnr.ilc.lari.itant.belexo.utils.TextExtractorInterface;
 import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo;
-import it.cnr.ilc.lari.itant.belexo.utils.TokenInfo.TokenType;
 
 public class DBManager {
     static ObjectMapper mapper = new ObjectMapper();
