@@ -13,4 +13,5 @@ public interface TextExtractorInterface {
     List<Annotation> annotations();
     Map<String, Object> metadata();
     String extract();
+    String getTextType();
 }

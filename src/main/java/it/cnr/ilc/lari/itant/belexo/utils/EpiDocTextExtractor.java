@@ -51,6 +51,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
     Map<String, Object> mdata;
     XpathMetadataImporter mimporter;
     private static final String LAYER = "epidoc";
+    private String textType;
 
     public EpiDocTextExtractor() {
         tokenList = new ArrayList<TokenInfo>();
@@ -67,6 +68,8 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             log.error("Cannot read importer: ", e.getMessage());
         }
     }
+
+    public String getTextType() { return textType; }
 
     @Override
     public Map<String, Object> metadata() { return mdata; }
@@ -232,6 +235,13 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         return begin-offset;
     }
 
+    protected void setTypeFromEdition(Node div) {
+        NamedNodeMap nmap = div.getAttributes();
+        Node attr = nmap.getNamedItem("subtype");
+        if ( attr == null ) textType = "unknown";
+        textType = attr.getNodeValue();
+    }
+
     @Override
     public TextExtractorInterface read(InputStream is) throws BadFormatException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -246,6 +256,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             // text, tokens and annotations
             Node div = getDivInBody(doc, "edition");
             if ( div == null ) throw new BadFormatException();
+            setTypeFromEdition(div);
             List<Node> parts = getParts(div);
             int begin = 0;
             for ( Node part: parts ) {

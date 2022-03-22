@@ -24,6 +24,8 @@ public class FakeTextExtractor implements TextExtractorInterface {
     public FakeTextExtractor() {
     }
 
+    public String getTextType() { return "fake"; }
+
     @Override
     public Map<String, Object> metadata() { return null; }
 

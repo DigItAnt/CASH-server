@@ -22,6 +22,8 @@ public class TxtTextExtractor implements TextExtractorInterface {
         tokenList = new ArrayList<TokenInfo>();
     }
 
+    public String getTextType() { return "plain"; }
+
     @Override
     public String extract() {
         return text;

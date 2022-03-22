@@ -143,7 +143,7 @@ public class DBManager {
             stmt.executeUpdate();
             ResultSet rs = stmt.getGeneratedKeys();  
             long ret = rs.next() ? rs.getLong(1) : 0;
-            connection.commit();
+            //connection.commit();
             return ret;
         } catch (Exception e) {
             e.printStackTrace();
@@ -709,34 +709,33 @@ public class DBManager {
             // add original content to node
             saveFileData(node, contentType, contentStream);
 
-            if ( filename.endsWith(".xml") ) { // TODO: perhaps do better, here!
-                log.info("MYID: " + nid);
-                ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
-                TextExtractorInterface extractor = new EpiDocTextExtractor();
-                String text = extractor.read(bais).extract(); // must read the bytes here...
-                long srcTxt = insertTextEntry(nid, text, "interpretative");
-                log.info("Added text");
-                int ti = 1;
-                for (TokenInfo token: extractor.tokens() ) { // adds tokens
-                    // if ( token.tokenType != TokenType.WORD ) continue; // NO: keep punct as tokens...
-                    // TODO: probably requires adding token type to the DB!
-                    long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
-                    log.info("Added token node " + tid);
-                }
-                for (Annotation ann: extractor.annotations()) { // adds annotations
-                    long aid = insertAnnotationInternal(nid, ann);
-                    ann.setID(aid);
-                    // save spans
-                    addAnnotationSpans(aid, ann.getSpans());
-                    // save attributes
-                    addAnnotationAttributes(aid, ann.getAttributes());
-                    log.info("Added annotation " + aid);
-                }
-                // add metadata
-                updateNodeMetadata(nid, extractor.metadata(), true);
-            } else if ( filename.endsWith(".txt") ) {
-                importTxt(nid, contentBytes);
+            TextExtractorInterface extractor;
+            if ( filename.endsWith(".xml") ) // TODO: perhaps do better, here!
+                extractor = new EpiDocTextExtractor();
+            else extractor = new TxtTextExtractor();
+            log.info("MYID: " + nid);
+            ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
+            String text = extractor.read(bais).extract(); // must read the bytes here...
+            long srcTxt = insertTextEntry(nid, text, extractor.getTextType());
+            log.info("Added text");
+            int ti = 1;
+            for (TokenInfo token: extractor.tokens() ) { // adds tokens
+                // if ( token.tokenType != TokenType.WORD ) continue; // NO: keep punct as tokens...
+                // TODO: probably requires adding token type to the DB!
+                long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
+                log.info("Added token node " + tid);
             }
+            for (Annotation ann: extractor.annotations()) { // adds annotations
+                long aid = insertAnnotationInternal(nid, ann);
+                ann.setID(aid);
+                // save spans
+                addAnnotationSpans(aid, ann.getSpans());
+                // save attributes
+                addAnnotationAttributes(aid, ann.getAttributes());
+                log.info("Added annotation " + aid);
+            }
+            // add metadata
+            updateNodeMetadata(nid, extractor.metadata(), true);
 
             connection.commit();
             return nid;
@@ -747,21 +746,6 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
-        }
-    }
-
-    private static void importTxt(long nid, byte[] contentBytes) throws Exception {
-        log.info("MYID: " + nid);
-        ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
-        TextExtractorInterface extractor = new TxtTextExtractor();
-        String text = extractor.read(bais).extract(); // must read the bytes here...
-        long srcTxt = insertTextEntry(nid, text, "plain");
-        log.info("Added text");
-        int ti = 1;
-        for (TokenInfo token: extractor.tokens() ) { // adds tokens
-            if ( token.tokenType != TokenType.WORD ) continue;
-            long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
-            log.info("Added token node " + tid);
         }
     }
 
@@ -951,7 +935,6 @@ public class DBManager {
                 ResultSet rs = stmt.getGeneratedKeys();  
                 ret = rs.next() ? rs.getLong(1) : 0;
             }
-            connection.commit();
             return ret;
         } catch (Exception e) {
             e.printStackTrace();
@@ -985,9 +968,12 @@ public class DBManager {
         }
     }
 
-
     @Transactional
     public synchronized static Annotation addAnnotation(long nodeId, Annotation ann) throws Exception {
+        return addAnnotation(nodeId, ann, false);
+    }
+
+    public synchronized static Annotation addAnnotation(long nodeId, Annotation ann, boolean inheritTransaction) throws Exception {
         log.info("Creating annotation for node " + nodeId);
         FileInfo node = getNodeById(nodeId);
         if ( node == null ) {
@@ -998,29 +984,25 @@ public class DBManager {
             log.error("Spans overlap!" + Strings.join(ann.getSpans(), ';'));
             throw new InvalidParamException();
         }
-        connection.setAutoCommit(false);
+        if ( !inheritTransaction ) connection.setAutoCommit(false);
         try {
             long annid = insertAnnotationInternal(nodeId, ann);
             ann.setID(annid);
-            log.info("ANN1");
             // save spans
             addAnnotationSpans(annid, ann.getSpans());
-            log.info("ANN2");
 
             // save attributes
             addAnnotationAttributes(annid, ann.getAttributes());
-            log.info("ANN3");
 
-            connection.commit();
-            log.info("ANN4");
+            if ( !inheritTransaction ) connection.commit();
 
             return ann;
         } catch (Exception e) {
             log.error(e.toString());
-            connection.rollback();
+            if ( !inheritTransaction ) connection.rollback();
             throw e;
         } finally {
-            connection.setAutoCommit(true);
+            if ( !inheritTransaction ) connection.setAutoCommit(true);
         }
     }
 
