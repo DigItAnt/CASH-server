@@ -1,5 +1,5 @@
 metadata	xpath	postprocessing
-fieldID	//tei:TEI/@xml:id	
+fileID	//tei:TEI/@xml:id	
 trismegistos.trismegistosID	//tei:altIdentifier[@type='trismegistos']/tei:idno/text()	
 trismegistos.trismegistosID_url	//tei:altIdentifier[@type='trismegistos']/tei:idno/@source	
 		
@@ -7,3 +7,15 @@ __START__traditionalIDs	//tei:altIdentifier[@type='traditionalID']/tei:idno
 traditionalID.traditionalID	text()	
 traditionalID.traditionalID_URL	@source	
 __END__		
+		
+editor	//tei:editor/tei:persName/text()	
+settlement.placeOfConservation	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/text()	
+settlement.placeOfConservationExternalReference	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/@ref	
+		
+support.objectType	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/text()	
+support.objectType_conceptUrl	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/@ana	
+support.material	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:material/text()	
+support.material_conceptUrl	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:material/@ana	
+		
+originalPlace.ancientName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='ancient']/text()	
+originalPlace.ancientNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='ancient']/@ref	
