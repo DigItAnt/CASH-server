@@ -8,11 +8,11 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>it.cnr.ilc.lari.itant</groupId>
-	<artifactId>belexo</artifactId>
+	<artifactId>cash</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>jar</packaging>
-	<name>belexo</name>
-	<description>Text Annotation Backend</description>
+	<name>cash</name>
+	<description>CASH - Corpus, Annotation and SearcH</description>
 	<properties>
 		<java.version>11</java.version>
 		<javax.jcr.version>2.0</javax.jcr.version>
