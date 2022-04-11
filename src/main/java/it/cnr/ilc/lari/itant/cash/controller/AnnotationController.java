@@ -17,6 +17,7 @@ import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.CreateAnnotationResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetAnnotationsResponse;
+import it.cnr.ilc.lari.itant.cash.om.GetRawContent;
 import it.cnr.ilc.lari.itant.cash.om.GetTextResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetTokensResponse;
 import it.cnr.ilc.lari.itant.cash.om.ModifyAnnotationResponse;
@@ -32,6 +33,14 @@ public class AnnotationController {
         GetTextResponse resp = new GetTextResponse();
         resp.setRequestUUID(requestUUID);
         resp.setText(DBManager.getNodeText(nodeid));
+        return resp;
+    }
+
+    @GetMapping(value="/api/v1/getcontent")
+    public GetRawContent getContent(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+        GetRawContent resp = new GetRawContent();
+        resp.setRequestUUID(requestUUID);
+        resp.setText(DBManager.getRawContent(nodeid));
         return resp;
     }
 

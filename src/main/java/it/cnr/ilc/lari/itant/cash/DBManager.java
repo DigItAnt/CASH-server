@@ -890,6 +890,15 @@ public class DBManager {
         return null;
     }
 
+    public static String getRawContent(long nodeId) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("SELECT CONVERT(value USING utf8) FROM blob_fs_props where node=? limit 1");
+        stmt.setLong(1, nodeId);
+        ResultSet res = stmt.executeQuery();
+        while ( res.next() )
+            return res.getString(1);
+        return null;
+    }
+
     /*
     private synchronized static long insertAnnotaton(long nodeId, Annotation ann) throws Exception {
         connection.setAutoCommit(false);
