@@ -700,7 +700,7 @@ public class DBManager {
             node.setElementId(nid);
 
             // add original content to node
-            saveFileData(node, contentType, contentStream);
+            saveFileData(node, contentType, new ByteArrayInputStream(contentBytes));
 
             TextExtractorInterface extractor;
             if ( filename.endsWith(".xml") ) // TODO: perhaps do better, here!
