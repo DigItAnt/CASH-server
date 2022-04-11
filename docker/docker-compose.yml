@@ -23,7 +23,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ../target/belexo-0.0.1-SNAPSHOT.jar:/cash.jar
+      - ../target/cash-0.0.1-SNAPSHOT.jar:/cash.jar
     restart: always
     environment:
       MYSQL_URL: jdbc:mysql://dbmysql:3306/belexo?connectTimeout=0&socketTimeout=0&autoReconnect=true
