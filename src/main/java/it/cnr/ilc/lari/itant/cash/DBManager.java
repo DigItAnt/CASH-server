@@ -34,6 +34,7 @@ import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.Token;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.cash.utils.EpiDocTextExtractor;
+import it.cnr.ilc.lari.itant.cash.utils.NullTextExtractor;
 import it.cnr.ilc.lari.itant.cash.utils.StringUtils;
 import it.cnr.ilc.lari.itant.cash.utils.TextExtractorInterface;
 import it.cnr.ilc.lari.itant.cash.utils.TokenInfo;
@@ -703,7 +704,8 @@ public class DBManager {
             saveFileData(node, contentType, new ByteArrayInputStream(contentBytes));
 
             TextExtractorInterface extractor;
-            if ( filename.endsWith(".xml") ) // TODO: perhaps do better, here!
+            if ( contentType == null ) extractor = new NullTextExtractor();
+            else if ( contentType.endsWith("xml") ) // TODO: perhaps do better, here!
                 extractor = new EpiDocTextExtractor();
             else extractor = new TxtTextExtractor();
             log.info("MYID: " + nid);

@@ -1,6 +1,8 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.StringBufferInputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import it.cnr.ilc.lari.itant.cash.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderResponse;
 import it.cnr.ilc.lari.itant.cash.om.CopyFileToRequest;
 import it.cnr.ilc.lari.itant.cash.om.CopyFileToResponse;
+import it.cnr.ilc.lari.itant.cash.om.CreateFileRequest;
 import it.cnr.ilc.lari.itant.cash.om.DeleteMetadataRequest;
 import it.cnr.ilc.lari.itant.cash.om.DeleteMetadataResponse;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode;
@@ -143,6 +146,18 @@ public class CRUDController {
 		toret.setRequestUUID(requestUUID);
 		return toret;
 	}
+
+	@PostMapping("/api/crud/createFile")
+	public UploadFileResponse createFile(@RequestBody CreateFileRequest request) throws Exception {
+		UploadFileResponse toret = new UploadFileResponse();
+		InputStream fis = new ByteArrayInputStream("".getBytes("UtF-8"));
+		long fid = DBManager.addFile(request.getElementId(), request.getFilename(), fis, null);
+		log.info("File created as node with id: " + fid);
+		toret.setNode(DocumentSystemNode.populateNode(fid));
+		toret.setRequestUUID(request.getRequestUUID());
+		return toret;
+	}
+
 
 	@PostMapping("/api/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request) throws Exception {
