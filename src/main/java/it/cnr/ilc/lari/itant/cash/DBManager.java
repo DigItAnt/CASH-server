@@ -125,6 +125,50 @@ public class DBManager {
         return ret;
     }
 
+    // This function is used to copy a node
+    private synchronized static long insertFileInfoFull(FileInfo f) throws Exception {
+        connection.setAutoCommit(false);
+        long ret = 0;
+        try {
+            // copy node
+            ret = insertFileInfoInternal(f);
+
+            // copy unstructured text
+            long srcTxt = copyTextEntry(f.getElementId(), ret);
+
+            // copy blob
+            copyFileData(f.getElementId(), ret);
+
+            // copy annotations
+            for (Annotation ann: getNodeAnnotations(f.getElementId())) { // adds annotations
+                long oldId = ann.getID();
+                ann.setID(-1); // invalidate the id to get a new one
+                long aid = insertAnnotationInternal(ret, ann);
+                ann.setID(aid);
+                // save spans
+                addAnnotationSpans(aid, DBManager.getAnnotationSpans(oldId));
+                // save attributes
+                addAnnotationAttributes(aid, DBManager.getAnnotationAttributes(oldId));
+                log.info("Added annotation " + aid);
+            }
+
+            // copy tokens
+            for ( Token t: getNodeTokens(f.getElementId()) ) {
+                insertTokenNode(ret, srcTxt, t.getText(), t.getPosition(),
+                                t.getBegin(), t.getEnd(), t.getXmlid(), t.isImported());
+            }
+            // copy metadata
+            updateNodeMetadata(ret, f.getMetadata());
+        } catch ( Exception e ) {
+            connection.rollback();
+            ret = 0;
+        } finally {
+            connection.setAutoCommit(true);
+        }
+        return ret;
+    }
+
+
     private synchronized static long insertFileInfoInternal(FileInfo f) throws Exception {
         try {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO fsnodes (name, type, father) values (?,?,?);",
@@ -259,7 +303,7 @@ public class DBManager {
             }
         
             node.setFather(destination);
-            long newId = insertFileInfo(node);
+            long newId = insertFileInfoFull(node);
             node.setElementId(newId);
             return node;
         } catch (Exception e) {
@@ -638,6 +682,13 @@ public class DBManager {
         return ret;
     }
 
+    private static void copyFileData(long srcId, long targetId) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) select name, value, content_type, ? from blob_fs_props where node=?");
+        stmt.setLong(1, targetId);
+        stmt.setLong(2, srcId);
+        stmt.execute();
+}
+
     private static void saveFileData(FileInfo node, String contentType, InputStream contentStream) throws Exception {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) values (?,?,?,?)");
             stmt.setString(1, ORIGINAL_CONTENT);
@@ -645,6 +696,17 @@ public class DBManager {
             stmt.setString(3, contentType);
             stmt.setLong(4, node.getElementId());
             stmt.execute();
+    }
+
+    private static long copyTextEntry(long srcId, long targetId) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) select text, ?, type from unstructured where node=?",
+                                                             Statement.RETURN_GENERATED_KEYS);
+        stmt.setLong(1, targetId);
+        stmt.setLong(2, srcId);
+        stmt.executeUpdate();
+        ResultSet rs = stmt.getGeneratedKeys();
+        return rs.next()?rs.getLong(1):0;
+
     }
 
     private static long insertTextEntry(long nodeId, String text, String tType) throws Exception {

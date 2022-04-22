@@ -27,6 +27,7 @@ import it.cnr.ilc.lari.itant.cash.om.DeleteMetadataResponse;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.cash.om.DownloadFileRequest;
 import it.cnr.ilc.lari.itant.cash.om.DownloadFileResponse;
+import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.MoveFileToRequest;
 import it.cnr.ilc.lari.itant.cash.om.MoveFileToResponse;
 import it.cnr.ilc.lari.itant.cash.om.MoveFolderRequest;
@@ -102,8 +103,9 @@ public class CRUDController {
 	@PostMapping("/api/crud/copyFileTo")
 	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request) throws Exception {
 		CopyFileToResponse toret = new CopyFileToResponse();
-		DBManager.copyNode(request.getElementId(), request.getTargetId());
+		FileInfo finfo = DBManager.copyNode(request.getElementId(), request.getTargetId());
 		toret.setRequestUUID(request.getRequestUUID());
+		toret.setNode(new DocumentSystemNode(finfo, true));
 		return toret;
 	}
 
