@@ -1,5 +1,27 @@
 metadata	xpath	postprocessing
 fileID	//tei:TEI/@xml:id	
+		
+title	//tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title/text()	
+itAnt_ID	//tei:teiHeader/tei:fileDesc//tei:edition/tei:idno/text()	
+		
+editor	//tei:editor/tei:persName/text()	
+		
+authority	//tei:publicationStmt/tei:authority/text()	
+publicationDate	//tei:publicationStmt/tei:date/text()	
+publicationPID	//tei:publicationStmt/tei:idno/text()	
+		
+license.distributionLicence	//tei:publicationStmt/tei:availability/tei:licence/text()	
+license.distributionLicence_URL	//tei:publicationStmt/tei:availability/tei:licence/@target	
+		
+settlement.placeOfConservation	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/text()	
+settlement.placeOfConservationExternalReference	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/@ref	
+		
+conservationInstitution.name	//tei:sourceDesc//tei:institution/text()	
+conservationInstitution.URL	//tei:sourceDesc//tei:institution/@ana	
+		
+inventoryNumber	//tei:sourceDesc//tei:idno[@type='museumID']/text()	
+inscriptionTitle	//tei:sourceDesc//tei:msName/text()	
+		
 trismegistos.trismegistosID	//tei:altIdentifier[@type='trismegistos']/tei:idno/text()	
 trismegistos.trismegistosID_url	//tei:altIdentifier[@type='trismegistos']/tei:idno/@source	
 		
@@ -8,9 +30,23 @@ traditionalID.traditionalID	text()
 traditionalID.traditionalID_URL	@source	
 __END__		
 		
-editor	//tei:editor/tei:persName/text()	
-settlement.placeOfConservation	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/text()	
-settlement.placeOfConservationExternalReference	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/@ref	
+		
+dimensions	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@type	
+reuse	//tei:physDesc//tei:supportDesc/tei:support/tei:rs[@type='reuse']/text()	
+condition	//tei:physDesc//tei:supportDesc/tei:condition/text()	
+conditionDesc	//tei:physDesc//tei:supportDesc/tei:condition/tei:note/text()	
+		
+execution	//tei:layoutDesc//tei:rs[@type='execution']/text()	
+execution_conceptUrl	//tei:layoutDesc//tei:rs[@type='execution']/@ana	
+opistography	//tei:layoutDesc//tei:rs[@type='opistography']/text()	
+layoutNotes	//tei:layoutDesc//tei:note[@type='layoutNotes']/text()	
+palaeographicNotes	//tei:physDesc//tei:handNote/tei:note[@type='palaeographicNotes']/text()	
+		
+writingSystem	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/text()	
+alphabet	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@subtype	
+alphabet_url	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@ref	
+wordDivisionType	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='wordDivision']/text()	
+		
 		
 support.objectType	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/text()	
 support.objectType_conceptUrl	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/@ana	
@@ -19,3 +55,36 @@ support.material_conceptUrl	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:su
 		
 originalPlace.ancientName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='ancient']/text()	
 originalPlace.ancientNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='ancient']/@ref	
+originalPlace.modernName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/text()	
+originalPlace.modernNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/@ref	
+		
+dateOfOrigin	//tei:history/tei:origin/tei:origDate/@notBefore-custom	
+dateOfOriginNotBefore	//tei:history/tei:origin/tei:origDate/@notAfter-custom	
+datingCertainty	//tei:history/tei:origin/tei:origDate/@cert	
+		
+ancientFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='ancient']/text()	
+ancientFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='ancient']/@ref	
+modernFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/text()	
+modernFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/@ref	
+detailedFindSpot	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='detailed']/text()	
+		
+autopsy	//tei:history/tei:provenance[@type='observed']/@subtype	
+		
+autopsyAuthor	//tei:history/tei:provenance/tei:persName/text()	
+encoding	//tei:encodingDesc/tei:p/text()	
+encodingSourceUrl	//tei:encodingDesc/tei:p/@source	
+		
+inscriptionType	//tei:profileDesc/tei:textClass/tei:keywords/tei:term/text()	
+		
+__START__facsimile	//tei:facsimile/tei:graphic	
+facsimile.Url	@url	
+facsimile.Desc	tei:desc/text()	
+facsimile.License	tei:desc/tei:ref/text()	
+facsimile.LicenseUrl	tei:desc/tei:ref/@target	
+__END__		
+		
+__START__bodytextpart	//tei:body/tei:div[@type='edition' and @subtype='interpretative']/tei:div[@type='textpart']	
+bodytextpart.section	@n	
+bodytextpart.textDirection	@style	
+bodytextpart.ductus	substring-after(@rend, 'ductus:')	
+__END__		
