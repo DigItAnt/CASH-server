@@ -279,6 +279,7 @@ public class DBManager {
 
     public synchronized static FileInfo copyNode(long nodeId, long destination) throws Exception {
         try {
+            if ( destination == 0 ) destination = getRootNodeId();
             FileInfo node = getNodeById(connection, nodeId);
             if ( node == null ) {
                 log.error("Cannot copy non-existent node " + nodeId);
