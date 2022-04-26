@@ -30,6 +30,7 @@ traditionalID.traditionalID	text()
 traditionalID.traditionalID_URL	@source	
 __END__		
 		
+summary	//tei:msContents/tei:summary/text()	
 		
 dimensions	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@type	
 reuse	//tei:physDesc//tei:supportDesc/tei:support/tei:rs[@type='reuse']/text()	
@@ -47,6 +48,7 @@ alphabet	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSyste
 alphabet_url	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@ref	
 wordDivisionType	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='wordDivision']/text()	
 		
+decoration	//tei:physDesc/tei:decoDesc/tei:decoNote/text()	
 		
 support.objectType	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/text()	
 support.objectType_conceptUrl	//tei:physDesc/tei:objectDesc/tei:supportDesc/tei:support/tei:objectType/@ana	
@@ -62,6 +64,10 @@ dateOfOrigin	//tei:history/tei:origin/tei:origDate/@notBefore-custom
 dateOfOriginNotBefore	//tei:history/tei:origin/tei:origDate/@notAfter-custom	
 datingCertainty	//tei:history/tei:origin/tei:origDate/@cert	
 		
+discoveryYear.when	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/@when	
+discoveryYear.notBefore	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/@notBefore	
+discoveryYear.notAfter	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/@notAfter	
+		
 ancientFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='ancient']/text()	
 ancientFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='ancient']/@ref	
 modernFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/text()	
@@ -73,6 +79,11 @@ autopsy	//tei:history/tei:provenance[@type='observed']/@subtype
 autopsyAuthor	//tei:history/tei:provenance/tei:persName/text()	
 encoding	//tei:encodingDesc/tei:p/text()	
 encodingSourceUrl	//tei:encodingDesc/tei:p/@source	
+		
+__START__language	//tei:profileDesc/tei:langUsage/tei:language	
+language.ident	@ident	
+language.source	@source	
+__END__		
 		
 inscriptionType	//tei:profileDesc/tei:textClass/tei:keywords/tei:term/text()	
 		
