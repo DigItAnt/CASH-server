@@ -65,9 +65,9 @@ public class DBManager {
 
     public static void init() throws Exception {
         if ( jdbcTemplate == null ) {
-            String mysqlUrl = "jdbc:mysql://localhost:3306/belexo";
-            String mysqlUser = "test";
-            String mysqlPassword = "test";
+            String mysqlUrl = "jdbc:mysql://localhost:3306/cash?connectTimeout=0&socketTimeout=0&autoReconnect=true";
+            String mysqlUser = "cash";
+            String mysqlPassword = "cash";
             if (System.getenv(ENV_MYSQL_URL) != null)
                 mysqlUrl = System.getenv(ENV_MYSQL_URL);
             if (System.getenv(ENV_MYSQL_USER) != null)
@@ -101,6 +101,11 @@ public class DBManager {
             log.info("DB already initialized");
             return;
         }
+
+        throw new Exception("DB is empty, please initialize it with models/schema.sql");
+        
+
+        /*
         log.info("DB is empty, need to be initialized");
 
         ScriptUtils.executeSqlScript(connection, new ClassPathResource(DB_SCHEMA_PATH));
@@ -109,6 +114,7 @@ public class DBManager {
         rdp.addScript(new ClassPathResource("/model/functions.sql"));
         rdp.setSeparator(";;");
         rdp.populate(connection);
+        */
 
     }
 
