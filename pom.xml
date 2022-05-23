@@ -88,16 +88,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.keycloak</groupId>
 			<artifactId>keycloak-spring-boot-starter</artifactId>
-			<!-- version>15.1.1</version -->
+			<version>15.1.1</version>
 		</dependency>
 
 	</dependencies>
 
-	<dependencyManagement>
+	<!-- dependencyManagement>
 		<dependencies>
 			<dependency>
 				<groupId>org.keycloak.bom</groupId>
@@ -107,7 +107,7 @@
 				<scope>import</scope>
 			</dependency>
 		</dependencies>
-	</dependencyManagement>
+	</dependencyManagement -->
 
 	<build>
 		<plugins>
