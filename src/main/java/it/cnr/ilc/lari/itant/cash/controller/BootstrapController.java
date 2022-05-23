@@ -1,5 +1,7 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
+import java.security.Principal;
+
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,7 +24,8 @@ public class BootstrapController {
 	}
 
 	@GetMapping("/api/getDocumentSystem")
-	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID) {
+	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, Principal principal) {
+		//System.out.println("User: " + principal.getName());
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
 		try {
