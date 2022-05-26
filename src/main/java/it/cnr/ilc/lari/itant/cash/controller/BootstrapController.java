@@ -25,7 +25,7 @@ public class BootstrapController {
 
 	@GetMapping("/api/getDocumentSystem")
 	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, Principal principal) {
-		//System.out.println("User: " + principal.getName());
+		//System.out.println("............................................................ User: " + principal.getName());
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
 		try {
