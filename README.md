@@ -1,8 +1,12 @@
 # CASH - Corpus, Annotation and SearcH
 
-A corpora and annotations management server.
+A corporus and annotations management server.
 
 CASH provides a set of services for the management of documents, creating a file-system-like abstraction, organising documents into folders. Documents can be annotated and searched, and as such, the main purpose of CASH in the overall architecture is that of dealing with how documents and annotations are represented and made persistent, and how such documents can be retrieved. 
+
+For details on its services see: 
+Swagger: https://lari2.ilc.cnr.it/cash/swagger-ui/index.html?configUrl=/belexo/v3/api-docs/swagger-config#/   +   /cash/v3/api-docs
+
 
 ## GETTING STARTED
 
