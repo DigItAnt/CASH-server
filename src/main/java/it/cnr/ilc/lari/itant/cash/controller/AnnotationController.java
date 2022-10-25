@@ -89,5 +89,10 @@ public class AnnotationController {
         return resp;
     }
 
+    @DeleteMapping(value="/api/v1/annotationbyvalue")
+    public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value) throws Exception {
+        log.info("delete annotation by value " + value);
+        DBManager.deleteAnnotationByValue(value);
+    }
 
 }
