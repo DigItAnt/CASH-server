@@ -1,7 +1,6 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
 import java.security.Principal;
-import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +29,7 @@ public class BootstrapController {
 
 	@GetMapping("/api/getDocumentSystem")
 	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, Principal principal) {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, requestUUID, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
 
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
@@ -46,7 +45,7 @@ public class BootstrapController {
 
 	@GetMapping("/api/getUsers")
 	public GetUsersResponse getUsers(@RequestParam String requestUUID, Principal principal) {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, requestUUID, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
 
 		PodamFactory factory = new PodamFactoryImpl();
 		GetUsersResponse toret = factory.manufacturePojo(GetUsersResponse.class);

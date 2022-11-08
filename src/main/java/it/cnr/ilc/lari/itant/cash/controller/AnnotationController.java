@@ -1,6 +1,6 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
-import java.util.List;
+import java.security.Principal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +21,7 @@ import it.cnr.ilc.lari.itant.cash.om.GetRawContent;
 import it.cnr.ilc.lari.itant.cash.om.GetTextResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetTokensResponse;
 import it.cnr.ilc.lari.itant.cash.om.ModifyAnnotationResponse;
-import it.cnr.ilc.lari.itant.cash.om.Token;
+import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 
 @CrossOrigin
 @RestController
@@ -29,7 +29,9 @@ public class AnnotationController {
     private static final Logger log = LoggerFactory.getLogger(AnnotationController.class);
 
     @GetMapping(value="/api/v1/gettext")
-    public GetTextResponse getText(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+    public GetTextResponse getText(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+        
         GetTextResponse resp = new GetTextResponse();
         resp.setRequestUUID(requestUUID);
         resp.setText(DBManager.getNodeText(nodeid));
@@ -37,7 +39,9 @@ public class AnnotationController {
     }
 
     @GetMapping(value="/api/v1/getcontent")
-    public GetRawContent getContent(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+    public GetRawContent getContent(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+
         GetRawContent resp = new GetRawContent();
         resp.setRequestUUID(requestUUID);
         resp.setText(DBManager.getRawContent(nodeid));
@@ -45,7 +49,9 @@ public class AnnotationController {
     }
 
     @GetMapping(value="/api/v1/annotation")
-    public GetAnnotationsResponse getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+    public GetAnnotationsResponse getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+
         GetAnnotationsResponse resp = new GetAnnotationsResponse();
         resp.setRequestUUID(requestUUID);
         resp.setAnnotations(DBManager.getNodeAnnotations(nodeid));
@@ -53,7 +59,9 @@ public class AnnotationController {
     }
 
     @GetMapping(value="/api/v1/token")
-    public GetTokensResponse getTokens(@RequestParam String requestUUID, @RequestParam long nodeid) throws Exception {
+    public GetTokensResponse getTokens(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+
         GetTokensResponse resp = new GetTokensResponse();
         resp.setRequestUUID(requestUUID);
         resp.setTokens(DBManager.getNodeTokens(nodeid));
@@ -61,7 +69,9 @@ public class AnnotationController {
     }
 
     @PostMapping(value="/api/v1/annotation")
-    public CreateAnnotationResponse createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation) throws Exception {
+    public CreateAnnotationResponse createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+
         CreateAnnotationResponse resp = new CreateAnnotationResponse();
         annotation.setID(-1);
 
@@ -71,13 +81,15 @@ public class AnnotationController {
     }
 
     @DeleteMapping(value="/api/v1/annotate")
-    public void deleteAnnotation(@RequestParam String requestUUID, @RequestParam long annotationID) throws Exception {
-        log.info("delete annotation " + annotationID);
+    public void deleteAnnotation(@RequestParam String requestUUID, @RequestParam long annotationID, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID, "delete annotation " + annotationID);
         DBManager.deleteAnnotation(annotationID);
     }
 
     @PutMapping(value="/api/v1/annotation")
-    public ModifyAnnotationResponse modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation) throws Exception {
+    public ModifyAnnotationResponse modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+
         ModifyAnnotationResponse resp = new ModifyAnnotationResponse();
 
         long nid = DBManager.getAnnotationNodeId(annotation.getID());
@@ -90,8 +102,9 @@ public class AnnotationController {
     }
 
     @DeleteMapping(value="/api/v1/annotationbyvalue")
-    public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value) throws Exception {
-        log.info("delete annotation by value " + value);
+    public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID, "delete annotation by value " + value);
+
         DBManager.deleteAnnotationByValue(value);
     }
 
