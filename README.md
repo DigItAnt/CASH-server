@@ -46,3 +46,14 @@ export MYSQL_URL=”jdbc:mysql://localhost:3306/cash?connectTimeout=0&socketTime
 export MYSQL_USER=cash
 export MYSQL_PASSWORD=cash
 ```
+
+### Keycloack integration
+You must set the following environment variables to connect to Keycloak:
+
+```
+export KEYCLOAK_AUTH_SERVER_URL=http://localhost:8080/auth
+export KEYCLOAK_REALM=cashrealm
+export KEYCLOAK_RESOURCE=cashclient
+```
+
+with your own values.
