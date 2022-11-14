@@ -2,7 +2,7 @@ package it.cnr.ilc.lari.itant.cash.controller;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.StringBufferInputStream;
+import java.security.Principal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +43,7 @@ import it.cnr.ilc.lari.itant.cash.om.RenameFolderResponse;
 import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataResponse;
 import it.cnr.ilc.lari.itant.cash.om.UploadFileResponse;
+import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
 
@@ -52,7 +53,9 @@ public class CRUDController {
 	private static final Logger log = LoggerFactory.getLogger(CRUDController.class);
 
 	@PostMapping("/api/crud/addFolder")
-	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request) throws Exception {
+	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		AddFolderResponse toret = new AddFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		long fid = DBManager.addFolder(request.getElementId());
@@ -61,7 +64,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/renameFolder")
-	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request) throws Exception {
+	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		RenameFolderResponse toret = new RenameFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
@@ -69,7 +74,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/removeFolder")
-	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request) throws Exception {
+	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		RemoveFolderResponse toret = new RemoveFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
 		DBManager.removeNode(request.getElementId());
@@ -77,7 +84,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/moveFolder")
-	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request) throws Exception {
+	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		MoveFolderResponse toret = new MoveFolderResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -85,7 +94,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/removeFile")
-	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request) throws Exception {
+	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		RemoveFileResponse toret = new RemoveFileResponse();
 		DBManager.removeNode(request.getElementId());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -93,7 +104,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/renameFile")
-	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request) throws Exception {
+	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		RenameFileResponse toret = new RenameFileResponse();
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -101,7 +114,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/copyFileTo")
-	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request) throws Exception {
+	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		CopyFileToResponse toret = new CopyFileToResponse();
 		FileInfo finfo = DBManager.copyNode(request.getElementId(), request.getTargetId());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -110,7 +125,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/moveFileTo")
-	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request) throws Exception {
+	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		MoveFileToResponse toret = new MoveFileToResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -118,7 +135,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/updateMetadata")
-	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request) throws Exception {
+	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		UpdateMetadataResponse toret = new UpdateMetadataResponse();
 		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -126,7 +145,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/deleteMetadata")
-	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request) throws Exception {
+	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		DeleteMetadataResponse toret = new DeleteMetadataResponse();
 		DBManager.deleteNodeMetadata(request.getElementId());
 		toret.setRequestUUID(request.getRequestUUID());
@@ -139,7 +160,9 @@ public class CRUDController {
     consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
 	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
 										 @RequestParam("element-id") Integer elementID, 
-										 @RequestParam("file") MultipartFile file) throws Exception {
+										 @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
 		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType());
@@ -150,7 +173,9 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/createFile")
-	public UploadFileResponse createFile(@RequestBody CreateFileRequest request) throws Exception {
+	public UploadFileResponse createFile(@RequestBody CreateFileRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = new ByteArrayInputStream("".getBytes("UtF-8"));
 		long fid = DBManager.addFile(request.getElementId(), request.getFilename(), fis, null);
@@ -162,7 +187,9 @@ public class CRUDController {
 
 
 	@PostMapping("/api/crud/downloadFile")
-	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request) throws Exception {
+	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+
 		// TODO: Return File!!
 		/* FileInfo node = */ DBManager.getNodeById(request.getElementId());
 		PodamFactory factory = new PodamFactoryImpl();

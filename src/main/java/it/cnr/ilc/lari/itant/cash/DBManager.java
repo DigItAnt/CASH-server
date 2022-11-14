@@ -1087,6 +1087,14 @@ public class DBManager {
         stmt.execute();
     }
 
+    public synchronized static void deleteAnnotationByValue(String value) throws Exception {
+        log.info("Deleting annotation by value " + value);
+        PreparedStatement stmt = connection.prepareStatement("delete from annotations where value=?");
+        stmt.setString(1, value);
+        stmt.execute();
+    }
+
+
     public static long getAnnotationNodeId(long annid) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("select node from annotations where id=?");
         stmt.setLong(1, annid);
