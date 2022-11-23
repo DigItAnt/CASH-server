@@ -159,9 +159,9 @@ public class CRUDController {
     method = RequestMethod.POST, 
     consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
 	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
-										 @RequestParam("element-id") Integer elementID, 
+										 @RequestParam("element-id") Integer elementID,
 										 @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();

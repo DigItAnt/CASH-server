@@ -716,7 +716,7 @@ public class DBManager {
 
     }
 
-    private static long insertTextEntry(long nodeId, String text, String tType) throws Exception {
+    public static long insertTextEntry(long nodeId, String text, String tType) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) values (?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, text);
@@ -727,7 +727,7 @@ public class DBManager {
         return rs.next()?rs.getLong(1):0;
     }
 
-    private static long insertTokenNode(long nodeId, long srcTxt,
+    public static long insertTokenNode(long nodeId, long srcTxt,
                                        String token, int position, int begin, int end,
                                        String xmlid, boolean imported) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
@@ -951,13 +951,29 @@ public class DBManager {
         return getAnnotationById(connection, annId);
     }
 
-    // @TODO: Should not return just the first one
     public static String getNodeText(long nodeId) throws Exception {
-        PreparedStatement stmt = connection.prepareStatement("SELECT text FROM unstructured where node=? limit 1");
+        return getNodeText(nodeId, null);
+    }
+
+    public static String getNodeText(long nodeId, String type) throws Exception {
+        String sstmt = (type != null)?"SELECT text FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT text FROM structured WHERE node=? LIMIT 1";
+        PreparedStatement stmt = connection.prepareStatement(sstmt);
         stmt.setLong(1, nodeId);
+        if ( type != null ) stmt.setString(2, type);
         ResultSet res = stmt.executeQuery();
         while ( res.next() )
             return res.getString(1);
+        return null;
+    }
+
+    public static Long getNodeTextId(long nodeId, String type) throws Exception {
+        String sstmt = (type != null)?"SELECT id FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT id FROM structured WHERE node=? LIMIT 1";
+        PreparedStatement stmt = connection.prepareStatement(sstmt);
+        stmt.setLong(1, nodeId);
+        if ( type != null ) stmt.setString(2, type);
+        ResultSet res = stmt.executeQuery();
+        while ( res.next() )
+            return res.getLong(1);
         return null;
     }
 
@@ -1104,4 +1120,5 @@ public class DBManager {
         log.error("Annotation " + annid + " not found");
         throw new InvalidParamException();
     }
+
 }
