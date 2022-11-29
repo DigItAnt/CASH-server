@@ -1,4 +1,5 @@
 import os, sys
+import os.path
 from conllu import parse
 from conllu.exceptions import ParseException
 import argparse
@@ -214,7 +215,7 @@ def insert(filename, destination=0, kc_token="", url="", fields=None, sentence_l
     # insert the text into CASH
     print_log(Fore.GREEN + "Inserting doc into " + url + ":" + Style.RESET_ALL +
               "\n", text[:50] + "...")
-    docid, srcid = create_file(filename, raw, text, destination, kc_token, url) if not test else (0, 0)
+    docid, srcid = create_file(os.path.basename(filename), raw, text, destination, kc_token, url) if not test else (0, 0)
 
     tokencount = 1
     for sentence in data:
