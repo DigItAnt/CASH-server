@@ -83,7 +83,7 @@ public class AnnotationController {
         resp.setRequestUUID(requestUUID);
         Long srcid = DBManager.getNodeTextId(nodeid, token.getSource());
         long id = DBManager.insertTokenNode(nodeid, srcid, token.getText(), token.getPosition(), token.getBegin(),
-                                            token.getEnd(), null, token.isImported());
+                                            token.getEnd(), token.getXmlid(), token.isImported());
         token.setID(id);
         resp.setToken(token);
         return resp;

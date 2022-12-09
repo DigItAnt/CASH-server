@@ -176,10 +176,10 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         return tinfo;
     }
 
-    private Node getDivInBody(Document doc, String type) {
+    private Node getDivInBody(Document doc, String type, String subtype) {
         NodeList bodys = doc.getElementsByTagName("tei:body");
         Node body = bodys.item(0);
-        // Inside the body, look for 'div type="edition"'
+        // Inside the body, look for 'div type=TYPE subtype=SUBTYPE'
         if ( body == null )
             return null;
         NodeList divs = body.getChildNodes();
@@ -189,7 +189,10 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             if ( attrs == null ) continue;
             Node xid = attrs.getNamedItem("type");
             if ( xid == null ) continue;
-            if ( xid.getNodeValue().equals(type) ) return div;
+            Node nst = attrs.getNamedItem("subtype");
+            if ( subtype != null && nst == null ) continue;
+            if ( xid.getNodeValue().equals(type) && 
+                 (subtype == null || nst.getNodeValue().equals(subtype))) return div;
         }
         
         return null;
@@ -239,7 +242,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         NamedNodeMap nmap = div.getAttributes();
         Node attr = nmap.getNamedItem("subtype");
         if ( attr == null ) textType = "unknown";
-        textType = attr.getNodeValue();
+        else textType = attr.getNodeValue();
     }
 
     @Override
@@ -254,7 +257,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
             mdata = mimporter.extract(doc);
 
             // text, tokens and annotations
-            Node div = getDivInBody(doc, "edition");
+            Node div = getDivInBody(doc, "edition", "interpretative");
             if ( div == null ) throw new BadFormatException();
             setTypeFromEdition(div);
             List<Node> parts = getParts(div);

@@ -77,7 +77,7 @@ def create_file(filename, content, text, destination=0, token="", url=""):
               "bytes, id:" + Style.RESET_ALL, elid)
     return (elid, response.json()['unstructuredids']['conllu'])
 
-def create_token(docid, token_text, position, span_from, span_to, token="", url=""):
+def create_token(docid, token_text, tid, position, span_from, span_to, token="", url=""):
     if url[-1] != '/':
         url += '/'
         
@@ -93,7 +93,7 @@ def create_token(docid, token_text, position, span_from, span_to, token="", url=
     
     data = {
         'text': token_text,
-        'xmlid': None,
+        'xmlid': str(tid),
         'position': position,
         'source': 'conllu',
         'begin': span_from,
@@ -232,10 +232,11 @@ def insert(filename, destination=0, kc_token="", url="", fields=None, sentence_l
                                         'feats', 'head', 'deprel', 'deps', 'misc']):
                 if col == 'form': # insert the token
                     print_log(Fore.GREEN + "Inserting token:" + Style.RESET_ALL,
-                              token[col] + Fore.GREEN + "@" +
+                              token['id'], token[col] + Fore.GREEN + "@" +
                               str(span_from) + ":" + str(span_to), end = '')
                     if '__skip__' in token: tokencount -= 1
-                    tokenid = create_token(docid, token[col], tokencount,
+                    tokenid = create_token(docid, token[col], token['id'],
+                                           tokencount,
                                            span_from, span_to, kc_token, url) if not test else 0
                     tokencount += 1
                 elif col == 'feats' or col == 'misc': # insert the features
