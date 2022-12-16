@@ -54,7 +54,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/addFolder")
 	public AddFolderResponse addFolder(@RequestBody AddFolderRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		AddFolderResponse toret = new AddFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
@@ -65,7 +65,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/renameFolder")
 	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RenameFolderResponse toret = new RenameFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
@@ -75,7 +75,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/removeFolder")
 	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RemoveFolderResponse toret = new RemoveFolderResponse();
 		toret.setRequestUUID(request.getRequestUUID());
@@ -85,7 +85,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/moveFolder")
 	public MoveFolderResponse moveFolder(@RequestBody MoveFolderRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		MoveFolderResponse toret = new MoveFolderResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
@@ -95,7 +95,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/removeFile")
 	public RemoveFileResponse removeFile(@RequestBody RemoveFileRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RemoveFileResponse toret = new RemoveFileResponse();
 		DBManager.removeNode(request.getElementId());
@@ -105,7 +105,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/renameFile")
 	public RenameFileResponse renameFile(@RequestBody RenameFileRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RenameFileResponse toret = new RenameFileResponse();
 		DBManager.renameNode(request.getElementId(), request.getRenameString());
@@ -115,7 +115,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/copyFileTo")
 	public CopyFileToResponse copyFileTo(@RequestBody CopyFileToRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		CopyFileToResponse toret = new CopyFileToResponse();
 		FileInfo finfo = DBManager.copyNode(request.getElementId(), request.getTargetId());
@@ -126,7 +126,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/moveFileTo")
 	public MoveFileToResponse moveFileTo(@RequestBody MoveFileToRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		MoveFileToResponse toret = new MoveFileToResponse();
 		DBManager.moveNode(request.getElementId(), request.getTargetId());
@@ -136,7 +136,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/updateMetadata")
 	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UpdateMetadataResponse toret = new UpdateMetadataResponse();
 		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
@@ -146,7 +146,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/deleteMetadata")
 	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		DeleteMetadataResponse toret = new DeleteMetadataResponse();
 		DBManager.deleteNodeMetadata(request.getElementId());
@@ -161,7 +161,7 @@ public class CRUDController {
 	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
 										 @RequestParam("element-id") Integer elementID,
 										 @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
-		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
@@ -174,7 +174,7 @@ public class CRUDController {
 
 	@PostMapping("/api/crud/createFile")
 	public UploadFileResponse createFile(@RequestBody CreateFileRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = new ByteArrayInputStream("".getBytes("UtF-8"));
@@ -186,9 +186,9 @@ public class CRUDController {
 	}
 
 
-	@PostMapping("/api/crud/downloadFile")
+	@PostMapping("/api/public/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		// TODO: Return File!!
 		/* FileInfo node = */ DBManager.getNodeById(request.getElementId());

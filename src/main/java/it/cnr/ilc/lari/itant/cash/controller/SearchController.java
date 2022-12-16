@@ -25,9 +25,9 @@ import uk.co.jemos.podam.api.PodamFactoryImpl;
 public class SearchController {
 	private static final Logger log = LoggerFactory.getLogger(SearchController.class);
 
-	@PostMapping("/api/searchFiles")
+	@PostMapping("/api/public/searchFiles")
 	public SearchFilesResponse searchFiles(@RequestBody SearchFilesRequest request, Principal principal) {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		PodamFactory factory = new PodamFactoryImpl();
 		SearchFilesResponse toret = factory.manufacturePojo(SearchFilesResponse.class);
@@ -36,9 +36,9 @@ public class SearchController {
 		return toret;
 	}
 
-	@PostMapping("/api/testSearch")
+	@PostMapping("/api/public/testSearch")
 	public TestSearchResponse testSearch(@RequestParam String query, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName());
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		TestSearchResponse res = new TestSearchResponse();
 

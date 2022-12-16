@@ -27,9 +27,9 @@ public class BootstrapController {
 		return "pong";
 	}
 
-	@GetMapping("/api/getDocumentSystem")
+	@GetMapping("/api/public/getDocumentSystem")
 	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, Principal principal) {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
@@ -45,7 +45,7 @@ public class BootstrapController {
 
 	@GetMapping("/api/getUsers")
 	public GetUsersResponse getUsers(@RequestParam String requestUUID, Principal principal) {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
 		PodamFactory factory = new PodamFactoryImpl();
 		GetUsersResponse toret = factory.manufacturePojo(GetUsersResponse.class);

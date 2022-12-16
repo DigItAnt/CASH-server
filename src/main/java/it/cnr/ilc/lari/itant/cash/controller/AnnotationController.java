@@ -33,9 +33,9 @@ import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 public class AnnotationController {
     private static final Logger log = LoggerFactory.getLogger(AnnotationController.class);
 
-    @GetMapping(value="/api/v1/gettext")
+    @GetMapping(value="/api/public/gettext")
     public GetTextResponse getText(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
         
         GetTextResponse resp = new GetTextResponse();
         resp.setRequestUUID(requestUUID);
@@ -43,9 +43,9 @@ public class AnnotationController {
         return resp;
     }
 
-    @GetMapping(value="/api/v1/getcontent")
+    @GetMapping(value="/api/public/getcontent")
     public GetRawContent getContent(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         GetRawContent resp = new GetRawContent();
         resp.setRequestUUID(requestUUID);
@@ -53,9 +53,9 @@ public class AnnotationController {
         return resp;
     }
 
-    @GetMapping(value="/api/v1/annotation")
+    @GetMapping(value="/api/public/annotation")
     public GetAnnotationsResponse getAnnotations(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         GetAnnotationsResponse resp = new GetAnnotationsResponse();
         resp.setRequestUUID(requestUUID);
@@ -63,9 +63,9 @@ public class AnnotationController {
         return resp;
     }
 
-    @GetMapping(value="/api/v1/token")
+    @GetMapping(value="/api/public/token")
     public GetTokensResponse getTokens(@RequestParam String requestUUID, @RequestParam long nodeid, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         GetTokensResponse resp = new GetTokensResponse();
         resp.setRequestUUID(requestUUID);
@@ -73,9 +73,9 @@ public class AnnotationController {
         return resp;
     }
 
-    @PostMapping(value="/api/v1/token")
+    @PostMapping(value="/api/token")
     public CreateTokenResponse createToken(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Token token, Principal principal) throws Exception {
-		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         CreateTokenResponse resp = new CreateTokenResponse();
         token.setID(-1);
@@ -89,9 +89,9 @@ public class AnnotationController {
         return resp;
     }
 
-    @PostMapping(value="/api/v1/annotation")
+    @PostMapping(value="/api/annotation")
     public CreateAnnotationResponse createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         CreateAnnotationResponse resp = new CreateAnnotationResponse();
         annotation.setID(-1);
@@ -101,15 +101,15 @@ public class AnnotationController {
         return resp;
     }
 
-    @DeleteMapping(value="/api/v1/annotate")
+    @DeleteMapping(value="/api/annotate")
     public void deleteAnnotation(@RequestParam String requestUUID, @RequestParam long annotationID, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID, "delete annotation " + annotationID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID, "delete annotation " + annotationID);
         DBManager.deleteAnnotation(annotationID);
     }
 
-    @PutMapping(value="/api/v1/annotation")
+    @PutMapping(value="/api/annotation")
     public ModifyAnnotationResponse modifyAnnotation(@RequestParam String requestUUID, @RequestBody Annotation annotation, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
         ModifyAnnotationResponse resp = new ModifyAnnotationResponse();
 
@@ -122,17 +122,17 @@ public class AnnotationController {
         return resp;
     }
 
-    @DeleteMapping(value="/api/v1/annotationbyvalue")
+    @DeleteMapping(value="/api/annotationbyvalue")
     public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value, Principal principal) throws Exception {
-		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID, "delete annotation by value " + value);
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID, "delete annotation by value " + value);
 
         DBManager.deleteAnnotationByValue(value);
     }
 
 
-    @PostMapping(value="/api/v1/unstructured")
+    @PostMapping(value="/api/unstructured")
     public UnstructuredResponse addUnastructured(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody UnstructuredRequest request, Principal principal) throws Exception {
-        if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, principal.getName(), requestUUID, "unstructured annotation for " + nodeid);
+        if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID, "unstructured annotation for " + nodeid);
         UnstructuredResponse resp = new UnstructuredResponse();
         resp.setUnstructuredids(new HashMap<String, Long>());
 
