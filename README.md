@@ -14,6 +14,8 @@ cd model
 mysql> create database cash;
 Query OK, 1 row affected (0,01 sec)
 
+mysql> use cash;
+
 mysql> source schema.sql;
 
 mysql> CREATE USER 'cash'@'localhost' IDENTIFIED BY 'cash';
