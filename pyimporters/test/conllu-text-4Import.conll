@@ -1,0 +1,102 @@
+# sent_id = ParlaMint-IT_2013-03-16-LEG17-Sed-2.seg1.3
+# text = SPILABOTTE, segretario provvisorio, dà lettura del processo verbale della seduta del giorno precedente.
+1	SPILABOTTE	SPILABOTTE	PROPN	SP	_	6	nsubj	_	NER=O|SpaceAfter=No
+2	,	,	PUNCT	FF	_	1	punct	_	NER=O
+3	segretario	segretario	NOUN	S	Gender=Masc|Number=Sing	1	appos	_	NER=O
+4	provvisorio	provvisorio	ADJ	A	Gender=Masc|Number=Sing	3	amod	_	NER=O|SpaceAfter=No
+5	,	,	PUNCT	FF	_	1	punct	_	NER=O
+6	dà	dà	VERB	V	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	0	root	_	NER=O
+7	lettura	lettura	NOUN	S	Gender=Fem|Number=Sing	6	obj	_	NER=O
+8-9	del	_	_	_	_	_	_	_	NER=O
+8	di	di	ADP	E	_	10	case	_	_
+9	il	il	DET	RD	Definite=Def|Gender=Masc|Number=Sing|PronType=Art	10	det	_	_
+10	processo	processo	NOUN	S	Gender=Masc|Number=Sing	7	nmod	_	NER=O
+11	verbale	verbale	ADJ	A	Number=Sing	10	amod	_	NER=O
+12-13	della	_	_	_	_	_	_	_	NER=O
+12	di	di	ADP	E	_	14	case	_	_
+13	la	il	DET	RD	Definite=Def|Gender=Fem|Number=Sing|PronType=Art	14	det	_	_
+14	seduta	seduta	NOUN	S	Gender=Fem|Number=Sing	10	nmod	_	NER=O
+15-16	del	_	_	_	_	_	_	_	NER=O
+15	di	di	ADP	E	_	17	case	_	_
+16	il	il	DET	RD	Definite=Def|Gender=Masc|Number=Sing|PronType=Art	17	det	_	_
+17	giorno	giorno	NOUN	S	Gender=Masc|Number=Sing	14	nmod	_	NER=O
+18	precedente	precedente	ADJ	A	Gender=Masc|Number=Sing	17	amod	_	NER=O|SpaceAfter=No
+19	.	.	PUNCT	FS	_	6	punct	_	NER=O
+
+# sent_id = ParlaMint-IT_2013-03-16-LEG17-Sed-2.seg1.5
+# text = Non essendovi osservazioni, il processo verbale è approvato.
+1	Non	non	ADV	BN	PronType=Neg	4	advmod	_	NER=O
+2-3	essendovi	_	_	_	_	_	_	_	NER=O
+2	essendo	essere	AUX	V	VerbForm=Ger	4	cop	_	_
+3	vi	voi	PRON	PC	Clitic=Yes|Number=Plur|Person=2|PronType=Prs	4	expl	_	_
+4	osservazioni	osservazione	NOUN	S	Gender=Fem|Number=Plur	10	advcl	_	NER=O|SpaceAfter=No
+5	,	,	PUNCT	FF	_	4	punct	_	NER=O
+6	il	il	DET	RD	Definite=Def|Gender=Masc|Number=Sing|PronType=Art	7	det	_	NER=O
+7	processo	processo	NOUN	S	Gender=Masc|Number=Sing	10	nsubj:pass	_	NER=O
+8	verbale	verbale	ADJ	A	Number=Sing	7	amod	_	NER=O
+9	è	essere	AUX	VA	Mood=Ind|Number=Sing|Person=3|Tense=Pres|VerbForm=Fin	10	aux:pass	_	NER=O
+10	approvato	approvare	VERB	V	Gender=Masc|Number=Sing|Tense=Past|VerbForm=Part	0	root	_	NER=O|SpaceAfter=No
+11	.	.	PUNCT	FS	_	10	punct	_	NER=O
+
+# text = L' Unione europea , quindi , non dovrebbe assumersi compiti che risultino più adatti alle amministrazioni nazionali , regionali o locali .
+# language = IT
+# sent_id = elexis.wsd.16.it.124757
+# user = username.18
+1	L'	il	DET	_	_	_	_	_	_	[notContent=true;]
+2	Unione	Unione	NOUN	_	_	_	_	_	_	[synsets={BABELNET=bn:00002740n}]
+3	europea	Europea	PROPN	_	_	_	_	_	_	[notFound=true;]
+4	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+5	quindi	quindi	ADV	_	_	_	_	_	_	[synsets={BABELNET=bn:00115635r}]
+6	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+7	non	non	ADV	_	_	_	_	_	_	[synsets={PSC=lexli:d1hF9cqFemkCDUX05iPbZ72Kfx33BiSMyfCdzb1F3R8cp92IMyaQInXqRf}]
+8	dovrebbe	dovere	AUX	_	_	_	_	_	_	[notContent=true;]
+9-10	assumersi	_	_	_	_	_	_	_	_	_
+9	assumere	assumere	VERB	_	_	_	_	_	_	_
+10	si	si	PRON	_	_	_	_	_	_	[notContent=true;]
+11	compiti	compito	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7431@sense2165}]
+12	che	che	PRON	_	_	_	_	_	_	[notContent=true;]
+13	risultino	risultare	VERB	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7c1f@sense8855}]
+14	più	più	ADV	_	_	_	_	_	_	[synsets={PSC=lexli:CxyrFfR543c2508Sg2YNA4yjt6CgOI0oFC0Bnqvao6cCTexvvnm9MJyQwx}]
+15	adatti	adatto	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e71d6@sense190}]
+16-17	alle	_	_	_	_	_	_	_	_	_
+16	a	a	ADP	_	_	_	_	_	_	[notContent=true;]
+17	il	il	DET	_	_	_	_	_	_	[notContent=true;]
+18	amministrazioni	amministrazione	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e722f@sense456}]
+19	nazionali	nazionale	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7974@sense6446}]
+20	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+21	regionali	regionale	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7b98@sense8302}]
+22	o	o	CCONJ	_	_	_	_	_	_	[notContent=true;]
+23	locali	locale	ADJ	_	_	_	_	_	_	[synsets={PSC=lexli:1kXWscTmi2KFqDCXYR31NgIMWCLDexHjUc5GyjGxDtErSlZgg1qnqfJKmg}]
+24	.	.	PUNCT	_	_	_	_	_	_	[notContent=true;]
+
+# text = In questo giorno si sono svolte partite amichevoli , flash mob , maratone radio , masterclass , trasmissioni televisive , sessioni aperte di allenamento , ecc.
+# language = IT
+# sent_id = 19.it.124760
+# user = username.18
+# multiword_expression	10-11	flash mob	flash_mob	NOUN	_	_	_	_	_	_	synsets={BABELNET=bn:02241092n}
+1	In	in	ADP	_	_	_	_	_	_	[notContent=true;]
+2	questo	questo	ADJ	_	_	_	_	_	_	[synsets={PSC=lexli:mazSOPD3KMhkTcXeTbor4rLYQYTREu8PeuHtkvVpuhb5WYzhZAZW3Mxbx6}]
+3	giorno	giorno	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7736@sense4608}]
+4	si	si	PRON	_	_	_	_	_	_	[notContent=true;]
+5	sono	essere	AUX	_	_	_	_	_	_	[notContent=true;]
+6	svolte	svolgere	VERB	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7db3@sense10256}]
+7	partite	partita	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7a34@sense7033}]
+8	amichevoli	amichevole	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e722a@sense441}]
+9	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+10	flash	flash	NOUN	_	_	_	_	_	_	_
+11	mob	mob	NOUN	_	_	_	_	_	_	_
+12	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+13	maratone	maratona	NOUN	_	_	_	_	_	_	[synsets={PSC=lexli:ZpNapS7tqJlhj6KmY9TYYJJcetEriiFpeP4cuBKTkRIGaGKpCrdDJoOWyS}]
+14	radio	radio	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7b6b@sense8138}]
+15	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+16	masterclass	masterclass	NOUN	_	_	_	_	_	_	[synsets={PSC=lexli:HZYMxb2qqL0yTjBV8R7p2SAc9neXadJ8Gr1tfWLvIDjpTWCrk4Twa2wG8u}]
+17	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+18	trasmissioni	trasmissione	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7e25@sense10663}]
+19	televisive	televisivo	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7dc9@sense10330}]
+20	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+21	sessioni	sessione	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7cca@sense9501}]
+22	aperte	aperto	ADJ	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e725c@sense599}]
+23	di	di	ADP	_	_	_	_	_	_	[notContent=true;]
+24	allenamento	allenamento	NOUN	_	_	_	_	_	_	[synsets={PSC=605dcdd8fdc24c34346e7213@sense373}]
+25	,	,	PUNCT	_	_	_	_	_	_	[notContent=true;]
+26	ecc.	eccetera	ADV	_	_	_	_	_	_	[notContent=true;]
