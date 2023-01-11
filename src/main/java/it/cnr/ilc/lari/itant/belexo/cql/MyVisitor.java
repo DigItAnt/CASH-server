@@ -6,21 +6,27 @@ import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsContext;
 
 // https://www.mvndoc.com/c/com.evolvedbinary.cql/corpusql-parser/index.html?overview-tree.html
 
-public class MyVisitor extends CorpusQLBaseVisitor<String> {
-    public String res = "";
+public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
+    GenStatus status = new GenStatus();
 
     @Override
-    public String visitAnd(AndContext ctx) {
+    public GenStatus visitAnd(AndContext ctx) {
         System.out.println(" --AND " + ctx.getText());
-        res += " E ";
-        return " E ";
+        return status;
     }
 
     @Override
-    public String visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
+    public GenStatus visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
         System.out.println(" -- value " + ctx.propName().getText() + " " + ctx.valuePart().getText());
-        res += ctx.propName().getText() + " UGUALE A " + ctx.valuePart().getText();
-        return ctx.propName().getText() + " UGUALE A " + ctx.valuePart().getText();
+        if (ctx.propName().getText().equals("word"))
+            status.setWordValuePairEquals(ctx.valuePart().getText());
+        else
+            status.setAttValuePairEquals(ctx.propName().getText(), ctx.valuePart().getText());
+        return status;
+    }
+
+    public GenStatus getStatus() {
+        return status;
     }
 
 }

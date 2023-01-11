@@ -118,6 +118,10 @@ public class DBManager {
 
     }
 
+    public static Connection getConnection() {
+        return connection;
+    }
+
     private synchronized static long insertFileInfo(FileInfo f) throws Exception {
         connection.setAutoCommit(false);
         long ret = 0;
@@ -881,6 +885,19 @@ public class DBManager {
             ret.add(rs.getLong("n.id"));
         return ret;
     }
+
+
+    public static List<Long> findNodesBySQLQuery(PreparedStatement stmt) throws Exception {
+        log.info("Search query: " + stmt.toString());
+        ResultSet rs = stmt.executeQuery();
+        ArrayList<Long> ret = new ArrayList<Long>();
+        while ( rs.next() )
+            ret.add(rs.getLong("node.id"));
+        // print len of ret
+        log.info("Found " + ret.size() + " nodes");
+        return ret;
+    }
+
 
     // @TODO: there are missing columns here
     protected static Annotation getAnnotationById(Connection connection, long annId) throws Exception {
