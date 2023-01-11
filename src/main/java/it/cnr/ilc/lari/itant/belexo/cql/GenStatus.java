@@ -15,9 +15,7 @@ public class GenStatus {
 
     public GenStatus() {
         fromList.add("fsnodes as node");
-        fromList.add("tokens as tok");
-      
-        whereList.add("tok.node = node.id");
+        fromList.add("LEFT JOIN tokens as tok ON tok.node = node.id");
     }
 
     private String clearString(String value) {
@@ -33,12 +31,9 @@ public class GenStatus {
     public void setAttValuePairEquals(String att, String value) {
         annotCounter++;
         String annot = "ann" + annotCounter;
-        fromList.add("annotations as " + annot);
+        fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
 
-        whereList.add(annot + ".node = node.id");
-        whereList.add("TokenMatch(" + annot + ".id, tok.id)");
-        whereList.add(annot + ".layer = ?");
-        whereList.add(annot + ".value = ?");
+        whereList.add("( TokenMatch(" + annot + ".id, tok.id) AND " + annot + ".layer = ? AND " + annot + ".value = ? )");
 
         paramList.add(att);
         paramList.add(clearString(value));
@@ -48,7 +43,7 @@ public class GenStatus {
     public PreparedStatement gen() throws Exception {
         String query = "SELECT node.id ";
         // add FROM concatenating fromList with comma
-        query += "\nFROM " + String.join(",\n  ", fromList);
+        query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND
         query += "\nWHERE " + String.join(" AND\n  ", whereList);
 
