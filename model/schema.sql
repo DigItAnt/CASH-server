@@ -355,8 +355,8 @@ CREATE FUNCTION `TokenMatch`(
 DETERMINISTIC
 BEGIN
 	DECLARE ret INT;
-	SET ret = 0;
-	SELECT count(a.id) INTO ret FROM `ann_spans`as a, `tokens` as t, `annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND a.`begin`<=t.`begin` AND a.`end`>=t.`end` LIMIT 1;
+	SET ret = 0; 
+	SELECT count(a.id) INTO ret FROM `ann_spans`as a, `tokens` as t, `annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND (t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND ((a.`begin`<=t.`begin` AND t.`begin`<=t.`end`) OR (a.`begin`<=t.`end` AND t.`end`<=a.`end`) OR (t.`begin`<=a.`begin` AND a.`begin`<=t.`end`) OR (t.`begin`<=a.`end` AND a.`end`<=t.`end`))) LIMIT 1;
 
 	RETURN ret;
 END$$

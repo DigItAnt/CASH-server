@@ -38,7 +38,6 @@ DETERMINISTIC
 BEGIN
 	DECLARE ret INT;
 	SET ret = 0;
-	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a, `belexo`.`tokens` as t, `belexo`.`annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND a.`begin`<=t.`begin` AND a.`end`>=t.`end` LIMIT 1;
-
-	RETURN ret;
+	SELECT count(a.id) INTO ret FROM `belexo`.`ann_spans`as a, `belexo`.`tokens` as t, `belexo`.`annotations` as ann WHERE (t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND ((a.`begin`<=t.`begin` AND t.`begin`<=t.`end`) OR ((a.`begin`<=t.`end`) AND (t.`end`<=a.`end`)) OR ((t.`begin`<=a.`begin`) AND (a.`begin`<=t.`end`)) OR ((t.`begin`<=a.`end`) AND (a.`end`<=t.`end`)))) LIMIT 1;
+    RETURN ret;
 END;;
