@@ -7,7 +7,7 @@ CASH provides a set of services for the management of documents, creating a file
 
 ## GETTING STARTED
 
-Create and initialise the cash db:
+Create and initialise the cash db as the db superuser:
 
 ```
 cd model
