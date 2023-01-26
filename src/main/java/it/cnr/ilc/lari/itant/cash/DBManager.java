@@ -973,7 +973,7 @@ public class DBManager {
     }
 
     public static String getNodeText(long nodeId, String type) throws Exception {
-        String sstmt = (type != null)?"SELECT text FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT text FROM structured WHERE node=? LIMIT 1";
+        String sstmt = (type != null)?"SELECT text FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT text FROM unstructured WHERE node=? LIMIT 1";
         PreparedStatement stmt = connection.prepareStatement(sstmt);
         stmt.setLong(1, nodeId);
         if ( type != null ) stmt.setString(2, type);
@@ -984,7 +984,7 @@ public class DBManager {
     }
 
     public static Long getNodeTextId(long nodeId, String type) throws Exception {
-        String sstmt = (type != null)?"SELECT id FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT id FROM structured WHERE node=? LIMIT 1";
+        String sstmt = (type != null)?"SELECT id FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT id FROM unstructured WHERE node=? LIMIT 1";
         PreparedStatement stmt = connection.prepareStatement(sstmt);
         stmt.setLong(1, nodeId);
         if ( type != null ) stmt.setString(2, type);
