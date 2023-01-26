@@ -198,7 +198,7 @@ def parse_conllu_file(filename):
 def feat2str(feat):
     if not feat:
         return ""
-    return "|".join([k + "=" + v for k, v in feat.items()])
+    return "|".join([k + "=" + (v or "") for k, v in feat.items()])
 
 def insert(filename, destination=0, kc_token="", url="", fields=None, sentence_layer="sentences",
            verbose=False, test=False):
