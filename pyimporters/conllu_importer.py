@@ -14,8 +14,8 @@ def print_log(*args, **kwargs):
 def get_token(kc, username, password):
     data = {
         'client_id': 'princlient',
-        'username': 'test',
-        'password': 'testtest',
+        'username': username,
+        'password': password,
         'grant_type': 'password',
     }
 
@@ -68,10 +68,10 @@ def create_file(filename, content, text, destination=0, token="", url=""):
         'conllu': text,
       } 
     }
-    response = requests.post(f'{url}api/v1/unstructured', params=params, headers=headers, json=data, verify=False)
+    response = requests.post(f'{url}api/unstructured', params=params, headers=headers, json=data, verify=False)
     if response.status_code != 200:
-        print_log(Style.RED  + "Error uploading text:" + Style.RESET_ALL,
-                  response.text, Style.RED + "remove node" + Style.RESET_ALL, elid)
+        print_log(Fore.RED  + "Error uploading text:" + Style.RESET_ALL,
+                  response.text, Fore.RED + "remove node" + Style.RESET_ALL, elid)
         sys.exit(response.status_code)
     print_log(Fore.GREEN + "File created,", len(content),
               "bytes, id:" + Style.RESET_ALL, elid)
@@ -101,7 +101,7 @@ def create_token(docid, token_text, tid, position, span_from, span_to, token="",
         'imported': True
     }
     
-    response = requests.post(f'{url}api/v1/token', params=params, headers=headers, json=data, verify=False)
+    response = requests.post(f'{url}api/token', params=params, headers=headers, json=data, verify=False)
     if response.status_code != 200:
         print_log(Fore.RED + "Error creating token:" + Style.RESET_ALL,
                   response.text)
@@ -129,8 +129,8 @@ def create_annotation(docid, span_from, span_to, layer, value, attributes={}, to
         'attributes': attributes,
         'spans': [ {'start': span_from, 'end': span_to} ]
     }
-    
-    response = requests.post(f'{url}api/v1/annotation', params=params, headers=headers, json=data, verify=False)
+
+    response = requests.post(f'{url}api/annotation', params=params, headers=headers, json=data, verify=False)
     #print_log(data)
     #print_log(response.json())
     if response.status_code != 200:
@@ -230,7 +230,9 @@ def insert(filename, destination=0, kc_token="", url="", fields=None, sentence_l
             ann_cnt = 0
             for coli, col in enumerate(['form', 'lemma', 'upos', 'xpos',
                                         'feats', 'head', 'deprel', 'deps', 'misc']):
-                if col == 'form': # insert the token
+                if col == 'deps':
+                    continue
+                elif col == 'form': # insert the token
                     print_log(Fore.GREEN + "Inserting token:" + Style.RESET_ALL,
                               token['id'], token[col] + Fore.GREEN + "@" +
                               str(span_from) + ":" + str(span_to), end = '')
