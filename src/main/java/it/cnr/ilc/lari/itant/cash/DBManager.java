@@ -784,7 +784,9 @@ public class DBManager {
             log.info("MYID: " + nid);
             ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
             String text = extractor.read(bais).extract(); // must read the bytes here...
-            long srcTxt = insertTextEntry(nid, text, extractor.getTextType());
+            long srcTxt = 0;
+            if (!text.equals(""))
+                srcTxt = insertTextEntry(nid, text, extractor.getTextType());
             log.info("Added text");
             int ti = 1;
             for (TokenInfo token: extractor.tokens() ) { // adds tokens
