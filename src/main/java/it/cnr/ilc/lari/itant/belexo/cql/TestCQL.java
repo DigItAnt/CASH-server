@@ -27,8 +27,9 @@ public class TestCQL {
         DBManager.init();
 
         String q = "[lemma=\"FAV.*\"] [ ]{2,4} [pos=\"POOO.*\"]"; // args[0]
-        q = "[word=\".\" & pos='asd' | pos=\"www\"]";
-        q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
+        q = "[word=\".\" & (pos='asd' | pos=\"www\" ) ]";
+        q = "[(word=\".\" & pos='asd') | pos=\"www\" ]";
+        //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);

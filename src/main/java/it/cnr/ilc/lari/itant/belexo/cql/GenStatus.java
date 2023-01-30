@@ -40,12 +40,17 @@ public class GenStatus {
         
     }
 
+    public void setOperator(String operator) {
+        whereList.add(operator);
+    }
+
     public PreparedStatement gen() throws Exception {
         String query = "SELECT DISTINCT node.id ";
         // add FROM concatenating fromList with comma
         query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND
-        query += "\nWHERE " + String.join(" AND\n  ", whereList);
+        //query += "\nWHERE " + String.join(" AND\n  ", whereList);
+        query += "\nWHERE " + String.join(" \n  ", whereList);
 
         PreparedStatement stmt = DBManager.getConnection().prepareStatement(query);
 
