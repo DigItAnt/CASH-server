@@ -36,3 +36,5 @@ build/
 backendLexO-textAnnotations.jar
 NOTE_KC
 *~
+pyimporters/__pycache__/conllu.cpython-310.pyc
+runlocal.sh
