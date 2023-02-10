@@ -163,10 +163,8 @@ public class DBManager {
             }
 
             // copy tokens
-            for ( Token t: getNodeTokens(f.getElementId()) ) {
-                insertTokenNode(ret, srcTxt, t.getText(), t.getPosition(),
-                                t.getBegin(), t.getEnd(), t.getXmlid(), t.isImported());
-            }
+            insertNodeTokens(ret, srcTxt, getNodeTokens(f.getElementId()));
+
             // copy metadata
             updateNodeMetadata(ret, f.getMetadata());
         } catch ( Exception e ) {
@@ -731,6 +729,75 @@ public class DBManager {
         return rs.next()?rs.getLong(1):0;
     }
 
+    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<Token> tokens) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
+        // TODO: probably requires adding token type to the DB!
+        long howMany = tokens.size();
+        log.info("inserting " + howMany + " tokens");
+        for ( Token token : tokens ) {          
+            stmt.setString(1, token.getText());
+            stmt.setLong(2, nodeId);
+            stmt.setLong(3, srcTxt);
+            stmt.setInt(4, token.getPosition());
+            stmt.setInt(5, token.getBegin());
+            stmt.setInt(6, token.getEnd());
+            if ( token.getXmlid() != null ) stmt.setString(7, token.getXmlid());
+            else stmt.setNull(7, Types.VARCHAR);
+            stmt.setBoolean(8, token.isImported());
+            stmt.addBatch();
+            howMany--;
+            if ( howMany % 1000 == 0 ) {
+                log.info("" + howMany + " tokens to go");
+            }
+        }
+
+        log.info("executing batch insert");
+        stmt.executeBatch();
+        log.info("done");
+        ResultSet rs = stmt.getGeneratedKeys();
+        List<Long> ret = new ArrayList<Long>();
+        while ( rs.next() ) {
+            ret.add(rs.getLong(1));
+        }
+        return ret;
+    }
+
+    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<TokenInfo> tokens, int firstPosition) throws Exception {
+        PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
+                                                             Statement.RETURN_GENERATED_KEYS);
+        // TODO: probably requires adding token type to the DB!
+        int ti = firstPosition;
+        long howMany = tokens.size();
+        log.info("inserting " + howMany + " tokens");
+        for ( TokenInfo token : tokens ) {          
+            stmt.setString(1, token.text);
+            stmt.setLong(2, nodeId);
+            stmt.setLong(3, srcTxt);
+            stmt.setInt(4, ti++);
+            stmt.setInt(5, token.begin);
+            stmt.setInt(6, token.end);
+            if ( token.xmlid != null ) stmt.setString(7, token.xmlid);
+            else stmt.setNull(7, Types.VARCHAR);
+            stmt.setBoolean(8, token.imported);
+            stmt.addBatch();
+            howMany--;
+            if ( howMany % 1000 == 0 ) {
+                log.info("" + howMany + " tokens to go");
+            }
+        }
+
+        log.info("executing batch insert");
+        stmt.executeBatch();
+        log.info("done");
+        ResultSet rs = stmt.getGeneratedKeys();
+        List<Long> ret = new ArrayList<Long>();
+        while ( rs.next() ) {
+            ret.add(rs.getLong(1));
+        }
+        return ret;
+    }
+
     public static long insertTokenNode(long nodeId, long srcTxt,
                                        String token, int position, int begin, int end,
                                        String xmlid, boolean imported) throws Exception {
@@ -789,12 +856,8 @@ public class DBManager {
                 srcTxt = insertTextEntry(nid, text, extractor.getTextType());
             log.info("Added text");
             int ti = 1;
-            for (TokenInfo token: extractor.tokens() ) { // adds tokens
-                // if ( token.tokenType != TokenType.WORD ) continue; // NO: keep punct as tokens...
-                // TODO: probably requires adding token type to the DB!
-                long tid = insertTokenNode(nid, srcTxt, token.text, ti++, token.begin, token.end, token.xmlid, token.imported);
-                log.info("Added token node " + tid);
-            }
+            List<Long> tokenIds = insertNodeTokens(nid, srcTxt, extractor.tokens(), ti);
+            log.info("Added " + tokenIds.size() + " token nodes");
             for (Annotation ann: extractor.annotations()) { // adds annotations
                 long aid = insertAnnotationInternal(nid, ann);
                 ann.setID(aid);
