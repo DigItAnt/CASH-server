@@ -11,7 +11,8 @@ KEY_PFIX = "conllu_"
 def print_log(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-def get_token(kc, username, password):
+def get_token(kc, username, password, noauth = False):
+    if noauth: return "noauth"
     data = {
         'client_id': 'princlient',
         'username': username,
@@ -289,7 +290,8 @@ if __name__ == "__main__":
                            help="CASH URL")
     argparser.add_argument("-k", "--keycloak-url",
                            default="https://lari2.ilc.cnr.it/auth/realms/princnr/protocol/openid-connect/token",
-                           help="CASH URL")
+                           help="KEYCLOACK URL")
+    argparser.add_argument("--noauth", action="store_true", help="do not authenticate", default=False)
     argparser.add_argument("-v", "--verbose", help="Verbose mode (log more)", action="store_true", default=False)
     argparser.add_argument("--dry", help="Dry run, do not insert", action="store_true", default=False)
     args = argparser.parse_args()
@@ -303,7 +305,7 @@ if __name__ == "__main__":
             sys.exit(1)
 
     try:
-        token = get_token(args.keycloak_url, args.username, args.password)
+        token = get_token(args.keycloak_url, args.username, args.password, noauth=args.noauth)
     except Exception as e:
         print_log(Fore.RED + "Error while getting OAuth token:", str(e) + Style.RESET_ALL)
         sys.exit(1)

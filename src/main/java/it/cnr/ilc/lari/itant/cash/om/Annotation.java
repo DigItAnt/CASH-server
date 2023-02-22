@@ -76,7 +76,7 @@ public class Annotation {
         if ( attributes == null ) {
             // populate it!
             try {
-                this.attributes = DBManager.getAnnotationAttributes(this.ID);
+                this.attributes = DBManager.getAnnotationAttributes(this.ID, null);
             } catch (Exception e) {
                 log.error("Could not fetch attributes for annotation " + this.ID, e);
             }
@@ -101,7 +101,7 @@ public class Annotation {
         if ( spans == null ) {
             // populate it!
             try {
-                this.spans = DBManager.getAnnotationSpans(this.ID);
+                this.spans = DBManager.getAnnotationSpans(this.ID, null);
             } catch (Exception e) {
                 log.error("Could not fetch spans for annotation " + this.ID, e);
             }

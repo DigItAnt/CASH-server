@@ -52,7 +52,7 @@ public class GenStatus {
         //query += "\nWHERE " + String.join(" AND\n  ", whereList);
         query += "\nWHERE " + String.join(" \n  ", whereList);
 
-        PreparedStatement stmt = DBManager.getConnection().prepareStatement(query);
+        PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 
         int i = 1;
         for ( String param: paramList ) {

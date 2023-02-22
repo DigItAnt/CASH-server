@@ -78,6 +78,7 @@ public class SearchController {
 		TestSearchResponse res = new TestSearchResponse();
 
 		List<Long> ids = DBManager.findNodesBySQLQuery(stmt);
+		stmt.getConnection().close();
 		ArrayList<String> paths = new ArrayList<>();
 		for ( Long nid: ids ) {
 			paths.add(DBManager.getNodePath(nid));

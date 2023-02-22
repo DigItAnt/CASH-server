@@ -39,7 +39,7 @@ public class AnnotationController {
         
         GetTextResponse resp = new GetTextResponse();
         resp.setRequestUUID(requestUUID);
-        resp.setText(DBManager.getNodeText(nodeid));
+        resp.setText(DBManager.getNodeText(nodeid, null));
         return resp;
     }
 
@@ -49,7 +49,7 @@ public class AnnotationController {
 
         GetRawContent resp = new GetRawContent();
         resp.setRequestUUID(requestUUID);
-        resp.setText(DBManager.getRawContent(nodeid));
+        resp.setText(DBManager.getRawContent(nodeid, null));
         return resp;
     }
 
@@ -59,7 +59,7 @@ public class AnnotationController {
 
         GetAnnotationsResponse resp = new GetAnnotationsResponse();
         resp.setRequestUUID(requestUUID);
-        resp.setAnnotations(DBManager.getNodeAnnotations(nodeid));
+        resp.setAnnotations(DBManager.getNodeAnnotations(nodeid, null));
         return resp;
     }
 
@@ -69,7 +69,7 @@ public class AnnotationController {
 
         GetTokensResponse resp = new GetTokensResponse();
         resp.setRequestUUID(requestUUID);
-        resp.setTokens(DBManager.getNodeTokens(nodeid));
+        resp.setTokens(DBManager.getNodeTokens(nodeid, null));
         return resp;
     }
 
@@ -81,9 +81,9 @@ public class AnnotationController {
         token.setID(-1);
 
         resp.setRequestUUID(requestUUID);
-        Long srcid = DBManager.getNodeTextId(nodeid, token.getSource());
+        Long srcid = DBManager.getNodeTextId(nodeid, token.getSource(), null);
         long id = DBManager.insertTokenNode(nodeid, srcid, token.getText(), token.getPosition(), token.getBegin(),
-                                            token.getEnd(), token.getXmlid(), token.isImported());
+                                            token.getEnd(), token.getXmlid(), token.isImported(), null);
         token.setID(id);
         resp.setToken(token);
         return resp;
@@ -104,7 +104,7 @@ public class AnnotationController {
     @DeleteMapping(value="/api/annotate")
     public void deleteAnnotation(@RequestParam String requestUUID, @RequestParam long annotationID, Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID, "delete annotation " + annotationID);
-        DBManager.deleteAnnotation(annotationID);
+        DBManager.deleteAnnotation(annotationID, null);
     }
 
     @PutMapping(value="/api/annotation")
@@ -113,8 +113,8 @@ public class AnnotationController {
 
         ModifyAnnotationResponse resp = new ModifyAnnotationResponse();
 
-        long nid = DBManager.getAnnotationNodeId(annotation.getID());
-        DBManager.deleteAnnotation(annotation.getID());
+        long nid = DBManager.getAnnotationNodeId(annotation.getID(), null);
+        DBManager.deleteAnnotation(annotation.getID(), null);
         DBManager.addAnnotation(nid, annotation);
 
         resp.setRequestUUID(requestUUID);
@@ -126,7 +126,7 @@ public class AnnotationController {
     public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value, Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID, "delete annotation by value " + value);
 
-        DBManager.deleteAnnotationByValue(value);
+        DBManager.deleteAnnotationByValue(value, null);
     }
 
 
@@ -138,7 +138,7 @@ public class AnnotationController {
 
         for ( String type : request.getUnstructured().keySet() ) {
             String value = request.getUnstructured().get(type);
-            long id = DBManager.insertTextEntry(nodeid, value, type);
+            long id = DBManager.insertTextEntry(nodeid, value, type, null);
             resp.getUnstructuredids().put(type, id);
         }
         
