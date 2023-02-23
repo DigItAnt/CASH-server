@@ -15,7 +15,7 @@ public class GenStatus {
 
     public GenStatus() {
         fromList.add("fsnodes as node");
-        fromList.add("LEFT JOIN tokens as tok ON tok.node = node.id");
+        fromList.add("LEFT JOIN tokens as tok1 ON tok1.node = node.id");
     }
 
     private String clearString(String value) {
@@ -24,16 +24,20 @@ public class GenStatus {
     }
 
     public void setWordValuePairEquals(String value) {
-        whereList.add("tok.text = ?");
+        whereList.add("tok1.text = ?");
         paramList.add(clearString(value));
     }
 
     public void setAttValuePairEquals(String att, String value) {
         annotCounter++;
         String annot = "ann" + annotCounter;
+        String span = "a" + annotCounter;
         fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
+        fromList.add("JOIN ann_spans as " + span + " ON " + span + ".ann = " + annot + ".id");
 
-        whereList.add("( TokenMatch(" + annot + ".id, tok.id) AND " + annot + ".layer = ? AND " + annot + ".value = ? )");
+        String overlapCheck = "((" + span + ".`begin`<=tok1.`begin` AND " + span + ".`end`>=tok1.`begin`) OR (" + 
+                                span + ".`begin`>tok1.`begin` AND tok1.`end`>=" + span + ".`begin`))";
+        whereList.add("( " + annot + ".layer = ? AND " + annot + ".value = ? AND " + overlapCheck + " )");
 
         paramList.add(att);
         paramList.add(clearString(value));
@@ -45,7 +49,7 @@ public class GenStatus {
     }
 
     public PreparedStatement gen() throws Exception {
-        String query = "SELECT DISTINCT node.id, tok.id, tok.begin, tok.end ";
+        String query = "SELECT DISTINCT node.id, tok1.id, tok1.begin, tok1.end ";
         // add FROM concatenating fromList with comma
         query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND

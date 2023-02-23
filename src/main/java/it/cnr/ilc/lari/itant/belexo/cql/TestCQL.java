@@ -29,6 +29,9 @@ public class TestCQL {
         String q = "[lemma=\"FAV.*\"] [ ]{2,4} [pos=\"POOO.*\"]"; // args[0]
         q = "[word=\".\" & (pos='asd' | pos=\"www\" ) ]";
         q = "[(word=\".\" & pos='asd') | pos=\"www\" ]";
+        q = "[epidoc=\"tei:name\"]";
+        //q = "[word=\"statis\"]";
+        q = "[word=\"statis\" | epidoc=\"tei:name\"]";
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
