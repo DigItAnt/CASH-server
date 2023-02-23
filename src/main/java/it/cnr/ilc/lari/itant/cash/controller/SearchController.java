@@ -3,7 +3,9 @@ package it.cnr.ilc.lari.itant.cash.controller;
 import java.security.Principal;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -23,6 +25,8 @@ import it.cnr.ilc.lari.itant.belexo.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
+import it.cnr.ilc.lari.itant.cash.om.SearchResponse;
+import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.TestSearchResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import uk.co.jemos.podam.api.PodamFactory;
@@ -60,7 +64,7 @@ public class SearchController {
 	}
 
 	@PostMapping("/api/public/search")
-	public TestSearchResponse search(@RequestParam String query, Principal principal) throws Exception {
+	public SearchResponse search(@RequestParam String query, Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(query));
@@ -75,14 +79,18 @@ public class SearchController {
 		String qsql = stmt.toString();
 		log.info("From {} to {}", query, qsql);
 
-		TestSearchResponse res = new TestSearchResponse();
+		SearchResponse res = new SearchResponse();
 
-		List<Long> ids = DBManager.findNodesBySQLQuery(stmt);
-		ArrayList<String> paths = new ArrayList<>();
-		for ( Long nid: ids ) {
-			paths.add(DBManager.getNodePath(nid));
+		List<SearchRow> srs = DBManager.findNodesBySQLQuery(stmt);
+		Map<Long, String> paths = new HashMap<>();
+
+		for ( SearchRow sr: srs ) {
+			if ( !paths.containsKey(sr.getNodeId()) ) {
+				paths.put(sr.getNodeId(), DBManager.getNodePath(sr.getNodeId()));
+			}
+			sr.setNodePath(paths.get(sr.getNodeId()));
 		}
-		res.setPaths(paths);
+		res.setRows(srs);
 		return res;
 	}
 

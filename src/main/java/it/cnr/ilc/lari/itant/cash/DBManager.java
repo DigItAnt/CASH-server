@@ -31,7 +31,9 @@ import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
+import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.Token;
+import it.cnr.ilc.lari.itant.cash.om.TokenRef;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.cash.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.cash.utils.NullTextExtractor;
@@ -58,12 +60,14 @@ public class DBManager {
     public final static String DB_SCHEMA_PATH = "/model/schema.sql";
 
     private static final Logger log = LoggerFactory.getLogger(DBManager.class);
-    private static Connection connection;
+    //private static Connection connection;
 
     @Autowired
     static JdbcTemplate jdbcTemplate;
 
-    public static void init() throws Exception {
+    // get a new Connection
+    private static Connection getNewConnection() throws Exception {
+        Connection connection;
         if ( jdbcTemplate == null ) {
             String mysqlUrl = "jdbc:mysql://localhost:3306/cash?connectTimeout=0&socketTimeout=0&autoReconnect=true";
             String mysqlUser = "cash";
@@ -80,10 +84,21 @@ public class DBManager {
         } else {
             connection = jdbcTemplate.getDataSource().getConnection();
         }
+        return connection;
+    }
+
+    public static Connection getConnection() throws Exception {
+        return getNewConnection();
+    }
+
+    public static void init() throws Exception {
+        Connection connection = getNewConnection();
+        
 
         checkDBInitialized(connection);
 
-        createRootNodeIfNeeded();
+        createRootNodeIfNeeded(connection);
+        connection.close();
     }
 
     private static int getNumTablesInDB(Connection connection) throws Exception {
@@ -118,66 +133,78 @@ public class DBManager {
 
     }
 
-    public static Connection getConnection() {
-        return connection;
-    }
+    // public static Connection getConnection() {
+    //     return connection;
+    // }
 
-    private synchronized static long insertFileInfo(FileInfo f) throws Exception {
-        connection.setAutoCommit(false);
+    private synchronized static long insertFileInfo(FileInfo f, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null ) {
+            connection = getNewConnection();
+            connection.setAutoCommit(false);
+        }
         long ret = 0;
         try {
-            ret = insertFileInfoInternal(f);
+            ret = insertFileInfoInternal(f, connection);
         } catch ( Exception e ) {
             connection.rollback();
         } finally {
-            connection.setAutoCommit(true);
+            if ( closeConnection ) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         }
         return ret;
     }
 
     // This function is used to copy a node
-    private synchronized static long insertFileInfoFull(FileInfo f) throws Exception {
-        connection.setAutoCommit(false);
+    private synchronized static long insertFileInfoFull(FileInfo f, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null ) {
+            connection = getNewConnection();
+            connection.setAutoCommit(false);
+        }
         long ret = 0;
         try {
             // copy node
-            ret = insertFileInfoInternal(f);
+            ret = insertFileInfoInternal(f, connection);
 
             // copy unstructured text
-            long srcTxt = copyTextEntry(f.getElementId(), ret);
+            long srcTxt = copyTextEntry(f.getElementId(), ret, connection);
 
             // copy blob
-            copyFileData(f.getElementId(), ret);
+            copyFileData(f.getElementId(), ret, connection);
 
             // copy annotations
-            for (Annotation ann: getNodeAnnotations(f.getElementId())) { // adds annotations
+            for (Annotation ann: getNodeAnnotations(f.getElementId(), connection)) { // adds annotations
                 long oldId = ann.getID();
                 ann.setID(-1); // invalidate the id to get a new one
-                long aid = insertAnnotationInternal(ret, ann);
+                long aid = insertAnnotationInternal(ret, ann, connection);
                 ann.setID(aid);
                 // save spans
-                addAnnotationSpans(aid, DBManager.getAnnotationSpans(oldId));
+                addAnnotationSpans(aid, DBManager.getAnnotationSpans(oldId), connection);
                 // save attributes
-                addAnnotationAttributes(aid, DBManager.getAnnotationAttributes(oldId));
+                addAnnotationAttributes(aid, DBManager.getAnnotationAttributes(oldId), connection);
                 log.info("Added annotation " + aid);
             }
 
             // copy tokens
-            insertNodeTokens(ret, srcTxt, getNodeTokens(f.getElementId()));
+            insertNodeTokens(ret, srcTxt, getNodeTokens(f.getElementId(), connection), connection);
 
             // copy metadata
-            updateNodeMetadata(ret, f.getMetadata());
+            updateNodeMetadata(ret, f.getMetadata(), connection);
         } catch ( Exception e ) {
             connection.rollback();
             ret = 0;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
         return ret;
     }
 
 
-    private synchronized static long insertFileInfoInternal(FileInfo f) throws Exception {
+    private synchronized static long insertFileInfoInternal(FileInfo f, Connection connection) throws Exception {
         try {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO fsnodes (name, type, father) values (?,?,?);",
                                                                   Statement.RETURN_GENERATED_KEYS);
@@ -198,6 +225,7 @@ public class DBManager {
     }
 
     public synchronized static void renameNode(long nodeId, String newName) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             PreparedStatement stmt = connection.prepareStatement("UPDATE fsnodes set name=? WHERE id=?");
@@ -211,11 +239,13 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
         
     }
 
     public synchronized static void removeNode(long nodeId) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             FileInfo node = getNodeById(connection, nodeId);
@@ -236,11 +266,13 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
         
     }
 
     public synchronized static void moveNode(long nodeId, long destination) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             FileInfo node = getNodeById(connection, nodeId);
@@ -281,11 +313,13 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
         
     }
 
     public synchronized static FileInfo copyNode(long nodeId, long destination) throws Exception {
+        Connection connection = getNewConnection();
         try {
             if ( destination == 0 ) destination = getRootNodeId();
             FileInfo node = getNodeById(connection, nodeId);
@@ -312,12 +346,14 @@ public class DBManager {
             }
         
             node.setFather(destination);
-            long newId = insertFileInfoFull(node);
+            long newId = insertFileInfoFull(node, connection);
             node.setElementId(newId);
             return node;
         } catch (Exception e) {
             e.printStackTrace();
             throw e;
+        } finally {
+            connection.close();
         }
     }
 
@@ -332,6 +368,7 @@ public class DBManager {
     }
 
     private synchronized static void OLD_replaceNodeMetadata(long elementId, Map<String, Object> metadata) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             // remove the old metadata first, then update it. This should be done in a 'softer' way
@@ -357,12 +394,17 @@ public class DBManager {
             connection.rollback();
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
     }
 
     private synchronized static void replaceRowAttributes(long id, Map<String, Object> attributes,
-                                                          String deleteQuery, String insertQuery, boolean inheritTransaction) throws Exception {
-        if ( !inheritTransaction ) connection.setAutoCommit(false);
+                                                          String deleteQuery, String insertQuery, Connection connection) throws Exception {
+        boolean inheritTransaction = connection != null;
+        if ( !inheritTransaction ) {
+            connection = getNewConnection();
+            connection.setAutoCommit(false);
+        }
         try {
             // remove the old ATTRIBUTES first, then update it. This should be done in a 'softer' way
             PreparedStatement stmt = connection.prepareStatement(deleteQuery);
@@ -385,11 +427,15 @@ public class DBManager {
             e.printStackTrace();
             if (!inheritTransaction) connection.rollback();
         } finally {
-            if ( !inheritTransaction) connection.setAutoCommit(true);
+            if ( !inheritTransaction) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         }
     }
 
     public synchronized static void deleteNodeMetadata(long elementId) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             // remove the old metadata first, then update it. This should be done in a 'softer' way
@@ -402,6 +448,7 @@ public class DBManager {
             connection.rollback();
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
     } 
 
@@ -423,12 +470,12 @@ public class DBManager {
         return (List) m1;
     }
  
-    public synchronized static void deleteRowAttributes(long id, String table) throws Exception {
-        deleteRowAttributes(id, table, true);
-    }
-
-    public synchronized static void deleteRowAttributes(long id, String query, boolean autocommit) throws Exception {
-        if ( !autocommit ) connection.setAutoCommit(false);
+    public synchronized static void deleteRowAttributes(long id, String query, Connection connection) throws Exception {
+        boolean autocommit = connection == null;
+        if ( !autocommit ) {
+            connection = getNewConnection();
+            connection.setAutoCommit(false);
+        }
         try {
             PreparedStatement stmt = connection.prepareStatement(query);
             stmt.setLong(1, id);
@@ -438,13 +485,16 @@ public class DBManager {
             e.printStackTrace();
             if ( !autocommit ) connection.rollback();
         } finally {
-            if ( !autocommit ) connection.setAutoCommit(true);
+            if ( !autocommit ) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         }
     } 
 
     protected static void updateRowAttributes(long rowId, Map<String, Object> attributes, Map<String, Object> newAttrs,
                                               String deleteQuery, String insertQuery,
-                                              String extras, boolean inheritTransaction) throws Exception {
+                                              String extras, Connection connection) throws Exception {
         try {
             log.info("Setting attributes for " + rowId);
             for (Map.Entry<String, Object> prop: newAttrs.entrySet()) {
@@ -455,7 +505,7 @@ public class DBManager {
                 }
             }
             String iq = insertQuery + " values " + StringUtils.n(nValuesInMetadata(attributes), "(?,?,?" + extras + ")", ",");
-            replaceRowAttributes(rowId, attributes, deleteQuery, iq, inheritTransaction);
+            replaceRowAttributes(rowId, attributes, deleteQuery, iq, connection);
             //logProperties(node);
         } catch (Exception e) {
             log.error(e.toString());
@@ -464,10 +514,10 @@ public class DBManager {
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
-        updateNodeMetadata(elementId, props, false);
+        updateNodeMetadata(elementId, props, null);
     }
 
-    public static void updateNodeMetadata(long elementId, Map<String, Object> props, boolean inheritTransaction) throws Exception {
+    public static void updateNodeMetadata(long elementId, Map<String, Object> props, Connection connection) throws Exception {
         if ( props == null ) return;
         try {
             FileInfo node = getNodeById(connection, elementId);
@@ -478,7 +528,7 @@ public class DBManager {
 
             updateRowAttributes(elementId, metadata, props, "delete from str_fs_props where node=? and meta=1",
                                                             "INSERT INTO str_fs_props (name, value, node, meta)", ",1",
-                                                            inheritTransaction);
+                                                            connection);
 
             log.info("Properties set on node with id: " + elementId);
             //logProperties(node);
@@ -490,6 +540,7 @@ public class DBManager {
 
     public static FileInfo getRootNode() throws Exception {
         log.info("Trying to get root node ");
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT id, name, type from fsnodes where father IS NULL");
         ResultSet res = stmt.executeQuery();
         FileInfo ret = null;
@@ -500,6 +551,7 @@ public class DBManager {
             ret.setName(res.getString("name"));
             ret.setType(res.getString("type"));
         }
+        connection.close();
         return ret;
     }
 
@@ -507,8 +559,16 @@ public class DBManager {
         return getRootNode().getElementId();
     }
 
+    public static FileInfo getNodeById(long nodeId, Connection connection) throws Exception {
+        FileInfo ret = getNodeById(connection, nodeId);
+        return ret;
+    }
+
     public static FileInfo getNodeById(long nodeId) throws Exception {
-        return getNodeById(connection, nodeId);
+        Connection connection = getNewConnection();
+        FileInfo ret = getNodeById(connection, nodeId);
+        connection.close();
+        return ret;
     }
 
     protected static FileInfo getNodeById(Connection connection, long nodeId) throws Exception {
@@ -530,7 +590,8 @@ public class DBManager {
     }
  
     public static List<FileInfo> getNodeChildren(long nodeId) throws Exception {
-	    PreparedStatement stmt = connection.prepareStatement("SELECT id, name, type from fsnodes where father=?");
+	    Connection connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement("SELECT id, name, type from fsnodes where father=?");
 	    stmt.setLong(1, nodeId);
 	    ResultSet res = stmt.executeQuery();
 	    List<FileInfo> ret = new java.util.ArrayList<FileInfo>();
@@ -542,10 +603,11 @@ public class DBManager {
             fi.setFather(nodeId);
 	        ret.add(fi);
         }
+        connection.close();
         return ret;
     }
 
-    private synchronized static void createRootNodeIfNeeded() throws Exception {
+    private synchronized static void createRootNodeIfNeeded(Connection connection) throws Exception {
         try {
             if (getRootNode() != null) {
                 log.info("repo already initialized");
@@ -558,7 +620,7 @@ public class DBManager {
             newfolder.setPath("/root");
             newfolder.setFather(NO_FATHER);
             newfolder.setType(FileDirectory.directory);
-            long newid = insertFileInfo(newfolder);
+            long newid = insertFileInfo(newfolder, connection);
             log.info("Created /root" + ", id: " + newid);
         } catch (Exception e) {
             e.printStackTrace();
@@ -567,13 +629,16 @@ public class DBManager {
     }
 
     public static boolean fileExists(long parent, String name) throws Exception {
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT * from fsnodes where father=? and name=? LIMIT 1");
         stmt.setLong(1, parent);
         stmt.setString(2, name);
         //log.info("PS: " + stmt.toString());
         ResultSet rSet = stmt.executeQuery();
-        if ( rSet.next() ) return true;
-        return false;
+        boolean ret = false;
+        if ( rSet.next() ) ret = true;
+        connection.close();
+        return ret;
     }
 
     public static String getNewFolderName(long parent) throws Exception {
@@ -589,6 +654,7 @@ public class DBManager {
     }
 
     public synchronized static long addFolder(long parent) throws Exception {
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO fsnodes (name, father, type) values (?,?,?)",
@@ -608,11 +674,13 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
     }
 
     public static Map<String, Object> OLD__getNodeMetadata(long nodeId) throws Exception {
         log.info("Getting metadata for " + nodeId);
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT name, value from str_fs_props where node=? and meta=1");
         stmt.setLong(1, nodeId);
         ResultSet rs = stmt.executeQuery();
@@ -637,6 +705,7 @@ public class DBManager {
             }
         }
         log.info("Metadata found: " + ret.keySet().toString());
+        connection.close();
         return ret;
     }
 
@@ -646,6 +715,7 @@ public class DBManager {
 
     private static Map<String, Object> getRowAttributes(long id, final String query) throws Exception {
         log.info("Getting metadata for " + id + " in " + query);
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement(query);
         stmt.setLong(1, id);
         ResultSet rs = stmt.executeQuery();
@@ -670,6 +740,7 @@ public class DBManager {
             }
         }
         log.info("Metadata found: " + ret.keySet().toString());
+        connection.close();
         return ret;
     }
 
@@ -678,6 +749,7 @@ public class DBManager {
     }
 
     public static List<Annotation.Span> getAnnotationSpans(long annid) throws Exception {
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT  begin,end from ann_spans where ann=?");
         stmt.setLong(1, annid);
         ResultSet rs = stmt.executeQuery();
@@ -688,17 +760,18 @@ public class DBManager {
             span.setEnd(rs.getInt("end"));
             ret.add(span);
         }
+        connection.close();
         return ret;
     }
 
-    private static void copyFileData(long srcId, long targetId) throws Exception {
+    private static void copyFileData(long srcId, long targetId, Connection connection) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) select name, value, content_type, ? from blob_fs_props where node=?");
         stmt.setLong(1, targetId);
         stmt.setLong(2, srcId);
         stmt.execute();
 }
 
-    private static void saveFileData(FileInfo node, String contentType, InputStream contentStream) throws Exception {
+    private static void saveFileData(FileInfo node, String contentType, InputStream contentStream, Connection connection) throws Exception {
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO blob_fs_props (name,value,content_type,node) values (?,?,?,?)");
             stmt.setString(1, ORIGINAL_CONTENT);
             stmt.setBlob(2, contentStream);
@@ -707,7 +780,7 @@ public class DBManager {
             stmt.execute();
     }
 
-    private static long copyTextEntry(long srcId, long targetId) throws Exception {
+    private static long copyTextEntry(long srcId, long targetId, Connection connection) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) select text, ?, type from unstructured where node=?",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setLong(1, targetId);
@@ -718,7 +791,10 @@ public class DBManager {
 
     }
 
-    public static long insertTextEntry(long nodeId, String text, String tType) throws Exception {
+    public static long insertTextEntry(long nodeId, String text, String tType, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null )
+            connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) values (?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, text);
@@ -726,10 +802,16 @@ public class DBManager {
         stmt.setString(3, tType);
         stmt.executeUpdate();
         ResultSet rs = stmt.getGeneratedKeys();
-        return rs.next()?rs.getLong(1):0;
+        long ret = rs.next()?rs.getLong(1):0;
+        if ( closeConnection )
+            connection.close();
+        return ret;
     }
 
-    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<Token> tokens) throws Exception {
+    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<Token> tokens, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null )
+            connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         // TODO: probably requires adding token type to the DB!
@@ -760,10 +842,15 @@ public class DBManager {
         while ( rs.next() ) {
             ret.add(rs.getLong(1));
         }
+        if ( closeConnection )
+            connection.close();
         return ret;
     }
 
-    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<TokenInfo> tokens, int firstPosition) throws Exception {
+    public static List<Long> insertNodeTokens(long nodeId, long srcTxt, List<TokenInfo> tokens, int firstPosition, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null )
+            connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         // TODO: probably requires adding token type to the DB!
@@ -795,12 +882,17 @@ public class DBManager {
         while ( rs.next() ) {
             ret.add(rs.getLong(1));
         }
+        if ( closeConnection )
+            connection.close();
         return ret;
     }
 
     public static long insertTokenNode(long nodeId, long srcTxt,
                                        String token, int position, int begin, int end,
-                                       String xmlid, boolean imported) throws Exception {
+                                       String xmlid, boolean imported, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null )
+            connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO tokens (text,node,srctxt,position,begin,end,xmlid,imported) values (?,?,?,?,?,?,?,?)",
                                                              Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, token);
@@ -814,13 +906,17 @@ public class DBManager {
         stmt.setBoolean(8, imported);
         stmt.executeUpdate();
         ResultSet rs = stmt.getGeneratedKeys();
-        return rs.next()?rs.getLong(1):0;
+        long ret = rs.next()?rs.getLong(1):0;
+        if ( closeConnection )
+            connection.close();
+        return ret;
     }
 
     @Transactional
     public synchronized static long addFile(long parentId, String filename, InputStream contentStream, String contentType) throws Exception {
         log.info("Creating file under parent " + parentId);
         FileInfo node = null;
+        Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             if ( parentId == 0 ) parentId = getRootNodeId();
@@ -828,7 +924,7 @@ public class DBManager {
                 log.error("A file with the same name already exists in this directory");
                 throw new InvalidParamException();
             }
-            if ( parentId > 0 && getNodeById(parentId) == null ) {
+            if ( parentId > 0 && getNodeById(parentId, connection) == null ) {
                 log.error("Specified parent directory does not exist");
                 throw new InvalidParamException();
             }
@@ -837,11 +933,11 @@ public class DBManager {
             node.setFather(parentId);
             node.setName(filename);
             node.setType(FileDirectory.file);
-            long nid = insertFileInfoInternal(node);
+            long nid = insertFileInfoInternal(node, connection);
             node.setElementId(nid);
 
             // add original content to node
-            saveFileData(node, contentType, new ByteArrayInputStream(contentBytes));
+            saveFileData(node, contentType, new ByteArrayInputStream(contentBytes), connection);
 
             TextExtractorInterface extractor;
             if ( contentType == null ) extractor = new NullTextExtractor();
@@ -853,22 +949,22 @@ public class DBManager {
             String text = extractor.read(bais).extract(); // must read the bytes here...
             long srcTxt = 0;
             if (!text.equals(""))
-                srcTxt = insertTextEntry(nid, text, extractor.getTextType());
+                srcTxt = insertTextEntry(nid, text, extractor.getTextType(), connection);
             log.info("Added text");
             int ti = 1;
-            List<Long> tokenIds = insertNodeTokens(nid, srcTxt, extractor.tokens(), ti);
+            List<Long> tokenIds = insertNodeTokens(nid, srcTxt, extractor.tokens(), ti, connection);
             log.info("Added " + tokenIds.size() + " token nodes");
             for (Annotation ann: extractor.annotations()) { // adds annotations
-                long aid = insertAnnotationInternal(nid, ann);
+                long aid = insertAnnotationInternal(nid, ann, connection);
                 ann.setID(aid);
                 // save spans
-                addAnnotationSpans(aid, ann.getSpans());
+                addAnnotationSpans(aid, ann.getSpans(), connection);
                 // save attributes
-                addAnnotationAttributes(aid, ann.getAttributes());
+                addAnnotationAttributes(aid, ann.getAttributes(), connection);
                 log.info("Added annotation " + aid);
             }
             // add metadata
-            updateNodeMetadata(nid, extractor.metadata(), true);
+            updateNodeMetadata(nid, extractor.metadata(), connection);
 
             connection.commit();
             return nid;
@@ -879,6 +975,7 @@ public class DBManager {
             throw e;
         } finally {
             connection.setAutoCommit(true);
+            connection.close();
         }
     }
 
@@ -888,6 +985,8 @@ public class DBManager {
     }
 
     public static String getNodePath(long nodeId) throws Exception {
+        Connection connection = getNewConnection();
+
         List<String> path = new ArrayList<String>();
         boolean toRoot = false;
         PreparedStatement stmt = connection.prepareStatement("select name, father from fsnodes where id=?");
@@ -901,10 +1000,12 @@ public class DBManager {
             } else toRoot = true; 
         }
         Collections.reverse(path);
+        connection.close();
         return "/" + String.join("/", path);
     }
 
     public static FileInfo findByAbsolutePath(String path) throws Exception {
+        Connection connection = getNewConnection();
         String[] elements = path.strip().split("/");
         if ( !elements[0].equals("root") ) throw new InvalidParamException();
         long nodeId = getRootNodeId();
@@ -917,7 +1018,9 @@ public class DBManager {
             if ( !rs.next() ) throw new NodeNotFoundException();
             nodeId = rs.getLong("id");
         }
-        return getNodeById(nodeId);
+        FileInfo ret = getNodeById(nodeId, connection);
+        connection.close();
+        return ret;
     }
 
     /**
@@ -943,21 +1046,34 @@ public class DBManager {
                 sql += " AND " + t + ".position=t" + (ti-1) + ".position+1";
         }
         log.info("Search query: " + sql);
+        Connection connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement(sql); // actually no params
         ResultSet rs = stmt.executeQuery();
         ArrayList<Long> ret = new ArrayList<Long>();
         while ( rs.next() )
             ret.add(rs.getLong("n.id"));
+        connection.close();
         return ret;
     }
 
 
-    public static List<Long> findNodesBySQLQuery(PreparedStatement stmt) throws Exception {
+    public static List<SearchRow> findNodesBySQLQuery(PreparedStatement stmt) throws Exception {
         log.info("Search query: " + stmt.toString());
         ResultSet rs = stmt.executeQuery();
-        ArrayList<Long> ret = new ArrayList<Long>();
-        while ( rs.next() )
-            ret.add(rs.getLong("node.id"));
+        ArrayList<SearchRow> ret = new ArrayList<SearchRow>();
+        int ccount = rs.getMetaData().getColumnCount();
+        while ( rs.next() ) {
+            SearchRow sr = new SearchRow();
+            sr.setNodeId(rs.getLong("node.id"));
+            for ( int i = 1; i <= (ccount - 1)/3 ; i++ ) { // once every three columns (tokid, begin, end)
+                TokenRef tr = new TokenRef();
+                tr.id = (rs.getLong("tok" + i + ".id"));
+                tr.begin = (rs.getInt("tok" + i + ".begin"));
+                tr.end = (rs.getInt("tok" + i + ".end"));
+                sr.addTokenRef(tr);
+            }
+            ret.add(sr);
+        }
         // print len of ret
         log.info("Found " + ret.size() + " nodes");
         return ret;
@@ -986,8 +1102,10 @@ public class DBManager {
     "SELECT t.id, t.text, position, begin, end, xmlid, u.type, imported " +
     "FROM tokens t, unstructured u WHERE t.srctxt=u.id and t.node=? ORDER BY t.position";
 
-    public static List<Token> getNodeTokens(long nodeId) throws Exception {
+    public static List<Token> getNodeTokens(long nodeId, Connection connection) throws Exception {
         log.info("Trying to get tokens of node " + nodeId);
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement(TOKENS_QUERY);
         stmt.setLong(1, nodeId);
         ResultSet res = stmt.executeQuery();
@@ -1006,12 +1124,15 @@ public class DBManager {
             tok.setImported(res.getBoolean("imported"));
             ret.add(tok);
         }
+        if ( closeConnection ) connection.close();
         return ret;
     }
 
     // @TODO: there are missing columns here
-    public static List<Annotation> getNodeAnnotations(long nodeId) throws Exception {
+    public static List<Annotation> getNodeAnnotations(long nodeId, Connection connection) throws Exception {
         log.info("Trying to get annotations of node " + nodeId);
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT id, layer, value, imported FROM annotations where node=?");
         stmt.setLong(1, nodeId);
         ResultSet res = stmt.executeQuery();
@@ -1025,47 +1146,63 @@ public class DBManager {
             ann.setImported(res.getBoolean("imported"));
             ret.add(ann);
         }
-
+        if ( closeConnection ) connection.close();
         return ret;
     }
 
-    public static Annotation getAnnotationById(long annId) throws Exception {
-        return getAnnotationById(connection, annId);
+    public static Annotation getAnnotationById(long annId, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
+        Annotation ret = getAnnotationById(connection, annId);
+        if ( closeConnection ) connection.close();
+        return ret;
     }
 
-    public static String getNodeText(long nodeId) throws Exception {
-        return getNodeText(nodeId, null);
+    public static String getNodeText(long nodeId, Connection connection) throws Exception {
+        return getNodeText(nodeId, null, connection);
     }
 
-    public static String getNodeText(long nodeId, String type) throws Exception {
+    public static String getNodeText(long nodeId, String type, Connection connection) throws Exception {
         String sstmt = (type != null)?"SELECT text FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT text FROM unstructured WHERE node=? LIMIT 1";
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement(sstmt);
         stmt.setLong(1, nodeId);
         if ( type != null ) stmt.setString(2, type);
         ResultSet res = stmt.executeQuery();
-        while ( res.next() )
-            return res.getString(1);
-        return null;
+        String ret = null;
+        if ( res.next() )
+            ret = res.getString(1);
+        if ( closeConnection ) connection.close();
+        return ret;
     }
 
-    public static Long getNodeTextId(long nodeId, String type) throws Exception {
+    public static Long getNodeTextId(long nodeId, String type, Connection connection) throws Exception {
         String sstmt = (type != null)?"SELECT id FROM unstructured WHERE node=? AND type=? LIMIT 1" : "SELECT id FROM unstructured WHERE node=? LIMIT 1";
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement(sstmt);
         stmt.setLong(1, nodeId);
         if ( type != null ) stmt.setString(2, type);
         ResultSet res = stmt.executeQuery();
-        while ( res.next() )
-            return res.getLong(1);
-        return null;
+        Long ret = null;
+        if ( res.next() )
+            ret = res.getLong(1);
+        if ( closeConnection ) connection.close();
+        return ret;
     }
 
-    public static String getRawContent(long nodeId) throws Exception {
+    public static String getRawContent(long nodeId, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("SELECT CONVERT(value USING utf8) FROM blob_fs_props where node=? limit 1");
         stmt.setLong(1, nodeId);
         ResultSet res = stmt.executeQuery();
-        while ( res.next() )
-            return res.getString(1);
-        return null;
+        String ret = null;
+        if ( res.next() )
+            ret = res.getString(1);
+        if ( closeConnection ) connection.close();
+        return ret;
     }
 
     /*
@@ -1083,7 +1220,7 @@ public class DBManager {
     }
     */
 
-    private synchronized static long insertAnnotationInternal(long nodeId, Annotation ann) throws Exception {
+    private synchronized static long insertAnnotationInternal(long nodeId, Annotation ann, Connection connection) throws Exception {
         try {
             PreparedStatement stmt;
             int coli = 1;
@@ -1113,7 +1250,7 @@ public class DBManager {
         }
     }
 
-    protected synchronized static void addAnnotationSpans(long annid, List<Annotation.Span> spans) throws Exception {
+    protected synchronized static void addAnnotationSpans(long annid, List<Annotation.Span> spans, Connection connection) throws Exception {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO ann_spans (ann, begin, end) values " +
                                                              StringUtils.n(spans.size(), "(?,?,?)", ","));
         int i = 1;
@@ -1125,11 +1262,11 @@ public class DBManager {
         stmt.execute();
     }
 
-    protected synchronized static void addAnnotationAttributes(long annid, Map<String, Object> attributes) throws Exception {
+    protected synchronized static void addAnnotationAttributes(long annid, Map<String, Object> attributes, Connection connection) throws Exception {
         try {
             updateRowAttributes(annid, new HashMap<String, Object>(),
                                 attributes, "delete from str_ann_props where ann=?",
-                                            "INSERT INTO str_ann_props (name, value, ann)", "", true);
+                                            "INSERT INTO str_ann_props (name, value, ann)", "", connection);
 
             log.info("Properties set on annotation with id: " + annid);
             //logProperties(node);
@@ -1141,11 +1278,13 @@ public class DBManager {
 
     @Transactional
     public synchronized static Annotation addAnnotation(long nodeId, Annotation ann) throws Exception {
-        return addAnnotation(nodeId, ann, false);
+        return addAnnotation(nodeId, ann, null);
     }
 
-    public synchronized static Annotation addAnnotation(long nodeId, Annotation ann, boolean inheritTransaction) throws Exception {
+    public synchronized static Annotation addAnnotation(long nodeId, Annotation ann, Connection connection) throws Exception {
         log.info("Creating annotation for node " + nodeId);
+        boolean inheritTransaction = connection != null;
+        if ( !inheritTransaction ) connection = getNewConnection();
         FileInfo node = getNodeById(nodeId);
         if ( node == null ) {
             log.error("Invalid node " + nodeId);
@@ -1157,13 +1296,13 @@ public class DBManager {
         }
         if ( !inheritTransaction ) connection.setAutoCommit(false);
         try {
-            long annid = insertAnnotationInternal(nodeId, ann);
+            long annid = insertAnnotationInternal(nodeId, ann, connection);
             ann.setID(annid);
             // save spans
-            addAnnotationSpans(annid, ann.getSpans());
+            addAnnotationSpans(annid, ann.getSpans(), connection);
 
             // save attributes
-            addAnnotationAttributes(annid, ann.getAttributes());
+            addAnnotationAttributes(annid, ann.getAttributes(), connection);
 
             if ( !inheritTransaction ) connection.commit();
 
@@ -1173,34 +1312,51 @@ public class DBManager {
             if ( !inheritTransaction ) connection.rollback();
             throw e;
         } finally {
-            if ( !inheritTransaction ) connection.setAutoCommit(true);
+            if ( !inheritTransaction ) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         }
     }
 
-    public synchronized static void deleteAnnotation(long annid) throws Exception {
+    public synchronized static void deleteAnnotation(long annid, Connection connection) throws Exception {
         log.info("Deleting annotation " + annid);
-        getAnnotationById(annid);
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
+        getAnnotationById(annid, connection);
         PreparedStatement stmt = connection.prepareStatement("delete from annotations where id=?");
         stmt.setLong(1, annid);
         stmt.execute();
+        if ( closeConnection ) connection.close();
     }
 
-    public synchronized static void deleteAnnotationByValue(String value) throws Exception {
+    public synchronized static void deleteAnnotationByValue(String value, Connection connection) throws Exception {
         log.info("Deleting annotation by value " + value);
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("delete from annotations where value=?");
         stmt.setString(1, value);
         stmt.execute();
+        if ( closeConnection ) connection.close();
     }
 
 
-    public static long getAnnotationNodeId(long annid) throws Exception {
+    public static long getAnnotationNodeId(long annid, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( connection == null ) connection = getNewConnection();
         PreparedStatement stmt = connection.prepareStatement("select node from annotations where id=?");
         stmt.setLong(1, annid);
         ResultSet res = stmt.executeQuery();
-        while ( res.next() )
-            return res.getLong(1);
-        log.error("Annotation " + annid + " not found");
-        throw new InvalidParamException();
+        long ret = 0;
+        if ( res.next() )
+            ret = res.getLong(1);
+        else { 
+            log.error("Annotation " + annid + " not found");
+            if ( closeConnection ) connection.close();
+            throw new InvalidParamException();
+        }
+        if ( closeConnection ) connection.close();
+        return ret;
     }
 
 }
