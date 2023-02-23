@@ -308,6 +308,8 @@ ENGINE = InnoDB
 DEFAULT CHARACTER SET = UTF8MB4
 COLLATE = UTF8MB4_unicode_ci;
 
+CREATE INDEX T1_begin_end ON tokens (begin, end);
+CREATE INDEX T2_begin_end ON ann_spans (begin, end);
 
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
@@ -356,7 +358,7 @@ DETERMINISTIC
 BEGIN
 	DECLARE ret INT;
 	SET ret = 0; 
-	SELECT count(a.id) INTO ret FROM `ann_spans`as a, `tokens` as t, `annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND (t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND ((a.`begin`<=t.`begin` AND t.`begin`<=t.`end`) OR (a.`begin`<=t.`end` AND t.`end`<=a.`end`) OR (t.`begin`<=a.`begin` AND a.`begin`<=t.`end`) OR (t.`begin`<=a.`end` AND a.`end`<=t.`end`))) LIMIT 1;
+	SELECT count(a.id) INTO ret FROM `ann_spans`as a, `tokens` as t, `annotations` as ann WHERE t.id=token AND ann.id=annotation and t.node=ann.node AND a.ann=annotation AND ((a.`begin`<=t.`begin` AND a.`end`>=t.`begin`) OR (a.`begin`>t.`begin` AND t.`end`>=a.`begin`)) LIMIT 1;
 
 	RETURN ret;
 END$$
