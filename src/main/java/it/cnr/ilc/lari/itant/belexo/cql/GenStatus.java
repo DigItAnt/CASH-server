@@ -45,7 +45,7 @@ public class GenStatus {
     }
 
     public PreparedStatement gen() throws Exception {
-        String query = "SELECT DISTINCT node.id ";
+        String query = "SELECT DISTINCT node.id, tok.id, tok.begin, tok.end ";
         // add FROM concatenating fromList with comma
         query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND
