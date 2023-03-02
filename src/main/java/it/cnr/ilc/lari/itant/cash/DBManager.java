@@ -1079,6 +1079,7 @@ public class DBManager {
         int ccount = rs.getMetaData().getColumnCount();
         while ( rs.next() ) {
             SearchRow sr = new SearchRow();
+            sr.setTokens(new ArrayList<>());
             sr.setNodeId(rs.getLong("node.id"));
             for ( int i = 1; i <= (ccount - 1)/3 ; i++ ) { // once every three columns (tokid, begin, end)
                 TokenRef tr = new TokenRef();
