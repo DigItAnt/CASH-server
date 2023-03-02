@@ -31,7 +31,9 @@ import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
+import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.Token;
+import it.cnr.ilc.lari.itant.cash.om.TokenRef;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.cash.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.cash.utils.NullTextExtractor;
@@ -83,6 +85,10 @@ public class DBManager {
             connection = jdbcTemplate.getDataSource().getConnection();
         }
         return connection;
+    }
+
+    public static Connection getConnection() throws Exception {
+        return getNewConnection();
     }
 
     public static void init() throws Exception {
@@ -1066,12 +1072,23 @@ public class DBManager {
     }
 
 
-    public static List<Long> findNodesBySQLQuery(PreparedStatement stmt) throws Exception {
+    public static List<SearchRow> findNodesBySQLQuery(PreparedStatement stmt) throws Exception {
         log.info("Search query: " + stmt.toString());
         ResultSet rs = stmt.executeQuery();
-        ArrayList<Long> ret = new ArrayList<Long>();
-        while ( rs.next() )
-            ret.add(rs.getLong("node.id"));
+        ArrayList<SearchRow> ret = new ArrayList<SearchRow>();
+        int ccount = rs.getMetaData().getColumnCount();
+        while ( rs.next() ) {
+            SearchRow sr = new SearchRow();
+            sr.setNodeId(rs.getLong("node.id"));
+            for ( int i = 1; i <= (ccount - 1)/3 ; i++ ) { // once every three columns (tokid, begin, end)
+                TokenRef tr = new TokenRef();
+                tr.id = (rs.getLong("tok" + i + ".id"));
+                tr.begin = (rs.getInt("tok" + i + ".begin"));
+                tr.end = (rs.getInt("tok" + i + ".end"));
+                sr.addTokenRef(tr);
+            }
+            ret.add(sr);
+        }
         // print len of ret
         log.info("Found " + ret.size() + " nodes");
         return ret;
