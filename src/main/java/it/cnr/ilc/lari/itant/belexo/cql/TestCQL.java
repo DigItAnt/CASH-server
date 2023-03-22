@@ -31,6 +31,8 @@ public class TestCQL {
         q = "[(word=\".\" & pos='asd') | pos=\"www\" ]";
         q = "[epidoc=\"tei:name\"]";
         //q = "[word=\"statis\"]";
+        // cash__author -> metadata author del documento
+        // pos__author -> metadata author del pos, pos__author__name -> metadata author.name del pos
         q = "[word=\"statis\" | epidoc=\"tei:name\"]";
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
 
