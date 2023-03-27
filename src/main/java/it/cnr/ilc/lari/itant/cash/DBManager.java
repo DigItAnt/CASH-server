@@ -514,17 +514,21 @@ public class DBManager {
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
-        updateNodeMetadata(elementId, props, null);
+        updateNodeMetadata(elementId, props, null, false);
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props, Connection connection) throws Exception {
+        updateNodeMetadata(elementId, props, connection, false);
+    }
+
+    public static void updateNodeMetadata(long elementId, Map<String, Object> props, Connection connection, boolean replace) throws Exception {
         if ( props == null ) return;
         try {
             FileInfo node = getNodeById(connection, elementId);
             if (node == null)
                 throw new NodeNotFoundException();
 
-            Map<String, Object> metadata = getNodeMetadata(elementId, connection);
+            Map<String, Object> metadata = replace?new HashMap<String, Object>():getNodeMetadata(elementId, connection);
 
             updateRowAttributes(elementId, metadata, props, "delete from str_fs_props where node=? and meta=1",
                                                             "INSERT INTO str_fs_props (name, value, node, meta)", ",1",
@@ -637,22 +641,30 @@ public class DBManager {
         }
     }
 
+    public static long getNodeIdByFilename(long parent, String name) throws Exception {
+        return getNodeIdByFilename(parent, name, null);
+    }
+
+    public static long getNodeIdByFilename(long parent, String name, Connection connection) throws Exception {
+        boolean closeConnection = connection == null;
+        if ( closeConnection ) connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement("SELECT id from fsnodes where father=? and name=? LIMIT 1");
+        stmt.setLong(1, parent);
+        stmt.setString(2, name);
+        ResultSet rSet = stmt.executeQuery();
+        long ret = -1;
+        if ( rSet.next() )
+            ret = rSet.getLong("id");
+        if ( closeConnection) connection.close();
+        return ret;
+    }
+
     public static boolean fileExists(long parent, String name) throws Exception {
         return fileExists(parent, name, null);
     }
 
     public static boolean fileExists(long parent, String name, Connection connection) throws Exception {
-        boolean closeConnection = connection == null;
-        if ( closeConnection ) connection = getNewConnection();
-        PreparedStatement stmt = connection.prepareStatement("SELECT * from fsnodes where father=? and name=? LIMIT 1");
-        stmt.setLong(1, parent);
-        stmt.setString(2, name);
-        //log.info("PS: " + stmt.toString());
-        ResultSet rSet = stmt.executeQuery();
-        boolean ret = false;
-        if ( rSet.next() ) ret = true;
-        if ( closeConnection) connection.close();
-        return ret;
+        return getNodeIdByFilename(parent, name, connection) != -1;
     }
 
     public static String getNewFolderName(long parent) throws Exception {
@@ -930,57 +942,73 @@ public class DBManager {
 
     @Transactional
     public static long addFile(long parentId, String filename, InputStream contentStream, String contentType) throws Exception {
+        return addFile(parentId, filename, contentStream, contentType, false);
+    }
+
+    @Transactional
+    public static long addFile(long parentId, String filename, InputStream contentStream, String contentType, boolean justMetadata) throws Exception {
         log.info("Creating file under parent " + parentId);
         FileInfo node = null;
         Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
             if ( parentId == 0 ) parentId = getRootNodeId(connection);
-            if ( fileExists(parentId, filename, connection) ) {
-                log.error("A file with the same name already exists in this directory");
+            long nid = getNodeIdByFilename(parentId, filename, connection);
+            if ( nid != -1 ) {
+                if ( !justMetadata ) {
+                    log.error("A file with the same name already exists in this directory");
+                    throw new InvalidParamException();
+                }
+            } else if ( justMetadata ) {
+                log.error("A file with the same name does not exist in this directory");
                 throw new InvalidParamException();
             }
-            if ( parentId > 0 && getNodeById(parentId, connection) == null ) {
-                log.error("Specified parent directory does not exist");
-                throw new InvalidParamException();
-            }
+
             byte[] contentBytes = contentStream.readAllBytes();
-            node = new FileInfo();
-            node.setFather(parentId);
-            node.setName(filename);
-            node.setType(FileDirectory.file);
-            long nid = insertFileInfoInternal(node, connection);
-            node.setElementId(nid);
-
-            // add original content to node
-            saveFileData(node, contentType, new ByteArrayInputStream(contentBytes), connection);
-
             TextExtractorInterface extractor;
             if ( contentType == null ) extractor = new NullTextExtractor();
             else if ( contentType.endsWith("xml") ) // TODO: perhaps do better, here!
                 extractor = new EpiDocTextExtractor();
             else extractor = new TxtTextExtractor();
-            log.info("MYID: " + nid);
             ByteArrayInputStream bais = new ByteArrayInputStream(contentBytes);
             String text = extractor.read(bais).extract(); // must read the bytes here...
-            long srcTxt = 0;
-            if (!text.equals(""))
-                srcTxt = insertTextEntry(nid, text, extractor.getTextType(), connection);
-            log.info("Added text");
-            int ti = 1;
-            List<Long> tokenIds = insertNodeTokens(nid, srcTxt, extractor.tokens(), ti, connection);
-            log.info("Added " + tokenIds.size() + " token nodes");
-            for (Annotation ann: extractor.annotations()) { // adds annotations
-                long aid = insertAnnotationInternal(nid, ann, connection);
-                ann.setID(aid);
-                // save spans
-                addAnnotationSpans(aid, ann.getSpans(), connection);
-                // save attributes
-                addAnnotationAttributes(aid, ann.getAttributes(), connection);
-                log.info("Added annotation " + aid);
+
+            if ( !justMetadata ) {
+                if ( parentId > 0 && getNodeById(parentId, connection) == null ) {
+                    log.error("Specified parent directory does not exist");
+                    throw new InvalidParamException();
+                }
+                node = new FileInfo();
+                node.setFather(parentId);
+                node.setName(filename);
+                node.setType(FileDirectory.file);
+                nid = insertFileInfoInternal(node, connection);
+                log.info("MYID: " + nid);
+                node.setElementId(nid);
+
+                // add original content to node
+                saveFileData(node, contentType, new ByteArrayInputStream(contentBytes), connection);
+
+                long srcTxt = 0;
+                if (!text.equals(""))
+                    srcTxt = insertTextEntry(nid, text, extractor.getTextType(), connection);
+                log.info("Added text");
+                int ti = 1;
+                List<Long> tokenIds = insertNodeTokens(nid, srcTxt, extractor.tokens(), ti, connection);
+                log.info("Added " + tokenIds.size() + " token nodes");
+                for (Annotation ann: extractor.annotations()) { // adds annotations
+                    long aid = insertAnnotationInternal(nid, ann, connection);
+                    ann.setID(aid);
+                    // save spans
+                    addAnnotationSpans(aid, ann.getSpans(), connection);
+                    // save attributes
+                    addAnnotationAttributes(aid, ann.getAttributes(), connection);
+                    log.info("Added annotation " + aid);
+                }
             }
+
             // add metadata
-            updateNodeMetadata(nid, extractor.metadata(), connection);
+            updateNodeMetadata(nid, extractor.metadata(), connection, justMetadata);
 
             connection.commit();
             return nid;

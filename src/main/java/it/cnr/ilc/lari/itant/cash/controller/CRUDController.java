@@ -172,6 +172,24 @@ public class CRUDController {
 		return toret;
 	}
 
+	@RequestMapping(
+    path = "/api/crud/updateFileMetadata", 
+    method = RequestMethod.POST, 
+    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
+	public UploadFileResponse updateFileMetadata(@RequestParam("requestUUID") String requestUUID, 
+										         @RequestParam("element-id") Integer elementID,
+										         @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
+		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+
+		UploadFileResponse toret = new UploadFileResponse();
+		InputStream fis = file.getInputStream();
+		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType(), true);
+		log.info("File id: " + fid + " medatada updated");
+		toret.setNode(DocumentSystemNode.populateNode(fid));
+		toret.setRequestUUID(requestUUID);
+		return toret;
+	}
+
 	@PostMapping("/api/crud/createFile")
 	public UploadFileResponse createFile(@RequestBody CreateFileRequest request, Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
@@ -184,7 +202,6 @@ public class CRUDController {
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
-
 
 	@PostMapping("/api/public/crud/downloadFile")
 	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request, Principal principal) throws Exception {
