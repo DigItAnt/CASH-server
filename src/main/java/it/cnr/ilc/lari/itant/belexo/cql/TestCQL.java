@@ -35,6 +35,7 @@ public class TestCQL {
         // pos__author -> metadata author del pos, pos__author__name -> metadata author.name del pos
         q = "[word=\"statis\" | epidoc=\"tei:name\"]";
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
+        q = "[_doc__sub1__f1__f2=\"statis\"]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);

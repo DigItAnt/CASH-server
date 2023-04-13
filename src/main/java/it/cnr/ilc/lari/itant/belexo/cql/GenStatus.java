@@ -2,11 +2,20 @@ package it.cnr.ilc.lari.itant.belexo.cql;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
 
 public class GenStatus {
+    private static final Logger log = LoggerFactory.getLogger(GenStatus.class);
+    
     List<String> fromList = new ArrayList<String>();
     List<String> whereList = new ArrayList<String>();
     List<String> paramList = new ArrayList<String>();
@@ -41,6 +50,45 @@ public class GenStatus {
 
         paramList.add(att);
         paramList.add(clearString(value));
+        
+    }
+
+    public void setMetaValuePairEquals(String layer, String field, String[] subfields, String value) {
+        // TODO handle layer, _doc so far
+        annotCounter++;
+        String prop = "prop" + annotCounter;
+        fromList.add("JOIN str_fs_props as " + prop + " on " + prop + ".node = node.id");
+
+        if (subfields.length == 0) {
+            whereList.add("( " + prop + ".name = ? AND " + prop + ".value = ? )");
+            paramList.add(field);
+            paramList.add(clearString(value));
+        } else {
+            Map<String, Object> subfieldsMap = new HashMap<>();
+            Map<String, Object> currentMap = subfieldsMap;
+            for (int i = 0; i < subfields.length - 1; i++) {
+                Map<String, Object> newMap = new HashMap<>();
+                currentMap.put(subfields[i], newMap);
+                currentMap = newMap;
+            }
+            currentMap.put(subfields[subfields.length - 1], clearString(value));
+
+            String subfieldsJson = "";
+            try {
+                subfieldsJson = new ObjectMapper().writeValueAsString(subfieldsMap);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            
+            log.info("subfieldsJson: " + subfieldsJson);
+
+            whereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
+            paramList.add(field);
+            paramList.add(clearString(value));
+
+
+        }
+
         
     }
 

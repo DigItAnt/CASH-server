@@ -1,17 +1,24 @@
 package it.cnr.ilc.lari.itant.belexo.cql;
 
+import java.util.Arrays;
+
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.evolvedbinary.cql.parser.CorpusQLBaseVisitor;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AndContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.OrContext;
-import com.evolvedbinary.cql.parser.CorpusQLParser.ValuePartParenthesisedContext;
 
 // https://www.mvndoc.com/c/com.evolvedbinary.cql/corpusql-parser/index.html?overview-tree.html
 
 public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
+    private static final Logger log = LoggerFactory.getLogger(MyVisitor.class);
+
     GenStatus status = new GenStatus();
+
+    public static String customSep = "__";
 
     @Override
     public GenStatus visitAnd(AndContext ctx) {
@@ -39,10 +46,29 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     @Override
     public GenStatus visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
         System.out.println(" -- value " + ctx.propName().getText() + " " + ctx.valuePart().getText());
+
+        if (ctx.propName().getText().contains(customSep))
+            return visitCustomAttValuePairEquals(ctx);
+
         if (ctx.propName().getText().equals("word"))
             status.setWordValuePairEquals(ctx.valuePart().getText());
         else
             status.setAttValuePairEquals(ctx.propName().getText(), ctx.valuePart().getText());
+        return status;
+    }
+
+    private GenStatus visitCustomAttValuePairEquals(AttValuePairEqualsContext ctx) {
+        String[] parts = ctx.propName().getText().split(customSep);
+        String layer = parts[0];
+        String field = parts[1];
+        String[] subfields = new String[]{};
+        if (parts.length > 2)
+            subfields = Arrays.copyOfRange(parts, 2, parts.length);
+
+        // log field and subfields
+        log.info("layer: {}, field: {}, subfields: {}", layer, field, subfields);
+
+        status.setMetaValuePairEquals(layer, field, subfields, ctx.valuePart().getText());
         return status;
     }
 
