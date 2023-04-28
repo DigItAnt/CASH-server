@@ -15,6 +15,8 @@ import it.cnr.ilc.lari.itant.cash.DBManager;
 
 public class GenStatus {
     private static final Logger log = LoggerFactory.getLogger(GenStatus.class);
+
+    public static String DOC_LAYER = "_doc";
     
     List<String> fromList = new ArrayList<String>();
     List<String> whereList = new ArrayList<String>();
@@ -37,15 +39,27 @@ public class GenStatus {
         paramList.add(clearString(value));
     }
 
+    protected String getAnnSpanFrom(int idspan, String annot) {
+        String span = "a" + idspan;
+        return "JOIN ann_spans as " + span + " ON " + span + ".ann = " + annot + ".id";
+    }
+
+    protected String getAnnSpanWhere(int idspan, String tok) {
+        String span = "a" + idspan;
+        String cond = String.format("(GREATEST(%s.begin, %s.begin) < LEAST(%s.end, %s.end))", span, tok, span, tok);
+        return cond;
+        //return "((" + span + ".`begin`<=" + tok + ".`begin` AND " + span + ".`end`>" + tok +".`begin`) OR (" + 
+        //       span + ".`begin`>" + tok + ".`begin` AND " + tok + ".`end`>" + span + ".`begin`))";
+    }
+
     public void setAttValuePairEquals(String att, String value) {
         annotCounter++;
         String annot = "ann" + annotCounter;
-        String span = "a" + annotCounter;
-        fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
-        fromList.add("JOIN ann_spans as " + span + " ON " + span + ".ann = " + annot + ".id");
 
-        String overlapCheck = "((" + span + ".`begin`<=tok1.`begin` AND " + span + ".`end`>=tok1.`begin`) OR (" + 
-                                span + ".`begin`>tok1.`begin` AND tok1.`end`>=" + span + ".`begin`))";
+        fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
+        fromList.add(getAnnSpanFrom(annotCounter, annot));
+
+        String overlapCheck = getAnnSpanWhere(annotCounter, "tok1");
         whereList.add("( " + annot + ".layer = ? AND " + annot + ".value = ? AND " + overlapCheck + " )");
 
         paramList.add(att);
@@ -54,10 +68,19 @@ public class GenStatus {
     }
 
     public void setMetaValuePairEquals(String layer, String field, String[] subfields, String value) {
-        // TODO handle layer, _doc so far
         annotCounter++;
         String prop = "prop" + annotCounter;
-        fromList.add("JOIN str_fs_props as " + prop + " on " + prop + ".node = node.id");
+        int spanId = 0;
+        if (layer.equals(DOC_LAYER))
+            fromList.add("JOIN str_fs_props as " + prop + " on " + prop + ".node = node.id");
+        else {
+            annotCounter++;
+            String ann = "ann" + annotCounter;
+            fromList.add("LEFT JOIN annotations as " + ann + " ON " + ann + ".node = node.id");
+            fromList.add("JOIN str_ann_props as " + prop + " on " + prop + ".ann = " + ann + ".id");
+            spanId = annotCounter;
+            fromList.add(getAnnSpanFrom(annotCounter, ann));
+        }
 
         if (subfields.length == 0) {
             whereList.add("( " + prop + ".name = ? AND " + prop + ".value = ? )");
@@ -89,6 +112,8 @@ public class GenStatus {
 
         }
 
+        if (!layer.equals(DOC_LAYER))
+            whereList.add(" AND " + getAnnSpanWhere(spanId, "tok1"));
         
     }
 
