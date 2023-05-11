@@ -88,7 +88,6 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     public GenStatus visitSequencePart(SequencePartContext ctx) {
         queryPartId++;
         status.setCurrentTokenId(queryPartId);
-        log.warn("QQQQQQQQQQQQQQQQQQQQQQQQQseqPART {}", ctx.toString() );
         return super.visitSequencePart(ctx);
     }
 

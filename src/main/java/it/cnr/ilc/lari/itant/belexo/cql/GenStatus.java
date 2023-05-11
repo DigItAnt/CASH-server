@@ -19,7 +19,12 @@ public class GenStatus {
     public static String DOC_LAYER = "_doc";
     
     List<String> fromList = new ArrayList<String>();
-    List<String> whereList = new ArrayList<String>();
+
+    // whereLists is a list of whereList, one for each token
+    // this is needed to manage "AND" between tokens in where clause generation
+    List<List<String>> whereLists = new ArrayList<>();
+    List<String> currWhereList = null;
+
     List<String> paramList = new ArrayList<String>();
 
     int annotCounter = 0;  // current annotation counter
@@ -36,6 +41,10 @@ public class GenStatus {
         this.currentTokenId = currentTokenId;
         fromList.add(String.format("LEFT JOIN tokens as %s ON %s.node = node.id", getCurrentTokenName(), getCurrentTokenName()));
         seq.addToken(currentTokenId);
+
+        // set whereList for current token
+        currWhereList = new ArrayList<>();
+        whereLists.add(currWhereList);
     }
 
     public String getCurrentTokenName() {
@@ -52,7 +61,7 @@ public class GenStatus {
     }
 
     public void setWordValuePairEquals(String value) {
-        whereList.add(getCurrentTokenName() + ".text = ?");
+        currWhereList.add(getCurrentTokenName() + ".text = ?");
         paramList.add(clearString(value));
     }
 
@@ -77,7 +86,7 @@ public class GenStatus {
         fromList.add(getAnnSpanFrom(annotCounter, annot));
 
         String overlapCheck = getAnnSpanWhere(annotCounter, getCurrentTokenName());
-        whereList.add("( " + annot + ".layer = ? AND " + annot + ".value = ? AND " + overlapCheck + " )");
+        currWhereList.add("( " + annot + ".layer = ? AND " + annot + ".value = ? AND " + overlapCheck + " )");
 
         paramList.add(att);
         paramList.add(clearString(value));
@@ -100,7 +109,7 @@ public class GenStatus {
         }
 
         if (subfields.length == 0) {
-            whereList.add("( " + prop + ".name = ? AND " + prop + ".value = ? )");
+            currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value = ? )");
             paramList.add(field);
             paramList.add(clearString(value));
         } else {
@@ -122,7 +131,7 @@ public class GenStatus {
             
             log.info("subfieldsJson: " + subfieldsJson);
 
-            whereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
+            currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
             paramList.add(field);
             paramList.add(clearString(value));
 
@@ -130,12 +139,12 @@ public class GenStatus {
         }
 
         if (!layer.equals(DOC_LAYER))
-            whereList.add(" AND " + getAnnSpanWhere(spanId, getCurrentTokenName()));
+            currWhereList.add(" AND " + getAnnSpanWhere(spanId, getCurrentTokenName()));
         
     }
 
     public void setOperator(String operator) {
-        whereList.add(operator);
+        currWhereList.add(operator);
     }
 
     public PreparedStatement gen() throws Exception {
@@ -147,18 +156,27 @@ public class GenStatus {
 
         String chainSeq = seq.buildChainString();
         if (chainSeq.length() > 0) {
-            if (whereList.size() > 0)
-                whereList.add(" AND " + chainSeq);
+            if (currWhereList.size() > 0)
+                currWhereList.add(" AND " + chainSeq);
             else
-                whereList.add(chainSeq);
+                currWhereList.add(chainSeq);
         }
 
         // add FROM concatenating fromList with comma
         query += "\nFROM " + String.join("\n  ", fromList);
-        // add WHERE concatenating whereList with AND
-        //query += "\nWHERE " + String.join(" AND\n  ", whereList);
-        if (whereList.size() > 0)
-            query += "\nWHERE " + String.join(" \n  ", whereList);
+
+        // manage whereLists
+        boolean whereAdded = false;
+        for (List<String> whereList: whereLists) {
+            if (whereList.size() > 0) {
+                if (!whereAdded) {
+                    query += "\nWHERE ";
+                    whereAdded = true;
+                } else
+                    query += "\n  AND ";
+                query += String.join(" \n  ", whereList);
+            }
+        }
 
         PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 

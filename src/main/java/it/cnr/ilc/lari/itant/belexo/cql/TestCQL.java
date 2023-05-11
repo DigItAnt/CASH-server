@@ -36,7 +36,7 @@ public class TestCQL {
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
         q = "[word=\"statis\"][pos=\"POOO.*\"]";
-        q = "[][][]";
+        //q = "[][][]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
