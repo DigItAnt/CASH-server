@@ -127,7 +127,8 @@ public class GenStatus {
         query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND
         //query += "\nWHERE " + String.join(" AND\n  ", whereList);
-        query += "\nWHERE " + String.join(" \n  ", whereList);
+        if (whereList.size() > 0)
+            query += "\nWHERE " + String.join(" \n  ", whereList);
 
         PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 
