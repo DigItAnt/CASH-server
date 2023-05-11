@@ -24,9 +24,26 @@ public class GenStatus {
 
     int annotCounter = 0;  // current annotation counter
 
+    int currentTokenId = 1;
+
+    TokenSequence seq = new TokenSequence();
+
+    public int getCurrentTokenId() {
+        return currentTokenId;
+    }
+
+    public void setCurrentTokenId(int currentTokenId) {
+        this.currentTokenId = currentTokenId;
+        fromList.add(String.format("LEFT JOIN tokens as %s ON %s.node = node.id", getCurrentTokenName(), getCurrentTokenName()));
+        seq.addToken(currentTokenId);
+    }
+
+    public String getCurrentTokenName() {
+        return "tok" + this.currentTokenId;
+    }
+
     public GenStatus() {
         fromList.add("fsnodes as node");
-        fromList.add("LEFT JOIN tokens as tok1 ON tok1.node = node.id");
     }
 
     private String clearString(String value) {
@@ -35,7 +52,7 @@ public class GenStatus {
     }
 
     public void setWordValuePairEquals(String value) {
-        whereList.add("tok1.text = ?");
+        whereList.add(getCurrentTokenName() + ".text = ?");
         paramList.add(clearString(value));
     }
 
@@ -59,7 +76,7 @@ public class GenStatus {
         fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
         fromList.add(getAnnSpanFrom(annotCounter, annot));
 
-        String overlapCheck = getAnnSpanWhere(annotCounter, "tok1");
+        String overlapCheck = getAnnSpanWhere(annotCounter, getCurrentTokenName());
         whereList.add("( " + annot + ".layer = ? AND " + annot + ".value = ? AND " + overlapCheck + " )");
 
         paramList.add(att);
@@ -113,7 +130,7 @@ public class GenStatus {
         }
 
         if (!layer.equals(DOC_LAYER))
-            whereList.add(" AND " + getAnnSpanWhere(spanId, "tok1"));
+            whereList.add(" AND " + getAnnSpanWhere(spanId, getCurrentTokenName()));
         
     }
 
@@ -122,7 +139,20 @@ public class GenStatus {
     }
 
     public PreparedStatement gen() throws Exception {
-        String query = "SELECT DISTINCT node.id, tok1.id, tok1.begin, tok1.end ";
+        //String query = String.format("SELECT DISTINCT node.id, %s.id, %s.begin, %s.end ", getCurrentTokenName(), getCurrentTokenName(), getCurrentTokenName());
+        String query = "SELECT DISTINCT node.id";
+        String fromSeq = seq.buildFromString();
+        if (fromSeq.length() > 0)
+            query += ", " + fromSeq;
+
+        String chainSeq = seq.buildChainString();
+        if (chainSeq.length() > 0) {
+            if (whereList.size() > 0)
+                whereList.add(" AND " + chainSeq);
+            else
+                whereList.add(chainSeq);
+        }
+
         // add FROM concatenating fromList with comma
         query += "\nFROM " + String.join("\n  ", fromList);
         // add WHERE concatenating whereList with AND

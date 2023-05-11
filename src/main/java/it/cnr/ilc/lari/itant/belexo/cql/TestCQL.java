@@ -4,8 +4,6 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import java.io.IOException;
-
 import com.evolvedbinary.cql.parser.CorpusQLLexer;
 import com.evolvedbinary.cql.parser.CorpusQLParser;
 
@@ -37,6 +35,8 @@ public class TestCQL {
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
+        q = "[word=\"statis\"][pos=\"POOO.*\"]";
+        q = "[][][]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);

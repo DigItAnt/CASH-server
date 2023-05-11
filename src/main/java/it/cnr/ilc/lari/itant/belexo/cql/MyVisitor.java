@@ -2,6 +2,7 @@ package it.cnr.ilc.lari.itant.belexo.cql;
 
 import java.util.Arrays;
 
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,12 @@ import org.slf4j.LoggerFactory;
 import com.evolvedbinary.cql.parser.CorpusQLBaseVisitor;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AndContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.ComplexQueryContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.OrContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.QueryContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.SequenceContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.SequencePartContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.SimpleQueryContext;
 
 // https://www.mvndoc.com/c/com.evolvedbinary.cql/corpusql-parser/index.html?overview-tree.html
 
@@ -19,6 +25,8 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     GenStatus status = new GenStatus();
 
     public static String customSep = "__";
+
+    public int queryPartId = 0;
 
     @Override
     public GenStatus visitAnd(AndContext ctx) {
@@ -75,5 +83,15 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     public GenStatus getStatus() {
         return status;
     }
+
+    @Override
+    public GenStatus visitSequencePart(SequencePartContext ctx) {
+        queryPartId++;
+        status.setCurrentTokenId(queryPartId);
+        log.warn("QQQQQQQQQQQQQQQQQQQQQQQQQseqPART {}", ctx.toString() );
+        return super.visitSequencePart(ctx);
+    }
+
+
 
 }
