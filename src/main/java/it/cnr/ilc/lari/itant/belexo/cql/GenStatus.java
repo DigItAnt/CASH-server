@@ -147,7 +147,7 @@ public class GenStatus {
         currWhereList.add(operator);
     }
 
-    public PreparedStatement gen() throws Exception {
+    public PreparedStatement gen(int offset, int limit) throws Exception {
         //String query = String.format("SELECT DISTINCT node.id, %s.id, %s.begin, %s.end ", getCurrentTokenName(), getCurrentTokenName(), getCurrentTokenName());
         String query = "SELECT DISTINCT node.id";
         String fromSeq = seq.buildFromString();
@@ -178,6 +178,9 @@ public class GenStatus {
             }
         }
 
+        // add offset and limit
+        query += "\nLIMIT ?, ?";
+
         PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 
         int i = 1;
@@ -185,6 +188,12 @@ public class GenStatus {
             stmt.setString(i, param);
             i++;
         }
+
+        // add offset and limit
+        stmt.setInt(i, offset);
+        i++;
+        stmt.setInt(i, limit);
+
 
         return stmt;
     }

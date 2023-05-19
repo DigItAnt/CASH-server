@@ -78,7 +78,7 @@ public class SearchController {
 
         MyVisitor vis = new MyVisitor();
         vis.visit(tree);
-		PreparedStatement stmt = vis.getStatus().gen();
+		PreparedStatement stmt = vis.getStatus().gen(offset, limit);
 		String qsql = stmt.toString();
 		log.info("From {} to {}", query, qsql);
 

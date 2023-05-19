@@ -46,6 +46,6 @@ public class TestCQL {
 
         MyVisitor vis = new MyVisitor();
         vis.visit(tree);
-        System.out.println(vis.status.gen().toString());
+        System.out.println(vis.status.gen(0, 10).toString());
     }
 }
