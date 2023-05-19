@@ -64,7 +64,10 @@ public class SearchController {
 	}
 
 	@PostMapping("/api/public/search")
-	public SearchResponse search(@RequestParam String query, Principal principal) throws Exception {
+	public SearchResponse search(@RequestParam String query,
+	                             @RequestParam(value="limit", defaultValue = "10") int limit,
+								 @RequestParam(value="offset", defaultValue = "0") int offset,
+	                             Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(query));

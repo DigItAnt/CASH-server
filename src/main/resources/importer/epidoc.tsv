@@ -32,7 +32,12 @@ __END__
 		
 summary	//tei:msContents/tei:summary/text()	
 		
-dimensions	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@type	
+dimensions.type	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@type	
+dimensions.unit	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@unit	
+dimensions.height	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:height/text()	
+dimensions.width	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:width/text()	
+dimensions.depth	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:depth/text()	
+		
 reuse	//tei:physDesc//tei:supportDesc/tei:support/tei:rs[@type='reuse']/text()	
 condition	//tei:physDesc//tei:supportDesc/tei:condition/text()	
 conditionDesc	//tei:physDesc//tei:supportDesc/tei:condition/tei:note/text()	
@@ -60,8 +65,9 @@ originalPlace.ancientNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeNam
 originalPlace.modernName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/text()	
 originalPlace.modernNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/@ref	
 		
-dateOfOrigin	//tei:history/tei:origin/tei:origDate/@notBefore-custom	
-dateOfOriginNotBefore	//tei:history/tei:origin/tei:origDate/@notAfter-custom	
+dateOfOrigin	//tei:history/tei:origin/tei:origDate/text()	
+dateOfOriginNotBefore	//tei:history/tei:origin/tei:origDate/@notBefore-custom	
+dateOfOriginNotAfter	//tei:history/tei:origin/tei:origDate/@notAfter-custom	
 datingCertainty	//tei:history/tei:origin/tei:origDate/@cert	
 		
 discoveryYear.when	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/@when	

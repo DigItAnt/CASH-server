@@ -102,6 +102,7 @@ public class XpathMetadataImporter {
         xPath.setNamespaceContext(context);
         //expression = "//tei:TEI";
         Object ret = xPath.compile(expression).evaluate(doc, what);
+        if ( ret instanceof String ) ret = ((String)ret).strip(); // strip the string
         log.info("Extracted: " + ret + " with " + expression);
         return ret;
     }
