@@ -183,7 +183,8 @@ public class CRUDController {
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
-		long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType(), true);
+		long fid = DBManager.updateFileMetadata(elementID, file.getOriginalFilename(), fis, file.getContentType());
+		//long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType(), true);
 		log.info("File id: " + fid + " medatada updated");
 		toret.setNode(DocumentSystemNode.populateNode(fid));
 		toret.setRequestUUID(requestUUID);

@@ -940,6 +940,24 @@ public class DBManager {
         return ret;
     }
 
+    public static long updateFileMetadata(long nodeId, String filename, InputStream contentStream, String contentType) throws Exception {
+        FileInfo node = getNodeById(nodeId);
+        if ( node == null ) {
+            log.error("Cannot update non-existent node " + nodeId);
+            throw new NodeNotFoundException();
+        }
+        if ( node.getType() != FileDirectory.file ) {
+            log.error("Cannot update a directory!");
+            throw new InvalidParamException();
+        }
+        if ( !node.getName().equals(filename) ) {
+            log.error("Filename mismatch!");
+            throw new InvalidParamException();
+        } 
+
+        return addFile(node.getFather(), filename, contentStream, contentType, true);
+    }
+
     @Transactional
     public static long addFile(long parentId, String filename, InputStream contentStream, String contentType) throws Exception {
         return addFile(parentId, filename, contentStream, contentType, false);
