@@ -6,6 +6,7 @@ import java.security.Principal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -184,7 +185,6 @@ public class CRUDController {
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
 		long fid = DBManager.updateFileMetadata(elementID, file.getOriginalFilename(), fis, file.getContentType());
-		//long fid = DBManager.addFile(elementID, file.getOriginalFilename(), fis, file.getContentType(), true);
 		log.info("File id: " + fid + " medatada updated");
 		toret.setNode(DocumentSystemNode.populateNode(fid));
 		toret.setRequestUUID(requestUUID);
@@ -209,10 +209,16 @@ public class CRUDController {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		// TODO: Return File!!
-		/* FileInfo node = */ DBManager.getNodeById(request.getElementId());
-		PodamFactory factory = new PodamFactoryImpl();
-		DownloadFileResponse toret = factory.manufacturePojo(DownloadFileResponse.class);
-		// TODO
+		FileInfo node = DBManager.getNodeById(request.getElementId()); // also raises exception if needed
+		String content = DBManager.getRawContent(node.getElementId(), null);
+		
+        // Set the headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", node.getName());
+
+		DownloadFileResponse toret = new DownloadFileResponse(content, headers);
+
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}
