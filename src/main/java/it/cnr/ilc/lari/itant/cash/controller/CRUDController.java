@@ -217,7 +217,7 @@ public class CRUDController {
         }
 		if ( !node.getType().equals(DBManager.TYPE_FILE) ) {
 			log.error("Cannot download non-file node " + request.getElementId());
-			throw new NodeNotFoundException();
+			throw new it.cnr.ilc.lari.itant.cash.exc.InvalidParamException();
 		}
 		String content = DBManager.getRawContent(node.getElementId(), null);
 		
