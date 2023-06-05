@@ -215,6 +215,10 @@ public class CRUDController {
             log.error("Cannot download non-existent node " + request.getElementId());
             throw new NodeNotFoundException();
         }
+		if ( !node.getType().equals(DBManager.TYPE_FILE) ) {
+			log.error("Cannot download non-file node " + request.getElementId());
+			throw new NodeNotFoundException();
+		}
 		String content = DBManager.getRawContent(node.getElementId(), null);
 		
         // Set the headers
