@@ -214,7 +214,7 @@ public class CRUDController {
 		
         // Set the headers
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         headers.setContentDispositionFormData("attachment", node.getName());
 
 		DownloadFileResponse toret = new DownloadFileResponse(content, headers);
