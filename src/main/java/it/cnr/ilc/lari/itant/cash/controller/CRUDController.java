@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderResponse;
 import it.cnr.ilc.lari.itant.cash.om.CopyFileToRequest;
@@ -210,6 +211,10 @@ public class CRUDController {
 
 		// TODO: Return File!!
 		FileInfo node = DBManager.getNodeById(request.getElementId()); // also raises exception if needed
+		if ( node == null ) {
+            log.error("Cannot download non-existent node " + request.getElementId());
+            throw new NodeNotFoundException();
+        }
 		String content = DBManager.getRawContent(node.getElementId(), null);
 		
         // Set the headers
