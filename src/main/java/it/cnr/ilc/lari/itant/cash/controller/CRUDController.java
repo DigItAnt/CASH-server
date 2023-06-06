@@ -215,7 +215,7 @@ public class CRUDController {
             log.error("Cannot download non-existent node " + request.getElementId());
             throw new NodeNotFoundException();
         }
-		if ( !node.getType().equals(DBManager.TYPE_FILE) ) {
+		if ( node.getType() != DocumentSystemNode.FileDirectory.file ) {
 			log.error("Cannot download non-file node " + request.getElementId());
 			throw new it.cnr.ilc.lari.itant.cash.exc.InvalidParamException();
 		}
