@@ -522,6 +522,7 @@ public class DBManager {
     }
 
     public static void updateNodeMetadata(long elementId, Map<String, Object> props, Connection connection, boolean replace) throws Exception {
+        if ( connection == null ) connection = getNewConnection();
         if ( props == null ) return;
         try {
             FileInfo node = getNodeById(connection, elementId);
