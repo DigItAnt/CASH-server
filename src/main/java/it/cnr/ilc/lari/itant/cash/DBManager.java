@@ -568,7 +568,7 @@ public class DBManager {
                     : getNodeMetadata(elementId, connection);
 
             updateRowAttributes(elementId, metadata, props,
-                    nocheck ? null : "delete from str_fs_props where node=? and meta=1",
+                    (nocheck && !replace) ? null : "delete from str_fs_props where node=? and meta=1",
                     "INSERT INTO str_fs_props (name, value, node, meta)", ",1",
                     connection);
 
