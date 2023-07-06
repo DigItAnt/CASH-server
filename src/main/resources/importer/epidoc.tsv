@@ -37,6 +37,7 @@ dimensions.unit	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@uni
 dimensions.height	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:height/text()	
 dimensions.width	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:width/text()	
 dimensions.depth	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/tei:depth/text()	
+dimensions.precision	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@precision	
 		
 reuse	//tei:physDesc//tei:supportDesc/tei:support/tei:rs[@type='reuse']/text()	
 condition	//tei:physDesc//tei:supportDesc/tei:condition/text()	
@@ -45,7 +46,7 @@ conditionDesc	//tei:physDesc//tei:supportDesc/tei:condition/tei:note/text()
 execution	//tei:layoutDesc//tei:rs[@type='execution']/text()	
 execution_conceptUrl	//tei:layoutDesc//tei:rs[@type='execution']/@ana	
 opistography	//tei:layoutDesc//tei:rs[@type='opistography']/text()	
-layoutNotes	//tei:layoutDesc//tei:note[@type='layoutNotes']/text()	
+layoutNotes	//tei:layoutDesc//tei:note[@type='layoutNotes']//text()	
 palaeographicNotes	//tei:physDesc//tei:handNote/tei:note[@type='palaeographicNotes']/text()	
 		
 writingSystem	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/text()	

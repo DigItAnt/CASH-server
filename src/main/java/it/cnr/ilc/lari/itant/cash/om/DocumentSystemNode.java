@@ -107,6 +107,12 @@ public class DocumentSystemNode {
     public static List<DocumentSystemNode> populateTree(long root) throws Exception {
         log.info("Populating Tree");
         ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();
+        FileInfo rnode = DBManager.getNodeById(root);
+        if ( rnode.type != FileDirectory.directory ) {
+            DocumentSystemNode dsn = new DocumentSystemNode(rnode, true);
+            toret.add(dsn);
+            return toret;
+        }
         List<FileInfo> children = DBManager.getNodeChildren(root);
         log.info("Iterating over nodes.");
         for ( FileInfo node: children ) {;

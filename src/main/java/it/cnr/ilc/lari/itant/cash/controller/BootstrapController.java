@@ -28,13 +28,14 @@ public class BootstrapController {
 	}
 
 	@GetMapping("/api/public/getDocumentSystem")
-	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, Principal principal) {
+	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, @RequestParam(name="element-id", required = false, defaultValue = "0") long id, Principal principal) {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
 		PodamFactory factory = new PodamFactoryImpl();
 		GetDocumentSystemResponse toret = factory.manufacturePojo(GetDocumentSystemResponse.class);
 		try {
-			toret.setDocumentSystem(DocumentSystemNode.populateTree(DBManager.getRootNodeId()));
+			long root = id == 0 ? DBManager.getRootNodeId() : id;
+			toret.setDocumentSystem(DocumentSystemNode.populateTree(root));
 			toret.setRequestUUID(requestUUID);
 			toret.setResults(toret.getDocumentSystem().size());
 		} catch (Exception e) {

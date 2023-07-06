@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class XpathMetadataImporter {
@@ -41,6 +42,17 @@ public class XpathMetadataImporter {
 
     public void setContext(NamespaceContext context) {
         this.context = context;
+    }
+
+    public String nodeListToString(NodeList nodes) {
+        StringBuilder builder = new StringBuilder();
+
+        for (int i = 0; i < nodes.getLength(); ++i) {
+            Node node = nodes.item(i);
+            builder.append(node.getNodeValue());
+        }
+
+        return builder.toString();
     }
 
     public XpathMetadataImporter(String expressions) {
@@ -112,7 +124,9 @@ public class XpathMetadataImporter {
 
         if ( fdef.subfields == null || fdef.subfields.size() == 0 ) { // scalar or list (list unsupported)
             log.info("Extracting field");
-            return runXPath(doc, fdef.expression, XPathConstants.STRING);
+            NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
+            log.info("Extracted " + nlist.getLength() + " nodes");
+            return  nodeListToString(nlist); //runXPath(doc, fdef.expression, XPathConstants.STRING);
         } else { // it's a structure
             if ( fdef.expression != null ) { // it's a list
                 List<Object> lst = new ArrayList<Object>();

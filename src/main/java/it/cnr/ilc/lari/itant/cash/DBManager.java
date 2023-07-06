@@ -862,6 +862,17 @@ public class DBManager {
         stmt.execute();
     }
 
+    private static void updateFileData(long nodeid, String contentType, InputStream contentStream,
+            Connection connection) throws Exception {
+        PreparedStatement stmt = connection
+                .prepareStatement("UPDATE blob_fs_props set value=?, content_type=? where node=?");
+        stmt.setBlob(1, contentStream);
+        stmt.setString(2, contentType);
+        stmt.setLong(3, nodeid);
+        stmt.execute();
+    }
+
+
     private static long copyTextEntry(long srcId, long targetId, Connection connection) throws Exception {
         PreparedStatement stmt = connection.prepareStatement(
                 "INSERT INTO unstructured (text,node,type) select text, ?, type from unstructured where node=?",
@@ -1093,6 +1104,9 @@ public class DBManager {
                 }
                 addAnnotationsSpans(annotations, connection);
                 addAnnotationsAttributes(annotations, connection);
+            } else {
+                // update node content
+                updateFileData(nid, contentType, new ByteArrayInputStream(contentBytes), connection);
             }
 
             // add metadata
