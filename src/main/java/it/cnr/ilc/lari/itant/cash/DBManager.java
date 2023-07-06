@@ -1294,6 +1294,7 @@ public class DBManager {
         while (res.next()) {
             log.info("Found.");
             Annotation ann = new Annotation();
+            ann.setNode(nodeId);
             ann.setID(res.getLong("id"));
             ann.setLayer(res.getString("layer"));
             ann.setValue(res.getString("value"));
@@ -1304,6 +1305,32 @@ public class DBManager {
             connection.close();
         return ret;
     }
+
+    // @TODO: there are missing columns here
+    public static List<Annotation> getAnnotationsByValue(String value, Connection connection) throws Exception {
+        log.info("Trying to get annotations by value " + value);
+        boolean closeConnection = connection == null;
+        if (connection == null)
+            connection = getNewConnection();
+        PreparedStatement stmt = connection
+                .prepareStatement("SELECT id, node, layer, value, imported FROM annotations where value=?");
+        stmt.setString(1, value);
+        ResultSet res = stmt.executeQuery();
+        List<Annotation> ret = new ArrayList<Annotation>();
+        while (res.next()) {
+            Annotation ann = new Annotation();
+            ann.setID(res.getLong("id"));
+            ann.setNode(res.getLong("node"));
+            ann.setLayer(res.getString("layer"));
+            ann.setValue(res.getString("value"));
+            ann.setImported(res.getBoolean("imported"));
+            ret.add(ann);
+        }
+        if (closeConnection)
+            connection.close();
+        return ret;
+    }
+
 
     public static Annotation getAnnotationById(long annId, Connection connection) throws Exception {
         boolean closeConnection = connection == null;

@@ -129,6 +129,14 @@ public class AnnotationController {
         DBManager.deleteAnnotationByValue(value, null);
     }
 
+    @GetMapping(value="/api/annotationbyvalue")
+    public GetAnnotationsResponse getByValue(@RequestParam String requestUUID, @RequestParam String value, Principal principal) throws Exception {
+        GetAnnotationsResponse resp = new GetAnnotationsResponse();
+        resp.setRequestUUID(requestUUID);
+        resp.setAnnotations(DBManager.getAnnotationsByValue(value, null));
+        return resp;
+        
+    }
 
     @PostMapping(value="/api/unstructured")
     public UnstructuredResponse addUnastructured(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody UnstructuredRequest request, Principal principal) throws Exception {

@@ -20,6 +20,7 @@ public class Annotation {
     long ID = -1;
     String layer;
     String value;
+    long node;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     boolean imported = false;
@@ -41,6 +42,13 @@ public class Annotation {
             this.end = end;
         }
         
+    }
+    
+    public long getNode() {
+        return node;
+    }
+    public void setNode(long node) {
+        this.node = node;
     }
 
     List<Span> spans;

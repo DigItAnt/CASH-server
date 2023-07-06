@@ -124,6 +124,7 @@ public class XpathMetadataImporter {
 
         if ( fdef.subfields == null || fdef.subfields.size() == 0 ) { // scalar or list (list unsupported)
             log.info("Extracting field");
+            // even for a single field, multiple nodes (e.g., text()) could be returned, so we concatenate them
             NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
             log.info("Extracted " + nlist.getLength() + " nodes");
             return  nodeListToString(nlist); //runXPath(doc, fdef.expression, XPathConstants.STRING);
