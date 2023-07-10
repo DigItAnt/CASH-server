@@ -226,7 +226,10 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
     protected int processPart(Node part, int begin) throws BadFormatException {
         int offset = begin;
         Node abNode = getChildByName(part, "tei:ab");
-        if ( abNode == null ) throw new BadFormatException();
+        if ( abNode == null ) {
+            log.warn("No tei:ab node in part: " + part.getNodeName());
+            return 0;
+        }
         NodeList lc = abNode.getChildNodes();
         for ( int ni = 0; ni < lc.getLength(); ni ++ ) {
             Node item = lc.item(ni);
