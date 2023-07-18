@@ -889,14 +889,26 @@ public class DBManager {
         boolean closeConnection = connection == null;
         if (connection == null)
             connection = getNewConnection();
-        PreparedStatement stmt = connection.prepareStatement("INSERT INTO unstructured (text,node,type) values (?,?,?)",
-                Statement.RETURN_GENERATED_KEYS);
+        // check whether text exists
+        Map<String, Long> textIds = getUnstructuredIds(nodeId, connection);
+        Long id = null;
+        if (textIds.containsKey(tType)) {
+            log.info("Text already exists, updating");
+            id = textIds.get(tType);
+        } else {
+            log.info("Text does not exist, inserting");
+        }
+
+        String sstmt = ((id == null)?"INSERT INTO unstructured (text, node, type) values (?,?,?)":
+                                     "UPDATE unstructured set text=?, node=?, type=? where id=?");
+        PreparedStatement stmt = connection.prepareStatement(sstmt, Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, text);
         stmt.setLong(2, nodeId);
         stmt.setString(3, tType);
+        if ( id != null ) stmt.setLong(4, id);
         stmt.executeUpdate();
         ResultSet rs = stmt.getGeneratedKeys();
-        long ret = rs.next() ? rs.getLong(1) : 0;
+        long ret = rs.next() ? rs.getLong(1) : id;
         if (closeConnection)
             connection.close();
         return ret;
@@ -1363,6 +1375,23 @@ public class DBManager {
         if (closeConnection)
             connection.close();
         return ret;
+    }
+
+    public static Map<String, Long> getUnstructuredIds(long nodeid, Connection connection) throws Exception {
+        String sstmt = "SELECT type, id FROM unstructured WHERE node=?";
+        boolean closeConnection = connection == null;
+        if (connection == null)
+            connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement(sstmt);
+        stmt.setLong(1, nodeid);
+        ResultSet res = stmt.executeQuery();
+        Map<String, Long> ret = new HashMap<String, Long>();
+        while ( res.next() )
+            ret.put(res.getString(1), res.getLong(2));
+        if (closeConnection)
+            connection.close();
+        return ret;
+
     }
 
     public static Long getNodeTextId(long nodeId, String type, Connection connection) throws Exception {
