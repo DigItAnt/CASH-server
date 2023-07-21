@@ -1,4 +1,4 @@
-package it.cnr.ilc.lari.itant.belexo.cql;
+package it.cnr.ilc.lari.itant.cash.cql;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

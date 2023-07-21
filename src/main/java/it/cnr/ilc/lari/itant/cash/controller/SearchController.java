@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.evolvedbinary.cql.parser.CorpusQLLexer;
 import com.evolvedbinary.cql.parser.CorpusQLParser;
 
-import it.cnr.ilc.lari.itant.belexo.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.SearchResponse;

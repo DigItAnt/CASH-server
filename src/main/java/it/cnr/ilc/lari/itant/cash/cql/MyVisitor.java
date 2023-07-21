@@ -1,4 +1,4 @@
-package it.cnr.ilc.lari.itant.belexo.cql;
+package it.cnr.ilc.lari.itant.cash.cql;
 
 import java.util.Arrays;
 
