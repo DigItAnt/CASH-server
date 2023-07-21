@@ -35,7 +35,7 @@ public class TestCQL {
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
-        q = "[word=\"statis\"][pos=\"POOO.*\"]";
+        q = "[word=\"_REGEX_statis\"][pos=\"POOO.*\"]";
         //q = "[][][]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));

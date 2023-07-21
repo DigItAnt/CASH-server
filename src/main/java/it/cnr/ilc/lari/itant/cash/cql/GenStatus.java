@@ -17,6 +17,7 @@ public class GenStatus {
     private static final Logger log = LoggerFactory.getLogger(GenStatus.class);
 
     public static String DOC_LAYER = "_doc";
+    public static String REGEX_PREFIX = "_REGEX_";
     
     List<String> fromList = new ArrayList<String>();
 
@@ -61,7 +62,13 @@ public class GenStatus {
     }
 
     public void setWordValuePairEquals(String value) {
-        currWhereList.add(getCurrentTokenName() + ".text = ?");
+        if (!clearString(value).startsWith(REGEX_PREFIX))
+            currWhereList.add(getCurrentTokenName() + ".text = ?");
+        else {
+            // remove the prefix
+            value = value.substring(REGEX_PREFIX.length());
+            currWhereList.add(getCurrentTokenName() + ".text REGEXP ?");
+        }
         paramList.add(clearString(value));
     }
 
