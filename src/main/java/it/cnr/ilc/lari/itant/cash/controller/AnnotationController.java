@@ -18,6 +18,7 @@ import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.CreateAnnotationResponse;
 import it.cnr.ilc.lari.itant.cash.om.CreateTokenResponse;
+import it.cnr.ilc.lari.itant.cash.om.DeleteTokenResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetAnnotationsResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetRawContent;
 import it.cnr.ilc.lari.itant.cash.om.GetTextResponse;
@@ -88,6 +89,18 @@ public class AnnotationController {
         resp.setToken(token);
         return resp;
     }
+
+    @DeleteMapping(value="/api/token")
+    public DeleteTokenResponse deleteToken(@RequestParam String requestUUID, @RequestParam long tokenid, Principal principal) throws Exception {
+		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
+
+        DeleteTokenResponse resp = new DeleteTokenResponse();
+
+        resp.setRequestUUID(requestUUID);
+        DBManager.deleteToken(tokenid, null);
+        return resp;
+    }
+
 
     @PostMapping(value="/api/annotation")
     public CreateAnnotationResponse createAnnotation(@RequestParam String requestUUID, @RequestParam long nodeid, @RequestBody Annotation annotation, Principal principal) throws Exception {

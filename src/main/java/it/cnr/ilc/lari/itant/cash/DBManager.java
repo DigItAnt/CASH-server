@@ -1620,6 +1620,19 @@ public class DBManager {
         }
     }
 
+    public static void deleteToken(long tokenid, Connection connection) throws Exception {
+        log.info("Deleting token " + tokenid);
+        boolean closeConnection = connection == null;
+        if (connection == null)
+            connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement("delete from tokens where id=?");
+        stmt.setLong(1, tokenid);
+        stmt.execute();
+        if (closeConnection)
+            connection.close();
+    }
+
+
     public static void deleteAnnotation(long annid, Connection connection) throws Exception {
         log.info("Deleting annotation " + annid);
         boolean closeConnection = connection == null;
