@@ -562,6 +562,10 @@ public class DBManager {
                 FileInfo node = getNodeById(connection, elementId);
                 if (node == null)
                     throw new NodeNotFoundException();
+                if ( node.getType() == FileDirectory.directory ) {
+                    log.error("Cannot update metadata of a directory!");
+                    throw new InvalidParamException();
+                }
             }
 
             Map<String, Object> metadata = replace ? new HashMap<String, Object>()
