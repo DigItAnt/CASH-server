@@ -9,6 +9,7 @@ import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathException;
 import javax.xml.xpath.XPathFactory;
 
 import org.slf4j.Logger;
@@ -123,11 +124,16 @@ public class XpathMetadataImporter {
         Object ret = null;
 
         if ( fdef.subfields == null || fdef.subfields.size() == 0 ) { // scalar or list (list unsupported)
-            log.info("Extracting field");
+            log.info("Extracting scalar field: " + fdef.expression);
             // even for a single field, multiple nodes (e.g., text()) could be returned, so we concatenate them
-            NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
-            log.info("Extracted " + nlist.getLength() + " nodes");
-            return  nodeListToString(nlist); //runXPath(doc, fdef.expression, XPathConstants.STRING);
+            try{
+                NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
+                log.info("Extracted " + nlist.getLength() + " nodes");
+                return  nodeListToString(nlist); //runXPath(doc, fdef.expression, XPathConstants.STRING);
+            } catch (XPathException e) {
+                log.info("Expression does not appear to return a NodeSet, trying string");
+                return runXPath(doc, fdef.expression, XPathConstants.STRING);
+            }
         } else { // it's a structure
             if ( fdef.expression != null ) { // it's a list
                 List<Object> lst = new ArrayList<Object>();
