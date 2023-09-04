@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.CreateAnnotationResponse;
 import it.cnr.ilc.lari.itant.cash.om.CreateTokenResponse;
 import it.cnr.ilc.lari.itant.cash.om.DeleteTokenResponse;
+import it.cnr.ilc.lari.itant.cash.om.GetAnnotationResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetAnnotationsResponse;
 import it.cnr.ilc.lari.itant.cash.om.GetRawContent;
 import it.cnr.ilc.lari.itant.cash.om.GetTextResponse;
@@ -126,6 +128,11 @@ public class AnnotationController {
 
         ModifyAnnotationResponse resp = new ModifyAnnotationResponse();
 
+        if ( annotation.getSpans().isEmpty() ) {
+            log.error("Trying to modify an annotation by removing spans");
+            throw new InvalidParamException();
+        }
+
         long nid = DBManager.getAnnotationNodeId(annotation.getID(), null);
         DBManager.deleteAnnotation(annotation.getID(), null);
         DBManager.addAnnotation(nid, annotation);
@@ -134,6 +141,20 @@ public class AnnotationController {
         resp.setAnnotation(annotation);
         return resp;
     }
+
+    /** Not ready yet
+    @GetMapping(value="/api/annotation")
+    public GetAnnotationResponse getAnnotation(@RequestParam String requestUUID, @RequestParam long annotationId, Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
+
+        GetAnnotationResponse resp = new GetAnnotationResponse();
+
+        Annotation annotation = DBManager.getAnnotationById(annotationId, null);
+        resp.setRequestUUID(requestUUID);
+        resp.setAnnotation(annotation);
+        return resp;
+    }
+     */
 
     @DeleteMapping(value="/api/annotationbyvalue")
     public void deleteByValue(@RequestParam String requestUUID, @RequestParam String value, Principal principal) throws Exception {
