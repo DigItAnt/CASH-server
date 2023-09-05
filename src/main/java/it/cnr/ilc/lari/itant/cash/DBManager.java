@@ -236,7 +236,16 @@ public class DBManager {
     public static void renameNode(long nodeId, String newName) throws Exception {
         Connection connection = getNewConnection();
         connection.setAutoCommit(false);
+        
         try {
+            FileInfo node = getNodeById(connection, nodeId);
+            if (node == null) {
+                throw new NodeNotFoundException("Node " + nodeId + " not found");
+            }
+            FileInfo dnode = getNodeById(connection, node.getFather());
+            if (dnode != null && fileExists(dnode.getElementId(), newName)) {
+                throw new InvalidParamException("A node of the same name (" + newName + ") already exists into the target!");
+            }
             PreparedStatement stmt = connection.prepareStatement("UPDATE fsnodes set name=? WHERE id=?");
             stmt.setString(1, newName);
             stmt.setLong(2, nodeId);
@@ -250,7 +259,6 @@ public class DBManager {
             connection.setAutoCommit(true);
             connection.close();
         }
-
     }
 
     public static void removeNode(long nodeId) throws Exception {
@@ -284,31 +292,33 @@ public class DBManager {
         Connection connection = getNewConnection();
         connection.setAutoCommit(false);
         try {
+            if (destination == 0)
+                destination = getRootNodeId();
             FileInfo node = getNodeById(connection, nodeId);
             if (node == null) {
                 log.error("Cannot move non-existent node " + nodeId);
-                throw new NodeNotFoundException();
+                throw new NodeNotFoundException("Cannot move non-existent node " + nodeId);
             }
             if (node.getFather() == NO_FATHER) {
                 log.error("Cannot move root node!");
-                throw new InvalidParamException();
+                throw new InvalidParamException("Cannot move root node!");
             }
             FileInfo dnode = getNodeById(connection, destination);
             if (dnode == null) {
                 log.error("Cannot move to a non-existent node " + destination);
-                throw new NodeNotFoundException();
+                throw new NodeNotFoundException("Cannot move to a non-existent node " + destination);
             }
             if (dnode.getType() != FileDirectory.directory) {
                 log.error("Destination node " + destination + " is not a directory!");
-                throw new InvalidParamException();
+                throw new InvalidParamException("Destination node " + destination + " is not a directory!");
             }
             if (dnode.hasAncestor(nodeId)) {
-                log.error("Cannot move unto a descendant node!");
-                throw new InvalidParamException();
+                log.error("Cannot move into a descendant node!");
+                throw new InvalidParamException("Cannot move into a descendant node!");
             }
             if (fileExists(destination, node.getName())) {
                 log.error("A node of the same name already exists into the target!");
-                throw new InvalidParamException();
+                throw new InvalidParamException("A node of the same name (" + node.getName() + ") already exists into the target!");
             }
 
             PreparedStatement stmt = connection.prepareStatement("UPDATE fsnodes set father=? WHERE id=?");
@@ -335,25 +345,25 @@ public class DBManager {
                 destination = getRootNodeId();
             FileInfo node = getNodeById(connection, nodeId);
             if (node == null) {
-                log.error("Cannot copy non-existent node " + nodeId);
-                throw new NodeNotFoundException();
+                log.info("Cannot copy non-existent node " + nodeId);
+                throw new NodeNotFoundException("Cannot copy non-existent node " + nodeId);
             }
             if (node.getType() != FileDirectory.file) {
-                log.error("Cannot copy a directory!");
-                throw new InvalidParamException();
+                log.info("Cannot copy a directory!");
+                throw new InvalidParamException("Cannot copy a directory!");
             }
             FileInfo dnode = getNodeById(connection, destination);
             if (dnode == null) {
-                log.error("Cannot move to a non-existent node " + destination);
-                throw new NodeNotFoundException();
+                log.info("Cannot copy into a non-existent node " + destination);
+                throw new NodeNotFoundException("Cannot copy into a non-existent node " + destination);
             }
             if (dnode.getType() != FileDirectory.directory) {
-                log.error("Destination node " + destination + " is not a directory!");
-                throw new InvalidParamException();
+                log.info("Destination node " + destination + " is not a directory!");
+                throw new InvalidParamException("Destination node " + destination + " is not a directory!");
             }
             if (fileExists(destination, node.getName())) {
-                log.error("A node of the same name already exists into the target!");
-                throw new InvalidParamException();
+                log.info("A node of the same name already exists into the target!");
+                throw new InvalidParamException("A node of the same name (" + node.getName() + ") already exists into the target!");
             }
 
             node.setFather(destination);

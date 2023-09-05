@@ -5,5 +5,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(value = HttpStatus.NOT_ACCEPTABLE, reason="The file is not in the proper format")
 public class BadFormatException extends RuntimeException {
-    
+    public BadFormatException() {
+        super("Invalid format");
+    }
+
+    public BadFormatException(String message) {
+        super(message);
+    }
 }
