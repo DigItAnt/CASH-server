@@ -79,8 +79,10 @@ public class GenStatus {
 
     protected String getAnnSpanWhere(int idspan, String tok) {
         String span = "a" + idspan;
-        String cond = String.format("(GREATEST(%s.begin, %s.begin) < LEAST(%s.end, %s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end))", span, tok, span, tok,
-                                                                                                                                         tok, span, span, tok);
+        String cond = String.format("(GREATEST(%s.begin, %s.begin) < LEAST(%s.end, %s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) )", 
+                                    span, tok, span, tok,
+                                    tok, span, span, tok, 
+                                    span, tok, tok, span);
         return cond;
         //return "((" + span + ".`begin`<=" + tok + ".`begin` AND " + span + ".`end`>" + tok +".`begin`) OR (" + 
         //       span + ".`begin`>" + tok + ".`begin` AND " + tok + ".`end`>" + span + ".`begin`))";
