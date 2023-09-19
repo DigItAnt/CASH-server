@@ -141,7 +141,7 @@ public class CRUDController {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UpdateMetadataResponse toret = new UpdateMetadataResponse();
-		DBManager.updateNodeMetadata(request.getElementId(), request.getMetadata());
+		DBManager.replaceNodeMetadata(request.getElementId(), request.getMetadata());
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
 	}

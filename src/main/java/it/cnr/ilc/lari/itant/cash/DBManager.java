@@ -556,6 +556,11 @@ public class DBManager {
         updateNodeMetadata(elementId, props, null, false, false);
     }
 
+    public static void replaceNodeMetadata(long elementId, Map<String, Object> props) throws Exception {
+        updateNodeMetadata(elementId, props, null, true, false);
+    }
+
+
     public static void updateNodeMetadata(long elementId, Map<String, Object> props, Connection connection)
             throws Exception {
         updateNodeMetadata(elementId, props, connection, false, false);
