@@ -1,13 +1,23 @@
 package it.cnr.ilc.lari.itant.cash.cql;
 
+import java.util.BitSet;
+
+import org.antlr.v4.runtime.ANTLRErrorListener;
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Parser;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
+import org.antlr.v4.runtime.atn.ATNConfigSet;
+import org.antlr.v4.runtime.dfa.DFA;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import com.evolvedbinary.cql.parser.CorpusQLLexer;
 import com.evolvedbinary.cql.parser.CorpusQLParser;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 
 /**
  * Example if using the Corpus Query Language Parser
@@ -35,12 +45,24 @@ public class TestCQL {
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
-        q = "[word=\"_REGEX_statis\"][pos=\"POOO.*\"]";
+        q = "[word.aa=\"_REGEX_statis\"][pos=\"POOO.*\"]";
         //q = "[][][]";
 
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
         final CorpusQLParser parser = new CorpusQLParser(tokens);
+
+        parser.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(final Recognizer<?, ?> recognizer,
+                                    final Object offendingSymbol,
+                                    final int line,
+                                    final int charPositionInLine,
+                                    final String msg,
+                                    final RecognitionException e) {
+                throw new InvalidParamException("failed to parse at line " + line + " due to " + msg);
+            }
+        });
 
         final ParseTree tree = parser.query();
 

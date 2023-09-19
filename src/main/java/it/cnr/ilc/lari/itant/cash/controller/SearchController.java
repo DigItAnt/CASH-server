@@ -7,8 +7,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.RecognitionException;
+import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +26,7 @@ import com.evolvedbinary.cql.parser.CorpusQLParser;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
+import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.SearchResponse;
@@ -73,6 +77,18 @@ public class SearchController {
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(query));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
         final CorpusQLParser parser = new CorpusQLParser(tokens);
+
+		parser.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(final Recognizer<?, ?> recognizer,
+                                    final Object offendingSymbol,
+                                    final int line,
+                                    final int charPositionInLine,
+                                    final String msg,
+                                    final RecognitionException e) {
+                throw new InvalidParamException("failed to parse at line " + line + " due to " + msg);
+            }
+        });
 
         final ParseTree tree = parser.query();
 
