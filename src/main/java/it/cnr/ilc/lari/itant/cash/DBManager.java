@@ -714,6 +714,9 @@ public class DBManager {
         stmt.setString(2, name);
         ResultSet rSet = stmt.executeQuery();
         long ret = -1;
+        // log query string
+        log.info("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        log.info(stmt.toString());
         if (rSet.next())
             ret = rSet.getLong("id");
         if (closeConnection)
