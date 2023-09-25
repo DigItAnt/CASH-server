@@ -709,7 +709,7 @@ public class DBManager {
         if (closeConnection)
             connection = getNewConnection();
         PreparedStatement stmt = connection
-                .prepareStatement("SELECT id from fsnodes where father=? and name=? LIMIT 1");
+                .prepareStatement("SELECT id from fsnodes where father=? and BINARY name=? LIMIT 1");
         stmt.setLong(1, parent);
         stmt.setString(2, name);
         ResultSet rSet = stmt.executeQuery();
