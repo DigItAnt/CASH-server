@@ -7,7 +7,7 @@ public class UserReqUUID {
     String requestUUID;
     
     @JsonProperty("user-id")
-    int userId;
+    String userId;
 
     public String getRequestUUID() {
         return requestUUID;
@@ -17,11 +17,11 @@ public class UserReqUUID {
         this.requestUUID = requestUUID;
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
