@@ -106,3 +106,14 @@ bodytextpart.section	@n
 bodytextpart.textDirection	@style	
 bodytextpart.ductus	substring-after(@rend, 'ductus:')	
 __END__		
+		
+		
+		
+		
+__START__persons	//tei:listPerson[@type='Onomastics']/tei:person	
+persons.ref	@xml:id	
+__START__names	tei:persName/tei:name	
+names.type	@type	
+names.text	text()	
+__END		
+__END__		
