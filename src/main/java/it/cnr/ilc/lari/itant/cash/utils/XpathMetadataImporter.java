@@ -25,7 +25,7 @@ public class XpathMetadataImporter {
     class FieldDef {
         // either 
         String expression;
-        Map<String, FieldDef> subfields;
+        Map<String, FieldDef> subfields = new HashMap<>();
 
         public FieldDef() {}
 
@@ -81,32 +81,37 @@ public class XpathMetadataImporter {
                 }
                 fdef.subfields.put(subfield, new FieldDef(columns[1].strip()));
             } else if ( line.startsWith("__") ) {
-                li += processSubListDef(lines, li);
+                li += processSubListDef(fields, lines, li);
                 // TODO: process until line.startWith("__END__");
             }
         }
     }
 
-    protected int processSubListDef(String[] lines, int li) {
+    protected int processSubListDef(Map<String, FieldDef> currentFields, String[] lines, int li) {
         int toSkip = 0;
         String[] sf = lines[li].split("\t");
         sf[0] = sf[0].substring("__START__".length()).strip(); // field name
         FieldDef fDef = new FieldDef(sf[1].strip());
-        fields.put(sf[0], fDef);
-        fDef.subfields = new HashMap<String, FieldDef>();
+        currentFields.put(sf[0], fDef);
         toSkip += 1;
-        while ( !lines[li+toSkip].startsWith("__END__") ) {
-            String[] columns = lines[li+toSkip].split("\t");
+        while (!lines[li + toSkip].startsWith("__END__")) {
+            String line = lines[li + toSkip];
             toSkip += 1;
-            if ( columns.length < 2 ) continue;
-            String[] f_sub = columns[0].split("\\.");
-            String field = f_sub[0].strip();
-            String subfield = f_sub[1].strip();
-            fDef.subfields.put(subfield, new FieldDef(columns[1].strip()));
+            if (line.startsWith("__START__")) { // New nested section
+                toSkip += processSubListDef(fDef.subfields, lines, li + toSkip - 1) - 1; // Process nested, adjust toSkip
+            } else {
+                String[] columns = line.split("\t");
+                if (columns.length < 2) continue;
+                String[] f_sub = columns[0].split("\\.");
+                String field = f_sub[0].strip();
+                String subfield = f_sub[1].strip();
+                fDef.subfields.put(subfield, new FieldDef(columns[1].strip()));
+            }
         }
-
+    
         return toSkip;
     }
+    
 
 
     protected Object runXPath(Object doc, String expression, QName what) throws Exception {
