@@ -155,7 +155,7 @@ public class GenStatus {
             
             log.info("subfieldsJson: " + subfieldsJson);
 
-            # TODO REGEX in this case
+            // TODO REGEX in this case
             currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
             paramList.add(field);
             paramList.add(clearString(value));
