@@ -59,9 +59,9 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         mdata = null;
         ClassPathResource cpr = new ClassPathResource(MDATAPATH);
         try {
-            String mdata = new String(cpr.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-            mdata = mdata.substring(mdata.indexOf('\n'));
-            mimporter = new XpathMetadataImporter(mdata);
+            String smdata = new String(cpr.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+            smdata = smdata.substring(smdata.indexOf('\n'));
+            mimporter = new XpathMetadataImporter(smdata);
             mimporter.setContext(new SimpleNamespaceContext(NSPS));
         } catch (Exception e) {
             e.printStackTrace();

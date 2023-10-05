@@ -26,7 +26,9 @@ import com.evolvedbinary.cql.parser.CorpusQLParser;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
+import it.cnr.ilc.lari.itant.cash.cql.MyVisitorFiles;
 import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
+import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.SearchResponse;
@@ -42,14 +44,50 @@ public class SearchController {
 	private static final Logger log = LoggerFactory.getLogger(SearchController.class);
 
 	@PostMapping("/api/public/searchFiles")
-	public SearchFilesResponse searchFiles(@RequestBody SearchFilesRequest request, Principal principal) {
+	public SearchFilesResponse searchFiles(@RequestParam String query,
+	                             @RequestParam(value="limit", defaultValue = "10") int limit,
+								 @RequestParam(value="offset", defaultValue = "0") int offset,
+	                             Principal principal) throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
-		PodamFactory factory = new PodamFactoryImpl();
-		SearchFilesResponse toret = factory.manufacturePojo(SearchFilesResponse.class);
-		toret.setRequestUUID(request.getRequestUUID());
-		toret.setResults(toret.getFiles().size());
-		return toret;
+        final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(query));
+        final CommonTokenStream tokens = new CommonTokenStream(lexer);
+        final CorpusQLParser parser = new CorpusQLParser(tokens);
+
+		parser.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(final Recognizer<?, ?> recognizer,
+                                    final Object offendingSymbol,
+                                    final int line,
+                                    final int charPositionInLine,
+                                    final String msg,
+                                    final RecognitionException e) {
+                throw new InvalidParamException("failed to parse at line " + line + " due to " + msg);
+            }
+        });
+
+        final ParseTree tree = parser.query();
+
+        MyVisitorFiles vis = new MyVisitorFiles();
+
+        vis.visit(tree);
+		PreparedStatement stmt = vis.getStatus().gen(offset, limit);
+		String qsql = stmt.toString();
+		log.info("From {} to {}", query, qsql);
+
+		SearchFilesResponse res = new SearchFilesResponse();
+
+		List<FileInfo> finfos = new ArrayList<FileInfo>();
+		List<SearchRow> srs = DBManager.findNodesBySQLQuery(stmt);
+
+		for ( SearchRow sr: srs ) {
+			FileInfo fi = DBManager.getNodeById(sr.getNodeId());
+			fi.getMetadata();
+			finfos.add(fi);
+			fi.getPath();
+		}
+		res.setFiles(finfos);
+		return res;
 	}
 
 	@PostMapping("/api/public/testSearch")
