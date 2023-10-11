@@ -1,7 +1,9 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
 import java.security.Principal;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,6 +30,7 @@ import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitorFiles;
 import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
+import it.cnr.ilc.lari.itant.cash.om.CountFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
@@ -42,6 +45,48 @@ import uk.co.jemos.podam.api.PodamFactoryImpl;
 @RestController
 public class SearchController {
 	private static final Logger log = LoggerFactory.getLogger(SearchController.class);
+
+	@PostMapping("/api/public/countFiles")
+	public CountFilesResponse searchFiles(@RequestParam String query,
+	                             Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+
+		final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(query));
+        final CommonTokenStream tokens = new CommonTokenStream(lexer);
+        final CorpusQLParser parser = new CorpusQLParser(tokens);
+
+		parser.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(final Recognizer<?, ?> recognizer,
+                                    final Object offendingSymbol,
+                                    final int line,
+                                    final int charPositionInLine,
+                                    final String msg,
+                                    final RecognitionException e) {
+                throw new InvalidParamException("failed to parse at line " + line + " due to " + msg);
+            }
+        });
+
+        final ParseTree tree = parser.query();
+
+        MyVisitorFiles vis = new MyVisitorFiles(true);
+
+        vis.visit(tree);
+		PreparedStatement stmt = vis.getStatus().gen(-1, -1);
+		String qsql = stmt.toString();
+		log.info("From {} to {}", query, qsql);
+
+		CountFilesResponse res = new CountFilesResponse();
+
+		ResultSet rs = stmt.executeQuery();
+
+		if (rs.next())
+			res.setResults(rs.getInt(1));
+		else res.setResults(0);
+
+		return res;
+	}
+
 
 	@PostMapping("/api/public/searchFiles")
 	public SearchFilesResponse searchFiles(@RequestParam String query,
@@ -68,7 +113,7 @@ public class SearchController {
 
         final ParseTree tree = parser.query();
 
-        MyVisitorFiles vis = new MyVisitorFiles();
+        MyVisitorFiles vis = new MyVisitorFiles(false);
 
         vis.visit(tree);
 		PreparedStatement stmt = vis.getStatus().gen(offset, limit);
@@ -87,6 +132,7 @@ public class SearchController {
 			fi.getPath();
 		}
 		res.setFiles(finfos);
+		res.setResults(finfos.size());
 		return res;
 	}
 

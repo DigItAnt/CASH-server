@@ -14,9 +14,16 @@ import it.cnr.ilc.lari.itant.cash.DBManager;
 public class GenStatusFiles extends GenStatus {
     private static final Logger log = LoggerFactory.getLogger(GenStatusFiles.class);
 
+    private boolean justCount;
+
+    public GenStatusFiles(boolean justCount) {
+        super();
+        this.justCount = justCount;
+    }
+
     public PreparedStatement gen(int offset, int limit) throws Exception {
         //String query = String.format("SELECT DISTINCT node.id, %s.id, %s.begin, %s.end ", getCurrentTokenName(), getCurrentTokenName(), getCurrentTokenName());
-        String query = "SELECT DISTINCT node.id";
+        String query = justCount?"SELECT COUNT(DISTINCT node.id)":"SELECT DISTINCT node.id";
         String chainSeq = seq.buildChainString();
         if (chainSeq.length() > 0) {
             if (currWhereList.size() > 0)
@@ -41,8 +48,9 @@ public class GenStatusFiles extends GenStatus {
             }
         }
 
-        // add offset and limit
-        query += "\nLIMIT ?, ?";
+        if (offset >= 0)
+            // add offset and limit
+            query += "\nLIMIT ?, ?";
 
         PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 
@@ -52,11 +60,12 @@ public class GenStatusFiles extends GenStatus {
             i++;
         }
 
-        // add offset and limit
-        stmt.setInt(i, offset);
-        i++;
-        stmt.setInt(i, limit);
-
+        if (offset >= 0) {
+            // add offset and limit
+            stmt.setInt(i, offset);
+            i++;
+            stmt.setInt(i, limit);
+        }
 
         return stmt;
     }

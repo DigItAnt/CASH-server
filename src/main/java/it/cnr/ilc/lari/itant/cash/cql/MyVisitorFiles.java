@@ -9,9 +9,10 @@ import org.slf4j.LoggerFactory;
 public class MyVisitorFiles extends MyVisitor {
     private static final Logger log = LoggerFactory.getLogger(MyVisitor.class);
 
-    public MyVisitorFiles() {
+    public MyVisitorFiles(boolean justCount) {
         super();
 
-        this.status = new GenStatusFiles();
+        this.status = new GenStatusFiles(justCount);
     }
+
 }
