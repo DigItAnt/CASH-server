@@ -54,6 +54,9 @@ public class GenStatus {
 
     public GenStatus() {
         fromList.add("fsnodes as node");
+        currWhereList = new ArrayList<>();
+        currWhereList.add("node.type = 'F'");
+        whereLists.add(currWhereList);
     }
 
     private String clearString(String value) {
