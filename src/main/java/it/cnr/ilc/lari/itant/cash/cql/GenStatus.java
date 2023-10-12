@@ -2,6 +2,7 @@ package it.cnr.ilc.lari.itant.cash.cql;
 
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,20 @@ public class GenStatus {
         return value.substring(1, value.length() - 1);
     }
 
+    String[] splitOnPipe(String value) {
+        // split on pipe, considering that value could include a pipe escaped with \, in this case the pipe is not a separator
+        // e.g. "a|b|c" -> ["a", "b", "c"] , "a\\|b|c" -> ["a\\|b", "c"]
+        String[] parts = value.split("(?<!\\\\)\\|");
+        // for each part, remove the escape char
+        for (int i = 0; i < parts.length; i++)
+            parts[i] = parts[i].replaceAll("\\\\", "");
+        return parts;
+    }
+
     public void setWordValuePairEquals(String value) {
+        // print splitOnPipe(value)
+        System.out.println(" -- value " + Arrays.asList(splitOnPipe(value)));
+
         String eqop = "=";
         if (clearString(value).startsWith(REGEX_PREFIX)) {
             // remove the prefix

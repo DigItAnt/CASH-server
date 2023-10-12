@@ -1,5 +1,7 @@
 package it.cnr.ilc.lari.itant.cash.cql;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.BitSet;
 
 import org.antlr.v4.runtime.ANTLRErrorListener;
@@ -45,9 +47,12 @@ public class TestCQL {
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
-        q = "[word.aa=\"_REGEX_statis\"][pos=\"POOO.*\"]";
+        q = "[word=\"stat\\|is|aaa\"]";
         //q = "[][][]";
 
+        // read q from standard input
+        //q = new BufferedReader(new InputStreamReader(System.in)).readLine();
+        
         final CorpusQLLexer lexer = new CorpusQLLexer(CharStreams.fromString(q));
         final CommonTokenStream tokens = new CommonTokenStream(lexer);
         final CorpusQLParser parser = new CorpusQLParser(tokens);
