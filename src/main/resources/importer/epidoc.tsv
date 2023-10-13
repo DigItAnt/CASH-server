@@ -65,6 +65,7 @@ originalPlace.ancientName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@
 originalPlace.ancientNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='ancient']/@ref	
 originalPlace.modernName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/text()	
 originalPlace.modernNameUrl	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='modern']/@ref	
+originalPlace.detailedName	//tei:history/tei:origin/tei:origPlace/tei:placeName[@type='detailed']/text()	
 		
 dateOfOrigin	//tei:history/tei:origin/tei:origDate/text()	
 dateOfOriginNotBefore	//tei:history/tei:origin/tei:origDate/@notBefore-custom	

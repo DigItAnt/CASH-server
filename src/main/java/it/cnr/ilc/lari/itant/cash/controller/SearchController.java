@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.transform.Result;
+
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -29,6 +31,7 @@ import com.evolvedbinary.cql.parser.CorpusQLParser;
 import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitorFiles;
+import it.cnr.ilc.lari.itant.cash.customparsers.MetadataToSQL;
 import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.om.CountFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
@@ -37,6 +40,7 @@ import it.cnr.ilc.lari.itant.cash.om.SearchFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.SearchResponse;
 import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.TestSearchResponse;
+import it.cnr.ilc.lari.itant.cash.om.UniqueValuesResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
@@ -135,6 +139,32 @@ public class SearchController {
 		res.setResults(finfos.size());
 		return res;
 	}
+
+	@PostMapping("/api/public/uniqueMetadataValues")
+	public UniqueValuesResponse uniqueValues(@RequestParam String field,
+	                             @RequestParam(value="limit", defaultValue = "10") int limit,
+								 @RequestParam(value="offset", defaultValue = "0") int offset,
+	                             Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+
+		PreparedStatement stmt = MetadataToSQL.getPreparedStatement(field);
+		String qsql = stmt.toString();
+		log.info("From {} to {}", field, qsql);
+
+		UniqueValuesResponse res = new UniqueValuesResponse();
+
+		List<String> values = new ArrayList<String>();
+		ResultSet rs = stmt.executeQuery();
+
+		while (rs.next()) {
+			values.add(rs.getString(1));
+		}
+
+		res.setValues(values);
+
+		return res;
+	}
+
 
 	@PostMapping("/api/public/testSearch")
 	public TestSearchResponse testSearch(@RequestParam String query, Principal principal) throws Exception {
