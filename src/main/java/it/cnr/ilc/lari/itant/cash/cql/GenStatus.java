@@ -19,7 +19,7 @@ public class GenStatus {
 
     public static String DOC_LAYER = "_doc";
     public static String REGEX_PREFIX = "_REGEX_";
-    
+
     List<String> fromList = new ArrayList<String>();
 
     // whereLists is a list of whereList, one for each token
@@ -29,7 +29,7 @@ public class GenStatus {
 
     List<String> paramList = new ArrayList<String>();
 
-    int annotCounter = 0;  // current annotation counter
+    int annotCounter = 0; // current annotation counter
 
     int currentTokenId = 1;
 
@@ -41,7 +41,8 @@ public class GenStatus {
 
     public void setCurrentTokenId(int currentTokenId) {
         this.currentTokenId = currentTokenId;
-        fromList.add(String.format("LEFT JOIN tokens as %s ON %s.node = node.id", getCurrentTokenName(), getCurrentTokenName()));
+        fromList.add(String.format("LEFT JOIN tokens as %s ON %s.node = node.id", getCurrentTokenName(),
+                getCurrentTokenName()));
         seq.addToken(currentTokenId);
 
         // set whereList for current token
@@ -66,7 +67,9 @@ public class GenStatus {
     }
 
     String[] splitOnPipe(String value) {
-        // split on pipe, considering that value could include a pipe escaped with \, in this case the pipe is not a separator
+        value = clearString(value);
+        // split on pipe, considering that value could include a pipe escaped with \, in
+        // this case the pipe is not a separator
         // e.g. "a|b|c" -> ["a", "b", "c"] , "a\\|b|c" -> ["a\\|b", "c"]
         String[] parts = value.split("(?<!\\\\)\\|");
         // for each part, remove the escape char
@@ -75,9 +78,24 @@ public class GenStatus {
         return parts;
     }
 
+    // Utility method to generate placeholders for IN clause
+    private static String generatePlaceholders(int count) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < count; i++) {
+            builder.append("?");
+            if (i < (count - 1)) {
+                builder.append(",");
+            }
+        }
+        return builder.toString();
+    }
+
     public void setWordValuePairEquals(String value) {
-        // print splitOnPipe(value)
-        System.out.println(" -- value " + Arrays.asList(splitOnPipe(value)));
+        String[] choices = splitOnPipe(value);
+        if (choices.length > 1) {
+            _setWordValuePairEqualsMultiValue(choices);
+            return;
+        }
 
         String eqop = "=";
         if (clearString(value).startsWith(REGEX_PREFIX)) {
@@ -89,6 +107,13 @@ public class GenStatus {
         paramList.add(clearString(value));
     }
 
+    private void _setWordValuePairEqualsMultiValue(String[] choices) {
+        // REGEX in multivalue options are not managed
+        currWhereList.add(getCurrentTokenName() + ".text IN (" + generatePlaceholders(choices.length) + " )");
+        for (String choice : choices)
+            paramList.add(choice);
+    }
+
     protected String getAnnSpanFrom(int idspan, String annot) {
         String span = "a" + idspan;
         return "JOIN ann_spans as " + span + " ON " + span + ".ann = " + annot + ".id";
@@ -96,13 +121,16 @@ public class GenStatus {
 
     protected String getAnnSpanWhere(int idspan, String tok) {
         String span = "a" + idspan;
-        String cond = String.format("(GREATEST(%s.begin, %s.begin) < LEAST(%s.end, %s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) )", 
-                                    span, tok, span, tok,
-                                    tok, span, span, tok, 
-                                    span, tok, tok, span);
+        String cond = String.format(
+                "(GREATEST(%s.begin, %s.begin) < LEAST(%s.end, %s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) OR (%s.begin<=%s.begin AND %s.end<=%s.end) )",
+                span, tok, span, tok,
+                tok, span, span, tok,
+                span, tok, tok, span);
         return cond;
-        //return "((" + span + ".`begin`<=" + tok + ".`begin` AND " + span + ".`end`>" + tok +".`begin`) OR (" + 
-        //       span + ".`begin`>" + tok + ".`begin` AND " + tok + ".`end`>" + span + ".`begin`))";
+        // return "((" + span + ".`begin`<=" + tok + ".`begin` AND " + span + ".`end`>"
+        // + tok +".`begin`) OR (" +
+        // span + ".`begin`>" + tok + ".`begin` AND " + tok + ".`end`>" + span +
+        // ".`begin`))";
     }
 
     public void setAttValuePairEquals(String att, String value) {
@@ -120,11 +148,22 @@ public class GenStatus {
         }
 
         String overlapCheck = getAnnSpanWhere(annotCounter, getCurrentTokenName());
-        currWhereList.add("( " + annot + ".layer = ? AND " + annot + ".value " + eqop + " ? AND " + overlapCheck + " )");
 
-        paramList.add(att);
-        paramList.add(clearString(value));
-        
+        String[] choices = splitOnPipe(value);
+        if (choices.length == 1) {
+            currWhereList
+                    .add("( " + annot + ".layer = ? AND " + annot + ".value " + eqop + " ? AND " + overlapCheck + " )");
+
+            paramList.add(att);
+            paramList.add(clearString(value));
+        } else {
+            currWhereList
+                    .add("( " + annot + ".layer = ? AND " + annot + ".value IN ("+ generatePlaceholders(choices.length) +") AND " + overlapCheck + " )");
+            paramList.add(att);
+            for (String choice : choices)
+                paramList.add(choice);
+        }
+
     }
 
     public void setMetaValuePairEquals(String layer, String field, String[] subfields, String value) {
@@ -150,9 +189,17 @@ public class GenStatus {
         }
 
         if (subfields.length == 0) {
-            currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + eqop + " ? )");
-            paramList.add(field);
-            paramList.add(clearString(value));
+            String[] choices = splitOnPipe(value);
+            if (choices.length == 1) {
+                currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + eqop + " ? )");
+                paramList.add(field);
+                paramList.add(clearString(value));
+            } else {
+                currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value IN ("+ generatePlaceholders(choices.length) +") )");
+                paramList.add(field);
+                for (String choice : choices)
+                    paramList.add(choice);
+            }
         } else {
             Map<String, Object> subfieldsMap = new HashMap<>();
             Map<String, Object> currentMap = subfieldsMap;
@@ -169,20 +216,20 @@ public class GenStatus {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-            
+
             log.info("subfieldsJson: " + subfieldsJson);
 
             // TODO REGEX in this case
-            currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
+            currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson
+                    + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
             paramList.add(field);
             paramList.add(clearString(value));
-
 
         }
 
         if (!layer.equals(DOC_LAYER))
             currWhereList.add(" AND " + getAnnSpanWhere(spanId, getCurrentTokenName()));
-        
+
     }
 
     public void setOperator(String operator) {
@@ -190,7 +237,9 @@ public class GenStatus {
     }
 
     public PreparedStatement gen(int offset, int limit) throws Exception {
-        //String query = String.format("SELECT DISTINCT node.id, %s.id, %s.begin, %s.end ", getCurrentTokenName(), getCurrentTokenName(), getCurrentTokenName());
+        // String query = String.format("SELECT DISTINCT node.id, %s.id, %s.begin,
+        // %s.end ", getCurrentTokenName(), getCurrentTokenName(),
+        // getCurrentTokenName());
         String query = "SELECT DISTINCT node.id";
         String fromSeq = seq.buildFromString();
         if (fromSeq.length() > 0)
@@ -209,7 +258,7 @@ public class GenStatus {
 
         // manage whereLists
         boolean whereAdded = false;
-        for (List<String> whereList: whereLists) {
+        for (List<String> whereList : whereLists) {
             if (whereList.size() > 0) {
                 if (!whereAdded) {
                     query += "\nWHERE ";
@@ -226,7 +275,7 @@ public class GenStatus {
         PreparedStatement stmt = DBManager.getNewConnection().prepareStatement(query);
 
         int i = 1;
-        for ( String param: paramList ) {
+        for (String param : paramList) {
             stmt.setString(i, param);
             i++;
         }
@@ -235,7 +284,6 @@ public class GenStatus {
         stmt.setInt(i, offset);
         i++;
         stmt.setInt(i, limit);
-
 
         return stmt;
     }

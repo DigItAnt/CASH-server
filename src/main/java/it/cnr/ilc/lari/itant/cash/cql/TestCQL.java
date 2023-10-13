@@ -47,7 +47,8 @@ public class TestCQL {
         //q = "[word=\"aa\" & pos=\"asd\" & lemma=\"www\"]";
         //q = "[_doc__sub1__f1__f2=\"statis\"]";
         q = "[pos__sub1__f1__f2=\"statis\"]";
-        q = "[word=\"stat\\|is|aaa\"]";
+        q = "[worda__gg__aa=\"no\\|word|statis|aaa|dd\"]";
+        //q = "[worda\"statis\"]";
         //q = "[][][]";
 
         // read q from standard input
