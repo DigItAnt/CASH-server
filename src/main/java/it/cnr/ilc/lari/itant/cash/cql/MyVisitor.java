@@ -92,5 +92,4 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     }
 
 
-
 }
