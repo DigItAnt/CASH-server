@@ -12,14 +12,14 @@ public class MetadataToSQL {
 
     // this function splits fields on FIELD_SEPARATOR
     static String[] splitFields(String fields) {
-        return fields.split(FIELD_SEPARATOR);
+        return fields.substring(FIELD_SEPARATOR.length()).split(FIELD_SEPARATOR);
     }
 
     static String[] getFields(String query) throws BadFormatException {
         if (!query.startsWith(GenStatus.DOC_LAYER))
             throw new BadFormatException("Query must start with " + GenStatus.DOC_LAYER);
         
-        return splitFields(query.substring(DOC_LAYER.length()));
+        return splitFields(query.substring(GenStatus.DOC_LAYER.length()));
     }
 
     public static PreparedStatement getPreparedStatement(String query) throws Exception {
