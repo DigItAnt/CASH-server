@@ -4,10 +4,10 @@ import java.sql.PreparedStatement;
 import java.util.Arrays;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.cql.GenStatus;
 import it.cnr.ilc.lari.itant.cash.exc.BadFormatException;
 
 public class MetadataToSQL {
-    public static final String DOC_LAYER = "__doc__";
     public static final String FIELD_SEPARATOR = "__";
 
     // this function splits fields on FIELD_SEPARATOR
@@ -16,8 +16,8 @@ public class MetadataToSQL {
     }
 
     static String[] getFields(String query) throws BadFormatException {
-        if (!query.startsWith(DOC_LAYER))
-            throw new BadFormatException("Query must start with " + DOC_LAYER);
+        if (!query.startsWith(GenStatus.DOC_LAYER))
+            throw new BadFormatException("Query must start with " + GenStatus.DOC_LAYER);
         
         return splitFields(query.substring(DOC_LAYER.length()));
     }
