@@ -90,6 +90,11 @@ public class XpathMetadataImporter {
     }
 
     protected int processSubListDef(Map<String, FieldDef> currentFields, String[] lines, int li) {
+        return processSubListDef(currentFields, lines, li, 0);
+    }
+
+    protected int processSubListDef(Map<String, FieldDef> currentFields, String[] lines, int li, int depth) {
+        log.info("Sublist depth: " + depth);
         int toSkip = 0;
         String[] sf = lines[li].split("\t");
         sf[0] = sf[0].substring("__START__".length()).strip(); // field name
@@ -100,7 +105,9 @@ public class XpathMetadataImporter {
             String line = lines[li + toSkip];
             toSkip += 1;
             if (line.startsWith("__START__")) { // New nested section
-                toSkip += processSubListDef(fDef.subfields, lines, li + toSkip - 1) - 1; // Process nested, adjust toSkip
+                log.info("Sublist: " + line);
+                toSkip += processSubListDef(fDef.subfields, lines, li + toSkip - 1, depth+1); // Process nested, adjust toSkip
+                log.info("Sublist processed, li is now: " + (li + toSkip - 1));
             } else {
                 String[] columns = line.split("\t");
                 if (columns.length < 2) continue;

@@ -1,4 +1,4 @@
-metadata	xpath	postprocessing
+x	xpath	postprocessing
 fileID	//tei:TEI/@xml:id	
 		
 title	//tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title/text()	
@@ -114,34 +114,40 @@ persons.ref	@xml:id
 __START__names	tei:persName/tei:name	
 names.type	@type	
 names.text	text()	
-__END__			
 __END__		
-
-
-__START__bibliography	//tei:listBibl/tei:biblStruct
-bibliography.type	@type
-bibliography.id	@xml:id
-bibliography.corresp	@corresp
-bibliography.analyticTitleLevel	tei:analytic/tei:title/@level
-bibliography.analyticTitleText	tei:analytic/tei:title/text()
-__START__analyticAuthors	tei:analytic/tei:author
-analyticAuthors.forename	tei:forename/text()
-analyticAuthors.surname	tei:surname/text()
-__END__
-bibliograpy.monogrTitleLevel	tei:monogr/tei:title/@level
-bibliograpy.monogrTitleText	tei:monogr/tei:title/text()
-__START__monogrEditors	tei:monogr/tei:editor
-monogrEditors.forename	tei:forename/text()
-monogrEditors.surname	tei:surname/text()
-__END__
-__START__monogrAuthors	tei:monogr/tei:author
-monogrAuthors.forename	tei:forename/text()
-monogrAuthors.surname	tei:surname/text()
-__END__
-bibliography.monogrPubPlace	tei:monogr/tei:imprint/tei:pubPlace/text()
-bibliography.monogrBiblScope	tei:monogr/tei:imprint/tei:biblScope/text()
-bibliography.monogrPublisher	tei:monogr/tei:imprint/tei:publisher/text()
-bibliography.monogrDate	tei:monogr/tei:imprint/tei:date/text()
-bibliography.citedRangeUnit	tei:citedRange/@unit
-bibliography.citedRangeText	tei:citedRange/text()
-__END__
+__END__		
+		
+		
+__START__bibliography	//tei:listBibl/tei:biblStruct	
+bibliography.type	@type	
+bibliography.id	@xml:id	
+bibliography.corresp	@corresp	
+bibliography.analyticTitleLevel	tei:analytic/tei:title/@level	
+bibliography.analyticTitleText	tei:analytic/tei:title/text()	
+__START__analyticAuthors	tei:analytic/tei:author	
+analyticAuthors.forename	tei:forename/text()	
+analyticAuthors.surname	tei:surname/text()	
+analyticAuthors.name	tei:name/text()	
+__END__		
+bibliography.monogrTitleLevel	tei:monogr/tei:title/@level	
+bibliography.monogrTitleText	tei:monogr/tei:title/text()	
+__START__monogrEditors	tei:monogr/tei:editor	
+monogrEditors.forename	tei:forename/text()	
+monogrEditors.surname	tei:surname/text()	
+monogrEditors.name	tei:name/text()	
+__END__		
+__START__monogrAuthors	tei:monogr/tei:author	
+monogrAuthors.forename	tei:forename/text()	
+monogrAuthors.surname	tei:surname/text()	
+monogrAuthors.surname	tei:name/text()	
+__END__		
+bibliography.monogrPubPlace	tei:monogr/tei:imprint/tei:pubPlace/text()	
+__START__biblScope	tei:monogr/tei:imprint/tei:biblScope	
+biblScope.unit	@unit	
+biblScope.text	text()	
+__END__		
+bibliography.monogrPublisher	tei:monogr/tei:imprint/tei:publisher/text()	
+bibliography.monogrDate	tei:monogr/tei:imprint/tei:date/text()	
+bibliography.citedRangeUnit	tei:citedRange/@unit	
+bibliography.citedRangeText	tei:citedRange/text()	
+__END__		
