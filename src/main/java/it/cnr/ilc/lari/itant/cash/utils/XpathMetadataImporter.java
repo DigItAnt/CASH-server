@@ -73,6 +73,7 @@ public class XpathMetadataImporter {
                 String[] f_sub = columns[0].split("\\.");
                 String field = f_sub[0].strip();
                 String subfield = f_sub[1].strip();
+                log.info("SubField: " + subfield);
                 FieldDef fdef = fields.get(field);
                 if ( fdef == null ) { // create a new one
                     fdef = new FieldDef();
@@ -81,8 +82,9 @@ public class XpathMetadataImporter {
                 }
                 fdef.subfields.put(subfield, new FieldDef(columns[1].strip()));
             } else if ( line.startsWith("__") ) {
+                log.info("Sublist: " + columns[0]);
                 li += processSubListDef(fields, lines, li);
-                // TODO: process until line.startWith("__END__");
+                log.info("Sublist processed, li is now: " + li);
             }
         }
     }
@@ -102,6 +104,7 @@ public class XpathMetadataImporter {
             } else {
                 String[] columns = line.split("\t");
                 if (columns.length < 2) continue;
+                log.info("ListSubField: " + columns[0] + ":" + columns[1]);
                 String[] f_sub = columns[0].split("\\.");
                 String field = f_sub[0].strip();
                 String subfield = f_sub[1].strip();
