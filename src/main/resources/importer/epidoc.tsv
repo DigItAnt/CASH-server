@@ -47,7 +47,7 @@ execution	//tei:layoutDesc//tei:rs[@type='execution']/text()
 execution_conceptUrl	//tei:layoutDesc//tei:rs[@type='execution']/@ana	
 opistography	//tei:layoutDesc//tei:rs[@type='opistography']/text()	
 layoutNotes	//tei:layoutDesc//tei:note[@type='layoutNotes']//text()	
-palaeographicNotes	//tei:physDesc//tei:handNote/tei:note[@type='palaeographicNotes']/text()	
+palaeographicNotes	//tei:physDesc//tei:handNote/tei:note[@type='palaeographicNotes']//text()	
 		
 writingSystem	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/text()	
 alphabet	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@subtype	
