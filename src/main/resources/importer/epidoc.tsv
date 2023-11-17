@@ -124,13 +124,19 @@ bibliography.id	@xml:id
 bibliography.corresp	@corresp	
 bibliography.analyticTitleLevel	tei:analytic/tei:title/@level	
 bibliography.analyticTitleText	tei:analytic/tei:title/text()	
+bibliography.analyticIdnoType	tei:analytic/tei:idno/@type
+bibliography.analyticIdno	tei:analytic/tei:idno/text()
 __START__analyticAuthors	tei:analytic/tei:author	
 analyticAuthors.forename	tei:forename/text()	
 analyticAuthors.surname	tei:surname/text()	
 analyticAuthors.name	tei:name/text()	
-__END__		
-bibliography.monogrTitleLevel	tei:monogr/tei:title/@level	
-bibliography.monogrTitleText	tei:monogr/tei:title/text()	
+__END__
+bibliography.monogrIdnoType	tei:monogr/tei:idno/@type
+bibliography.monogrIdno	tei:monogr/tei:idno/text()
+__START__monogrTitle	tei:monogr/tei:title
+monogrTitle.level	@level
+monogrTitle.text	text()
+__END__
 __START__monogrEditors	tei:monogr/tei:editor	
 monogrEditors.forename	tei:forename/text()	
 monogrEditors.surname	tei:surname/text()	
@@ -141,7 +147,9 @@ monogrAuthors.forename	tei:forename/text()
 monogrAuthors.surname	tei:surname/text()	
 monogrAuthors.surname	tei:name/text()	
 __END__		
-bibliography.monogrPubPlace	tei:monogr/tei:imprint/tei:pubPlace/text()	
+bibliography.monogrPubPlace	tei:monogr/tei:imprint/tei:pubPlace/text()
+bibliography.monogrNoteType	tei:monogr/tei:imprint/tei:note/@type
+bibliography.monogrNoteText	tei:monogr/tei:imprint/tei:note/text()
 __START__biblScope	tei:monogr/tei:imprint/tei:biblScope	
 biblScope.unit	@unit	
 biblScope.text	text()	
@@ -149,5 +157,15 @@ __END__
 bibliography.monogrPublisher	tei:monogr/tei:imprint/tei:publisher/text()	
 bibliography.monogrDate	tei:monogr/tei:imprint/tei:date/text()	
 bibliography.citedRangeUnit	tei:citedRange/@unit	
-bibliography.citedRangeText	tei:citedRange/text()	
+bibliography.citedRangeText	tei:citedRange/text()
+__START__notes	tei:note/tei:note
+notes.type	@type
+notes.text	text()
+__END__
+bibliography.seriesTitleLevel	tei:series/tei:title/@level
+bibliography.seriesTitleText	tei:series/tei:title/text()
+__START__seriesBiblScope	tei:series/tei:biblScope
+seriesBiblScope.unit	@unit
+seriesBiblScope.text	text()
+__END__
 __END__		
