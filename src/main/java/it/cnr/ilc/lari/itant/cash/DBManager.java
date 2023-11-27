@@ -2,10 +2,12 @@ package it.cnr.ilc.lari.itant.cash;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.Collections;
@@ -1697,6 +1699,39 @@ public class DBManager {
         }
         if (closeConnection)
             connection.close();
+        return ret;
+    }
+
+    public static Blob getBlob(long elementId) throws Exception {
+        Connection connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement("select value from blob_fs_props where node=?");
+        stmt.setLong(1, elementId);
+        ResultSet res = stmt.executeQuery();
+        Blob ret = null;
+        if (res.next())
+            ret = res.getBlob(1);
+        connection.close();
+        return ret;
+    }
+
+
+    public static String getContentType(long elementId) {
+        String ret = null;
+        Connection connection = null;
+        try {
+            connection = getNewConnection();
+            PreparedStatement stmt = connection.prepareStatement("select content_type from blob_fs_props where node=?");
+            stmt.setLong(1, elementId);
+            ResultSet res = stmt.executeQuery();
+            if (res.next())
+                ret = res.getString(1);
+            connection.close();
+        } catch (Exception e) {
+            log.error(e.toString());
+        } finally {
+            try { if ( connection != null ) connection.close();
+            } catch (Exception e) { log.error(e.toString()); }
+        }
         return ret;
     }
 

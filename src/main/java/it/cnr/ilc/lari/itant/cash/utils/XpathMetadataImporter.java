@@ -16,7 +16,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class XpathMetadataImporter {
@@ -26,11 +25,33 @@ public class XpathMetadataImporter {
         // either 
         String expression;
         Map<String, FieldDef> subfields = new HashMap<>();
+        String postprocess;
 
         public FieldDef() {}
 
         public FieldDef(String expr) {
             expression = expr;
+            this.postprocess = null;
+        }
+
+        public FieldDef(String expr, String postprocess) {
+            expression = expr;
+            this.postprocess = postprocess;
+        }
+
+        public boolean notNull() {
+            return postprocess != null && postprocess.contains("notnull");
+        }
+
+        public String applyPostprocessing(String value) {
+            String ret = value;
+            if ( postprocess == null ) return ret;
+            // split postprocess on ; and iterate over each resulting token
+            if ( !postprocess.contains("nostrip") ) ret = ret.strip();
+            for ( String pp: postprocess.split(";") ) {
+                // TODO
+            }
+            return ret;
         }
     }
 
@@ -144,10 +165,10 @@ public class XpathMetadataImporter {
             try{
                 NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
                 log.info("Extracted " + nlist.getLength() + " nodes");
-                return  nodeListToString(nlist); //runXPath(doc, fdef.expression, XPathConstants.STRING);
+                return fdef.applyPostprocessing(nodeListToString(nlist)); //runXPath(doc, fdef.expression, XPathConstants.STRING);
             } catch (XPathException e) {
                 log.info("Expression does not appear to return a NodeSet, trying string");
-                return runXPath(doc, fdef.expression, XPathConstants.STRING);
+                return fdef.applyPostprocessing((String)runXPath(doc, fdef.expression, XPathConstants.STRING));
             }
         } else { // it's a structure
             if ( fdef.expression != null ) { // it's a list

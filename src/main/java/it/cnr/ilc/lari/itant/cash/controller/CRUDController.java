@@ -30,6 +30,7 @@ import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode;
 import it.cnr.ilc.lari.itant.cash.om.DownloadFileRequest;
 import it.cnr.ilc.lari.itant.cash.om.DownloadFileResponse;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
+import it.cnr.ilc.lari.itant.cash.om.MetadataRefreshStatus;
 import it.cnr.ilc.lari.itant.cash.om.MoveFileToRequest;
 import it.cnr.ilc.lari.itant.cash.om.MoveFileToResponse;
 import it.cnr.ilc.lari.itant.cash.om.MoveFolderRequest;
@@ -46,6 +47,7 @@ import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataResponse;
 import it.cnr.ilc.lari.itant.cash.om.UploadFileResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
+import it.cnr.ilc.lari.itant.cash.utils.MetadataRefresher;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
 
@@ -230,5 +232,11 @@ public class CRUDController {
 
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
+	}
+
+	@PostMapping("/api/crud/refreshAllMetadata")
+	public MetadataRefreshStatus refreshAllMetadata(@RequestParam("requestUUID") String requestUUID, 
+												 	@RequestParam("element-id") Integer elementID) throws Exception {
+		return MetadataRefresher.run(elementID);
 	}
 }

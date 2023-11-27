@@ -32,7 +32,7 @@ import it.cnr.ilc.lari.itant.cash.utils.TokenInfo.TokenType;
 
 public class EpiDocTextExtractor implements TextExtractorInterface {
 
-    private static final String MDATAPATH = "/importer/epidoc.tsv";
+    public static final String MDATAPATH = "/importer/epidoc.tsv";
     private static final String MDATA = "fieldID\t//tei:TEI/@xml:id\n" +
     "trismegistos.trismegistosID\t//tei:altIdentifier[@type='trismegistos']/tei:idno/text()\n" +
     "trismegistos.trismegistosID_url\t//tei:altIdentifier[@type='trismegistos']/tei:idno/@source\n"+
@@ -40,7 +40,7 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
     "traditionalID.traditionalID\ttext()\n" +
     "traditionalID.traditionalID_url\t@source\n" +
     "__END__";
-    private static final Map<String, String> NSPS = new HashMap<String, String>() {{
+    public static final Map<String, String> NSPS = new HashMap<String, String>() {{
         put("dcr", "http://www.isocat.org/ns/dcr");
         put("tei", "http://www.tei-c.org/ns/1.0");
     }};

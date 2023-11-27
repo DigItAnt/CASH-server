@@ -1,5 +1,6 @@
 package it.cnr.ilc.lari.itant.cash.om;
 
+import java.sql.Blob;
 import java.util.Date;
 import java.util.Map;
 
@@ -135,4 +136,5 @@ public class FileInfo {
         }
         return sb.toString();
     }
+
 }
