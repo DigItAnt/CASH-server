@@ -45,7 +45,7 @@ public class XpathMetadataImporter {
 
         public String applyPostprocessing(String value) {
             String ret = value;
-            if ( postprocess == null ) return ret;
+            if ( postprocess == null ) return ret.strip();
             // split postprocess on ; and iterate over each resulting token
             if ( !postprocess.contains("nostrip") ) ret = ret.strip();
             for ( String pp: postprocess.split(";") ) {
