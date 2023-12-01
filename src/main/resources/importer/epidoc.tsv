@@ -30,7 +30,7 @@ traditionalID.traditionalID	text()
 traditionalID.traditionalID_URL	@source	
 __END__		
 		
-summary	//tei:msContents/tei:summary/text()	
+summary	//tei:msContents/tei:summary//text()	
 		
 dimensions.type	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@type	
 dimensions.unit	//tei:physDesc//tei:supportDesc/tei:support//tei:dimensions/@unit	
