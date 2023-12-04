@@ -316,6 +316,20 @@ SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 
 -- -----------------------------------------------------
+-- Table `zotero`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `zotero` (
+    fileid VARCHAR(10),
+    `key` VARCHAR(50),
+    `value` TEXT,
+    INDEX fileid_index (fileid),
+    INDEX key_index (`key`),
+    INDEX value_index (`value`(255))
+);
+
+
+
+-- -----------------------------------------------------
 -- Function `SpanMatch`
 -- The SpanMatch function tells whether an annotation
 -- features a span (of its potentially multiple)

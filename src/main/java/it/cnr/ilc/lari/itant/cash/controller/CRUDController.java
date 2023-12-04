@@ -1,9 +1,14 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 
+import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
@@ -18,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderResponse;
@@ -46,10 +52,10 @@ import it.cnr.ilc.lari.itant.cash.om.RenameFolderResponse;
 import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataRequest;
 import it.cnr.ilc.lari.itant.cash.om.UpdateMetadataResponse;
 import it.cnr.ilc.lari.itant.cash.om.UploadFileResponse;
+import it.cnr.ilc.lari.itant.cash.om.ZoteroCSVResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import it.cnr.ilc.lari.itant.cash.utils.MetadataRefresher;
-import uk.co.jemos.podam.api.PodamFactory;
-import uk.co.jemos.podam.api.PodamFactoryImpl;
+import it.cnr.ilc.lari.itant.cash.utils.ZoteroImporter;
 
 @CrossOrigin
 @RestController
@@ -68,7 +74,8 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/renameFolder")
-	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request, Principal principal) throws Exception {
+	public RenameFolderResponse renameFolder(@RequestBody RenameFolderRequest request, Principal principal)
+			throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RenameFolderResponse toret = new RenameFolderResponse();
@@ -78,7 +85,8 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/removeFolder")
-	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request, Principal principal) throws Exception {
+	public RemoveFolderResponse removeFolder(@RequestBody RemoveFolderRequest request, Principal principal)
+			throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		RemoveFolderResponse toret = new RemoveFolderResponse();
@@ -139,7 +147,8 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/updateMetadata")
-	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request, Principal principal) throws Exception {
+	public UpdateMetadataResponse updateMetadata(@RequestBody UpdateMetadataRequest request, Principal principal)
+			throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UpdateMetadataResponse toret = new UpdateMetadataResponse();
@@ -149,7 +158,8 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/deleteMetadata")
-	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request, Principal principal) throws Exception {
+	public DeleteMetadataResponse deleteMetadata(@RequestBody DeleteMetadataRequest request, Principal principal)
+			throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		DeleteMetadataResponse toret = new DeleteMetadataResponse();
@@ -158,14 +168,12 @@ public class CRUDController {
 		return toret;
 	}
 
-	@RequestMapping(
-    path = "/api/crud/uploadFile", 
-    method = RequestMethod.POST, 
-    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
-	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID, 
-										 @RequestParam("element-id") Integer elementID,
-										 @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
-		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+	@RequestMapping(path = "/api/crud/uploadFile", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public UploadFileResponse uploadFile(@RequestParam("requestUUID") String requestUUID,
+			@RequestParam("element-id") Integer elementID,
+			@RequestParam("file") MultipartFile file, Principal principal) throws Exception {
+		if (principal != null)
+			log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
@@ -176,14 +184,43 @@ public class CRUDController {
 		return toret;
 	}
 
-	@RequestMapping(
-    path = "/api/crud/updateFileMetadata", 
-    method = RequestMethod.POST, 
-    consumes = MediaType.MULTIPART_FORM_DATA_VALUE)	
-	public UploadFileResponse updateFileMetadata(@RequestParam("requestUUID") String requestUUID, 
-										         @RequestParam("element-id") Integer elementID,
-										         @RequestParam("file") MultipartFile file, Principal principal) throws Exception {
-		if ( principal != null ) log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+	@RequestMapping(path = "/api/crud/uploadZoteroCSV", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public ZoteroCSVResponse uploadZoteroCSV(@RequestParam("requestUUID") String requestUUID,
+			@RequestParam("file") MultipartFile file, Principal principal) throws Exception {
+		if (principal != null)
+			log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+
+		ZoteroCSVResponse toret = new ZoteroCSVResponse();
+		try (InputStream fis = file.getInputStream();
+				BOMInputStream bomIn = new BOMInputStream(fis);
+				Reader in = new InputStreamReader(bomIn, StandardCharsets.UTF_8)) {
+
+			// check mimetype, it must be a CSV
+			String mimetype = file.getContentType();
+			if (mimetype != null && !mimetype.equals("text/csv")) {
+				log.error("Invalid mimetype for Zotero CSV import: " + mimetype);
+				throw new InvalidParamException("this is not a valid CSV file");
+			}
+
+			int numrecords = new ZoteroImporter().parseCSV(in);
+
+			toret.setNumrecords(numrecords);
+
+		} catch (IOException e) {
+			log.error("Error reading file", e);
+			throw new InvalidParamException("cannot read file");
+		}
+
+		toret.setRequestUUID(requestUUID);
+		return toret;
+	}
+
+	@RequestMapping(path = "/api/crud/updateFileMetadata", method = RequestMethod.POST, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+	public UploadFileResponse updateFileMetadata(@RequestParam("requestUUID") String requestUUID,
+			@RequestParam("element-id") Integer elementID,
+			@RequestParam("file") MultipartFile file, Principal principal) throws Exception {
+		if (principal != null)
+			log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		UploadFileResponse toret = new UploadFileResponse();
 		InputStream fis = file.getInputStream();
@@ -208,25 +245,26 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/public/crud/downloadFile")
-	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request, Principal principal) throws Exception {
+	public DownloadFileResponse downloadFile(@RequestBody DownloadFileRequest request, Principal principal)
+			throws Exception {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
 
 		// TODO: Return File!!
 		FileInfo node = DBManager.getNodeById(request.getElementId()); // also raises exception if needed
-		if ( node == null ) {
-            log.error("Cannot download non-existent node " + request.getElementId());
-            throw new NodeNotFoundException();
-        }
-		if ( node.getType() != DocumentSystemNode.FileDirectory.file ) {
+		if (node == null) {
+			log.error("Cannot download non-existent node " + request.getElementId());
+			throw new NodeNotFoundException();
+		}
+		if (node.getType() != DocumentSystemNode.FileDirectory.file) {
 			log.error("Cannot download non-file node " + request.getElementId());
 			throw new it.cnr.ilc.lari.itant.cash.exc.InvalidParamException();
 		}
 		String content = DBManager.getRawContent(node.getElementId(), null);
-		
-        // Set the headers
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        headers.setContentDispositionFormData("attachment", node.getName());
+
+		// Set the headers
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		headers.setContentDispositionFormData("attachment", node.getName());
 
 		DownloadFileResponse toret = new DownloadFileResponse(content, headers);
 
@@ -235,8 +273,8 @@ public class CRUDController {
 	}
 
 	@PostMapping("/api/crud/refreshAllMetadata")
-	public MetadataRefreshStatus refreshAllMetadata(@RequestParam("requestUUID") String requestUUID, 
-												 	@RequestParam("element-id") Integer elementID) throws Exception {
+	public MetadataRefreshStatus refreshAllMetadata(@RequestParam("requestUUID") String requestUUID,
+			@RequestParam("element-id") Integer elementID) throws Exception {
 		return MetadataRefresher.run(elementID);
 	}
 }
