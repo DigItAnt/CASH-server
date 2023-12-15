@@ -1,13 +1,14 @@
 package it.cnr.ilc.lari.itant.cash.om;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class BiblioResult {
 
     String recordKey;
 
-    Map<String, String> params = new HashMap<>();
+    Map<String, List<String>> params = new HashMap<>();
 
     public BiblioResult(String recordKey) {
         this.recordKey = recordKey;
@@ -17,11 +18,11 @@ public class BiblioResult {
         return recordKey;
     }
 
-    public void add(String key, String value) {
+    public void add(String key, List<String> value) {
         params.put(key, value);
     }
 
-    public Map<String, String> getParams() {
+    public Map<String, List<String>> getParams() {
         return params;
     }
 

@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
@@ -16,7 +17,8 @@ import it.cnr.ilc.lari.itant.cash.om.BiblioResponse;
 
 public class ZoteroQueryManager {
 
-    public static PreparedStatement generatePreparedStatement(Connection conn, List<BiblioFilter> filters, int offset, int limit)
+    public static PreparedStatement generatePreparedStatement(Connection conn, List<BiblioFilter> filters, int offset,
+            int limit)
             throws SQLException {
         if (filters == null || filters.isEmpty()) {
             throw new IllegalArgumentException("Filter list cannot be null or empty");
@@ -32,18 +34,32 @@ public class ZoteroQueryManager {
             }
 
             String alias = "t" + (i + 1);
-            whereClause.append(generateCondition(alias, filters.get(i), i)+"\n");
+            whereClause.append(generateCondition(alias, filters.get(i), i) + "\n");
         }
 
-        String sql = "\nSELECT t.fileid, JSON_OBJECTAGG(t.key, t.Value) AS Attributes \n" +
-                "FROM zotero AS t \n" +
-                "WHERE t.fileid IN (" +
+        String sql = "WITH ValueAggregation AS ( \n" +
+                "    SELECT  \n" +
+                "        fileid,  \n" +
+                "        `key`,  \n" +
+                "        JSON_ARRAYAGG(`value`) AS ValueArray \n" +
+                "    FROM  \n" +
+                "        zotero \n" +
+                "    GROUP BY  \n" +
+                "        fileid, `key` \n" +
+                ") \n" +
+                "SELECT  \n" +
+                "    va.fileid,  \n" +
+                "    JSON_OBJECTAGG(va.`key`, va.ValueArray) AS Attributes \n" +
+                "FROM  \n" +
+                "    ValueAggregation AS va \n" +
+                "WHERE  \n" +
+                "    va.fileid IN ( \n" +
                 "SELECT t1.fileid \n" +
                 "FROM zotero AS t1 \n" +
                 joinClause +
                 "WHERE " + whereClause +
                 ") \n" +
-                "GROUP BY t.fileid\n" +
+                "GROUP BY va.fileid\n" +
                 "LIMIT " + limit + " OFFSET " + offset + "\n";
 
         PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -78,6 +94,14 @@ public class ZoteroQueryManager {
         }
     }
 
+    protected static List<String> convertJSONArray(JSONArray array) {
+        List<String> list = new java.util.ArrayList<>();
+        for (int i = 0; i < array.length(); i++) {
+            list.add(array.getString(i));
+        }
+        return list;
+    }
+
     public static BiblioResponse query(BiblioRequest request, int offset, int limit) throws Exception {
         Connection connection = DBManager.getNewConnection();
         BiblioResponse res = new BiblioResponse();
@@ -99,7 +123,7 @@ public class ZoteroQueryManager {
                 JSONObject records = new JSONObject(attributes);
 
                 for (String key : records.keySet()) {
-                    res.add(fileid, key, records.getString(key));
+                    res.add(fileid, key, convertJSONArray(records.getJSONArray(key)));
                 }
             }
 
@@ -124,7 +148,7 @@ public class ZoteroQueryManager {
         );
 
         BiblioResponse res = query(new BiblioRequest(filters), 0, 10);
-        
+
         System.out.println(res);
     }
 

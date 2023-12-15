@@ -12,7 +12,7 @@ public class BiblioResponse extends ReqUUIDResponse {
     public BiblioResponse() {    
     }
 
-    public void add(String fileid, String key, String value) {
+    public void add(String fileid, String key, List<String> value) {
         if (!this.recordKeys.contains(fileid)) {
             current = new BiblioResult(fileid);
             results.add(current);
