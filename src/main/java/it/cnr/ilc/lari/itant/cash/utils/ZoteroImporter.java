@@ -55,9 +55,6 @@ public class ZoteroImporter {
                         String[] values;
                         String key = entry.getKey().trim();
 
-                        if (key.equals("Key"))
-                            continue; // skip key
-
                         if (fieldsToSplit.contains(entry.getKey()))
                             values = Arrays.stream(entry.getValue().split(";"))
                                         .map(String::trim)
