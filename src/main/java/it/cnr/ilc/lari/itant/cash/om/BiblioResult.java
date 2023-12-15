@@ -1,19 +1,13 @@
 package it.cnr.ilc.lari.itant.cash.om;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class BiblioResult {
-    static class BiblioEntry {
-        public String key;
-        public String value;
-
-
-    }
 
     String recordKey;
 
-    List<BiblioEntry> params = new ArrayList<>();
+    Map<String, String> params = new HashMap<>();
 
     public BiblioResult(String recordKey) {
         this.recordKey = recordKey;
@@ -24,13 +18,10 @@ public class BiblioResult {
     }
 
     public void add(String key, String value) {
-        BiblioEntry entry = new BiblioEntry();
-        entry.key = key;
-        entry.value = value;
-        params.add(entry);
+        params.put(key, value);
     }
 
-    public List<BiblioEntry> getParams() {
+    public Map<String, String> getParams() {
         return params;
     }
 
