@@ -14,14 +14,12 @@ import org.slf4j.LoggerFactory;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
 import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
-import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
-import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 
 public class ZoteroImporter {
 
     private static final Logger log = LoggerFactory.getLogger(ZoteroImporter.class);
 
-    public int parseCSV(Reader in) throws Exception {
+    public int importCSV(Reader in) throws Exception {
         Iterable<CSVRecord> records;
 
         Connection connection = DBManager.getNewConnection();
@@ -100,4 +98,7 @@ public class ZoteroImporter {
         }
 
     }
+
+
+
 }

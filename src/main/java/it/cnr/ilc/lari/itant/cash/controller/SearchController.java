@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.evolvedbinary.cql.parser.CorpusQLLexer;
@@ -33,6 +34,8 @@ import it.cnr.ilc.lari.itant.cash.cql.MyVisitor;
 import it.cnr.ilc.lari.itant.cash.cql.MyVisitorFiles;
 import it.cnr.ilc.lari.itant.cash.customparsers.MetadataToSQL;
 import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
+import it.cnr.ilc.lari.itant.cash.om.BiblioRequest;
+import it.cnr.ilc.lari.itant.cash.om.BiblioResponse;
 import it.cnr.ilc.lari.itant.cash.om.CountFilesResponse;
 import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.SearchFilesRequest;
@@ -42,6 +45,7 @@ import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.TestSearchResponse;
 import it.cnr.ilc.lari.itant.cash.om.UniqueValuesResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
+import it.cnr.ilc.lari.itant.cash.utils.ZoteroQueryManager;
 import uk.co.jemos.podam.api.PodamFactory;
 import uk.co.jemos.podam.api.PodamFactoryImpl;
 
@@ -224,6 +228,17 @@ public class SearchController {
 			sr.setNodePath(paths.get(sr.getNodeId()));
 		}
 		res.setRows(srs);
+		return res;
+	}
+
+	@PostMapping("/api/public/searchbiblio")
+	public BiblioResponse searchBiblio(@RequestBody BiblioRequest filters,
+	                             @RequestParam(value="limit", defaultValue = "10") int limit,
+								 @RequestParam(value="offset", defaultValue = "0") int offset,
+	                             Principal principal) throws Exception {
+		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal));
+		BiblioResponse res = ZoteroQueryManager.query(filters, offset, limit);
+		res.setRequestUUID(filters.getRequestUUID());
 		return res;
 	}
 

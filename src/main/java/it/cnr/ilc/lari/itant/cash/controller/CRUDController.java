@@ -202,7 +202,7 @@ public class CRUDController {
 				throw new InvalidParamException("this is not a valid CSV file");
 			}
 
-			int numrecords = new ZoteroImporter().parseCSV(in);
+			int numrecords = new ZoteroImporter().importCSV(in);
 
 			toret.setNumrecords(numrecords);
 
