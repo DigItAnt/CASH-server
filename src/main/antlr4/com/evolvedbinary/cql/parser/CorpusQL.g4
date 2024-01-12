@@ -66,7 +66,10 @@ positionLongPart:   attValuePair | '(' positionLong ')' | '!' positionLongPart ;
 attValuePair:       propName '==' valuePart      # attValuePairEquals
                     | propName '=' valuePart      # attValuePairEqualsRE
                     | propName '!=' valuePart   # attValuePairNotEquals
+                    | propName '<=' valuePart   # attValuePairLessEq
+                    | propName '>=' valuePart   # attValuePairGreaterEq
                     | propName '<' valuePart   # attValuePairLess
+                    | propName '>' valuePart   # attValuePairGreater
                     | valuePart                 # attValuePairDefaultEquals
                     ;
 

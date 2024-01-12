@@ -11,7 +11,10 @@ import com.evolvedbinary.cql.parser.CorpusQLBaseVisitor;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AndContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsREContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairGreaterContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairGreaterEqContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairLessContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairLessEqContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairNotEqualsContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.ComplexQueryContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.OrContext;
@@ -110,5 +113,22 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, true);
     }
 
+    @Override
+    public GenStatus visitAttValuePairLessEq(AttValuePairLessEqContext ctx) {
+        String op = "<=";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, true);        
+    }
+
+    @Override
+    public GenStatus visitAttValuePairGreater(AttValuePairGreaterContext ctx) {
+        String op = ">";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, true);
+    }
+
+    @Override
+    public GenStatus visitAttValuePairGreaterEq(AttValuePairGreaterEqContext ctx) {
+        String op = ">=";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, true);        
+    }
 
 }
