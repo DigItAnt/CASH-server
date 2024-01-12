@@ -53,20 +53,20 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         return status;
     }
 
-    public GenStatus visitAttValuePairOp(String propName, String valuePart, String op) {
+    public GenStatus visitAttValuePairOp(String propName, String valuePart, String op, boolean cast) {
         System.out.println(" -- value " + propName + " " + valuePart + " op: " + op);
 
         if (propName.contains(customSep))
-            return visitCustomAttValuePairOp(propName, valuePart, op);
+            return visitCustomAttValuePairOp(propName, valuePart, op, cast);
 
         if (propName.equals("word"))
-            status.setWordValuePairOp(valuePart, op);
+            status.setWordValuePairOp(valuePart, op, cast);
         else
-            status.setAttValuePairOp(propName, valuePart, op);
+            status.setAttValuePairOp(propName, valuePart, op, cast);
         return status;
     }
 
-    private GenStatus visitCustomAttValuePairOp(String propName, String valuePart, String op) {
+    private GenStatus visitCustomAttValuePairOp(String propName, String valuePart, String op, boolean cast) {
         String[] parts = propName.split(customSep);
         String layer = parts[0];
         String field = parts[1];
@@ -77,7 +77,7 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         // log field and subfields
         log.info("layer: {}, field: {}, subfields: {}", layer, field, subfields);
 
-        status.setMetaValuePairOp(layer, field, subfields, valuePart, op);
+        status.setMetaValuePairOp(layer, field, subfields, valuePart, op, cast);
         return status;
     }
 
@@ -95,19 +95,19 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     @Override
     public GenStatus visitAttValuePairEqualsRE(AttValuePairEqualsREContext ctx) {
         String op = "=";
-        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);        
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, false);        
     }
 
     @Override
     public GenStatus visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
         String op = "==";
-        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);        
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, false);
     }
 
     @Override
     public GenStatus visitAttValuePairLess(AttValuePairLessContext ctx) {
         String op = "<";
-        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);     
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op, true);
     }
 
 

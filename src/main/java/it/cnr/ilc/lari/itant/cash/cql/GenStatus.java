@@ -96,7 +96,7 @@ public class GenStatus {
         return op;
     }
 
-    public void setWordValuePairOp(String value, String op) {
+    public void setWordValuePairOp(String value, String op, boolean cast) {
         //op is =, ==, <, >, <=, >=
         String[] choices = splitOnPipe(value);
         if (op.equals("==") && choices.length > 1) {
@@ -114,7 +114,10 @@ public class GenStatus {
 
         op = adaptOp(op);
 
-        currWhereList.add(getCurrentTokenName() + ".text " + op + " ?");
+        if ( cast )
+            currWhereList.add("CAST( " + getCurrentTokenName() + ".text AS SIGNED) " + op + " CAST(? AS SIGNED)");
+        else
+            currWhereList.add(getCurrentTokenName() + ".text " + op + " ?");
         paramList.add(clearString(value));
     }
 
@@ -144,7 +147,7 @@ public class GenStatus {
         // ".`begin`))";
     }
 
-    public void setAttValuePairOp(String att, String value, String op) {
+    public void setAttValuePairOp(String att, String value, String op, boolean cast) {
         boolean regex = false;
         //regex = clearString(value).startsWith(REGEX_PREFIX);
         regex = op.equals("=");
@@ -164,7 +167,11 @@ public class GenStatus {
         String[] choices = splitOnPipe(value);
         if (!op.equals("==") || choices.length == 1) {
             op = adaptOp(op);
-            currWhereList
+            if (cast)
+                currWhereList
+                    .add("( " + annot + ".layer = ? AND CAST(" + annot + ".value AS SIGNED) " + op + " CAST(? AS SIGNED) AND " + overlapCheck + " )");
+            else
+                currWhereList
                     .add("( " + annot + ".layer = ? AND " + annot + ".value " + op + " ? AND " + overlapCheck + " )");
 
             paramList.add(att);
@@ -179,7 +186,7 @@ public class GenStatus {
 
     }
 
-    public void setMetaValuePairOp(String layer, String field, String[] subfields, String value, String op) {
+    public void setMetaValuePairOp(String layer, String field, String[] subfields, String value, String op, boolean cast) {
         boolean regex = false;
         //regex = clearString(value).startsWith(REGEX_PREFIX);
         regex = op.equals("=");
@@ -209,7 +216,10 @@ public class GenStatus {
             String[] choices = splitOnPipe(value);
             if (!op.equals("==") || choices.length == 1) {
                 op = adaptOp(op);
-                currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + op + " ? )");
+                if ( cast )
+                    currWhereList.add("( " + prop + ".name = ? AND CAST(" + prop + ".value AS SIGNED) " + op + " CAST(? AS SIGNED) )");
+                else
+                    currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + op + " ? )");
                 paramList.add(field);
                 paramList.add(clearString(value));
             } else {
