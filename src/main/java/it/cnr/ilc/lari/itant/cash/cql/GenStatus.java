@@ -90,20 +90,31 @@ public class GenStatus {
         return builder.toString();
     }
 
-    public void setWordValuePairEquals(String value) {
+    private String adaptOp(String op) {
+        if (op.equals("=="))
+            return "=";
+        return op;
+    }
+
+    public void setWordValuePairOp(String value, String op) {
+        //op is =, ==, <, >, <=, >=
         String[] choices = splitOnPipe(value);
-        if (choices.length > 1) {
+        if (op.equals("==") && choices.length > 1) {
             _setWordValuePairEqualsMultiValue(choices);
             return;
         }
 
-        String eqop = "=";
-        if (clearString(value).startsWith(REGEX_PREFIX)) {
-            // remove the prefix
-            value = value.substring(REGEX_PREFIX.length());
-            eqop = "REGEXP";
+        boolean regex = false;
+        //regex = clearString(value).startsWith(REGEX_PREFIX);
+        regex = op.equals("=");
+
+        if (regex) {
+            op = "REGEXP";
         }
-        currWhereList.add(getCurrentTokenName() + ".text " + eqop + " ?");
+
+        op = adaptOp(op);
+
+        currWhereList.add(getCurrentTokenName() + ".text " + op + " ?");
         paramList.add(clearString(value));
     }
 
@@ -133,26 +144,28 @@ public class GenStatus {
         // ".`begin`))";
     }
 
-    public void setAttValuePairEquals(String att, String value) {
+    public void setAttValuePairOp(String att, String value, String op) {
+        boolean regex = false;
+        //regex = clearString(value).startsWith(REGEX_PREFIX);
+        regex = op.equals("=");
+
         annotCounter++;
         String annot = "ann" + annotCounter;
 
         fromList.add("LEFT JOIN annotations as " + annot + " on " + annot + ".node = node.id");
         fromList.add(getAnnSpanFrom(annotCounter, annot));
 
-        String eqop = "=";
-        if (clearString(value).startsWith(REGEX_PREFIX)) {
-            // remove the prefix
-            value = value.substring(REGEX_PREFIX.length());
-            eqop = "REGEXP";
+        if (regex) {
+            op = "REGEXP";
         }
 
         String overlapCheck = getAnnSpanWhere(annotCounter, getCurrentTokenName());
 
         String[] choices = splitOnPipe(value);
-        if (choices.length == 1) {
+        if (!op.equals("==") || choices.length == 1) {
+            op = adaptOp(op);
             currWhereList
-                    .add("( " + annot + ".layer = ? AND " + annot + ".value " + eqop + " ? AND " + overlapCheck + " )");
+                    .add("( " + annot + ".layer = ? AND " + annot + ".value " + op + " ? AND " + overlapCheck + " )");
 
             paramList.add(att);
             paramList.add(clearString(value));
@@ -166,7 +179,11 @@ public class GenStatus {
 
     }
 
-    public void setMetaValuePairEquals(String layer, String field, String[] subfields, String value) {
+    public void setMetaValuePairOp(String layer, String field, String[] subfields, String value, String op) {
+        boolean regex = false;
+        //regex = clearString(value).startsWith(REGEX_PREFIX);
+        regex = op.equals("=");
+
         annotCounter++;
         String prop = "prop" + annotCounter;
         int spanId = 0;
@@ -179,19 +196,20 @@ public class GenStatus {
             fromList.add("JOIN str_ann_props as " + prop + " on " + prop + ".ann = " + ann + ".id");
             spanId = annotCounter;
             fromList.add(getAnnSpanFrom(annotCounter, ann));
+
+            currWhereList.add(ann + ".layer = ? AND");
+            paramList.add(layer);
         }
 
-        String eqop = "=";
-        if (clearString(value).startsWith(REGEX_PREFIX)) {
-            // remove the prefix
-            value = value.substring(REGEX_PREFIX.length());
-            eqop = "REGEXP";
+        if (regex) {
+            op = "REGEXP";
         }
 
         if (subfields.length == 0) {
             String[] choices = splitOnPipe(value);
-            if (choices.length == 1) {
-                currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + eqop + " ? )");
+            if (!op.equals("==") || choices.length == 1) {
+                op = adaptOp(op);
+                currWhereList.add("( " + prop + ".name = ? AND " + prop + ".value " + op + " ? )");
                 paramList.add(field);
                 paramList.add(clearString(value));
             } else {
@@ -219,7 +237,7 @@ public class GenStatus {
 
             log.info("subfieldsJson: " + subfieldsJson);
 
-            // TODO REGEX in this case
+            // TODO REGEX and <,>, ecc. in this case
             currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson
                     + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
             paramList.add(field);

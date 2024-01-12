@@ -10,6 +10,9 @@ import org.slf4j.LoggerFactory;
 import com.evolvedbinary.cql.parser.CorpusQLBaseVisitor;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AndContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairEqualsREContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairLessContext;
+import com.evolvedbinary.cql.parser.CorpusQLParser.AttValuePairNotEqualsContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.ComplexQueryContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.OrContext;
 import com.evolvedbinary.cql.parser.CorpusQLParser.QueryContext;
@@ -50,23 +53,21 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         return status;
     }
 
+    public GenStatus visitAttValuePairOp(String propName, String valuePart, String op) {
+        System.out.println(" -- value " + propName + " " + valuePart + " op: " + op);
 
-    @Override
-    public GenStatus visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
-        System.out.println(" -- value " + ctx.propName().getText() + " " + ctx.valuePart().getText());
+        if (propName.contains(customSep))
+            return visitCustomAttValuePairOp(propName, valuePart, op);
 
-        if (ctx.propName().getText().contains(customSep))
-            return visitCustomAttValuePairEquals(ctx);
-
-        if (ctx.propName().getText().equals("word"))
-            status.setWordValuePairEquals(ctx.valuePart().getText());
+        if (propName.equals("word"))
+            status.setWordValuePairOp(valuePart, op);
         else
-            status.setAttValuePairEquals(ctx.propName().getText(), ctx.valuePart().getText());
+            status.setAttValuePairOp(propName, valuePart, op);
         return status;
     }
 
-    private GenStatus visitCustomAttValuePairEquals(AttValuePairEqualsContext ctx) {
-        String[] parts = ctx.propName().getText().split(customSep);
+    private GenStatus visitCustomAttValuePairOp(String propName, String valuePart, String op) {
+        String[] parts = propName.split(customSep);
         String layer = parts[0];
         String field = parts[1];
         String[] subfields = new String[]{};
@@ -76,7 +77,7 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         // log field and subfields
         log.info("layer: {}, field: {}, subfields: {}", layer, field, subfields);
 
-        status.setMetaValuePairEquals(layer, field, subfields, ctx.valuePart().getText());
+        status.setMetaValuePairOp(layer, field, subfields, valuePart, op);
         return status;
     }
 
@@ -89,6 +90,24 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
         queryPartId++;
         status.setCurrentTokenId(queryPartId);
         return super.visitSequencePart(ctx);
+    }
+
+    @Override
+    public GenStatus visitAttValuePairEqualsRE(AttValuePairEqualsREContext ctx) {
+        String op = "=";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);        
+    }
+
+    @Override
+    public GenStatus visitAttValuePairEquals(AttValuePairEqualsContext ctx) {
+        String op = "==";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);        
+    }
+
+    @Override
+    public GenStatus visitAttValuePairLess(AttValuePairLessContext ctx) {
+        String op = "<";
+        return visitAttValuePairOp(ctx.propName().getText(), ctx.valuePart().getText(), op);     
     }
 
 

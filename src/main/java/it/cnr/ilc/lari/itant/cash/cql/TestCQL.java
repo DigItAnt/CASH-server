@@ -50,6 +50,7 @@ public class TestCQL {
         q = "[worda__gg__aa=\"no\\|word|statis|aaa|dd\"]";
         //q = "[worda\"statis\"]";
         //q = "[][][]";
+        q = "[epidoc__type == \"12|3\"]";  // TODO fixare layer epidoc
 
         // read q from standard input
         //q = new BufferedReader(new InputStreamReader(System.in)).readLine();

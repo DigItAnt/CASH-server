@@ -63,8 +63,10 @@ positionLong:       positionLongPart (booleanOperator positionLong)? ;
 
 positionLongPart:   attValuePair | '(' positionLong ')' | '!' positionLongPart ;
 
-attValuePair:       propName '=' valuePart      # attValuePairEquals
+attValuePair:       propName '==' valuePart      # attValuePairEquals
+                    | propName '=' valuePart      # attValuePairEqualsRE
                     | propName '!=' valuePart   # attValuePairNotEquals
+                    | propName '<' valuePart   # attValuePairLess
                     | valuePart                 # attValuePairDefaultEquals
                     ;
 
