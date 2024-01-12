@@ -18,7 +18,6 @@ public class GenStatus {
     private static final Logger log = LoggerFactory.getLogger(GenStatus.class);
 
     public static String DOC_LAYER = "_doc";
-    public static String REGEX_PREFIX = "_REGEX_";
 
     List<String> fromList = new ArrayList<String>();
 
