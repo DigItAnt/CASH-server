@@ -1,6 +1,7 @@
 package it.cnr.ilc.lari.itant.cash.cql;
 
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -30,7 +31,7 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
 
     GenStatus status = new GenStatus();
 
-    public static String customSep = "__";
+    public static String customSep = ".";
 
     public int queryPartId = 0;
 
@@ -70,7 +71,7 @@ public class MyVisitor extends CorpusQLBaseVisitor<GenStatus> {
     }
 
     private GenStatus visitCustomAttValuePairOp(String propName, String valuePart, String op, boolean cast) {
-        String[] parts = propName.split(customSep);
+        String[] parts = propName.split(Pattern.quote(customSep));
         String layer = parts[0];
         String field = parts[1];
         String[] subfields = new String[]{};

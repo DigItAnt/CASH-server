@@ -73,7 +73,7 @@ attValuePair:       propName '==' valuePart      # attValuePairEquals
                     | valuePart                 # attValuePairDefaultEquals
                     ;
 
-propName:           NAME ('/' NAME)? ;
+propName:           NAME ('.' NAME)* ;
 
 repetitionAmount:   '*'                             # repetitionZeroOrMore
                     | '+'                           # repetitionOneOrMore
