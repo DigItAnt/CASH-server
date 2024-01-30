@@ -246,11 +246,20 @@ public class GenStatus {
 
             log.info("subfieldsJson: " + subfieldsJson);
 
-            // TODO REGEX and <,>, ecc. in this case
-            currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson
-                    + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
-            paramList.add(field);
-            paramList.add(clearString(value));
+            if ( op.contains("<") || op.contains(">") ) {
+                String subfieldsPath = "";
+                for (int i = 0; i < subfields.length; i++)
+                    subfieldsPath += subfields[i] + ".";
+                subfieldsPath = subfieldsPath.substring(0, subfieldsPath.length() - 1);
+                String clause = "(" + "CAST(JSON_EXTRACT(" + prop + ".value, '$." + subfieldsPath + "') AS UNSIGNED) " + op + " CAST(? AS UNSIGNED) )" ;
+                currWhereList.add(clause);
+                paramList.add(clearString(value));
+            } else {
+                currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson
+                        + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
+                paramList.add(field);
+                paramList.add(clearString(value));
+            }
 
         }
 
