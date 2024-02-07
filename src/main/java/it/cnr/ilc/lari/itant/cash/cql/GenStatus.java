@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import it.cnr.ilc.lari.itant.cash.DBManager;
+import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 
 public class GenStatus {
     private static final Logger log = LoggerFactory.getLogger(GenStatus.class);
@@ -109,6 +110,7 @@ public class GenStatus {
 
         if (regex) {
             op = "REGEXP";
+            if (clearString(value).equals("")) { throw new InvalidParamException("Empty regex not allowed"); }
         }
 
         op = adaptOp(op);
@@ -159,6 +161,7 @@ public class GenStatus {
 
         if (regex) {
             op = "REGEXP";
+            if (clearString(value).equals("")) { throw new InvalidParamException("Empty regex not allowed"); }
         }
 
         String overlapCheck = getAnnSpanWhere(annotCounter, getCurrentTokenName());
@@ -209,6 +212,7 @@ public class GenStatus {
 
         if (regex) {
             op = "REGEXP";
+            if (clearString(value).equals("")) { throw new InvalidParamException("Empty regex not allowed"); }
         }
 
         if (subfields.length == 0) {
