@@ -84,11 +84,13 @@ public class ZoteroQueryManager {
         switch (filter.getOp().toLowerCase()) {
             case "eq":
                 return String.format("(%s.key = ? AND %s.Value = ?)", alias, alias);
-            case "in":
-                return String.format("(%s.key = ? AND %s.Value LIKE ?)", alias, alias);
+            case "re":
+                return String.format("(%s.key = ? AND %s.Value REGEXP ?)", alias, alias);
             case "lt":
                 return String.format("(%s.key = ? AND CAST(%s.Value AS UNSIGNED) < CAST(? AS UNSIGNED))", alias, alias);
             // Add more cases for other operators
+            case "gt":
+                return String.format("(%s.key = ? AND CAST(%s.Value AS UNSIGNED) > CAST(? AS UNSIGNED))", alias, alias);
             default:
                 throw new IllegalArgumentException("Unsupported operation: " + filter.getOp());
         }
