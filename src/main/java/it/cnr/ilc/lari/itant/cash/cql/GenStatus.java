@@ -253,9 +253,16 @@ public class GenStatus {
             if ( op.contains("<") || op.contains(">") ) {
                 String subfieldsPath = "";
                 for (int i = 0; i < subfields.length; i++)
-                    subfieldsPath += subfields[i] + ".";
+                    subfieldsPath += subfields[i] + "[*].";
+                String propt = "propt" + annotCounter;
+                String propv = "propv" + annotCounter;
                 subfieldsPath = subfieldsPath.substring(0, subfieldsPath.length() - 1);
-                String clause = "(" + "CAST(JSON_EXTRACT(" + prop + ".value, '$." + subfieldsPath + "') AS UNSIGNED) " + op + " CAST(? AS UNSIGNED) )" ;
+                String clause = "( " + prop + ".name=? AND " +
+                                "(EXISTS (SELECT 1" +
+                                "         FROM JSON_TABLE(" + prop + ".value, '$." + subfieldsPath + "'" +
+                                "                         COLUMNS(" + propv + " JSON PATH '$')) as " + propt +
+                                "         WHERE CAST(" + propv + " AS SIGNED) " + op + " CAST(? AS SIGNED) ) ) = 1)";
+                paramList.add(field);
                 currWhereList.add(clause);
                 paramList.add(clearString(value));
             } else {
