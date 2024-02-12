@@ -38,6 +38,7 @@ import it.cnr.ilc.lari.itant.cash.om.Token;
 import it.cnr.ilc.lari.itant.cash.om.TokenRef;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.cash.utils.EpiDocTextExtractor;
+import it.cnr.ilc.lari.itant.cash.utils.MetadataMapper;
 import it.cnr.ilc.lari.itant.cash.utils.NullTextExtractor;
 import it.cnr.ilc.lari.itant.cash.utils.StringUtils;
 import it.cnr.ilc.lari.itant.cash.utils.TextExtractorInterface;
@@ -448,7 +449,8 @@ public class DBManager {
             for (String k : attributes.keySet()) {
                 Object v = attributes.get(k);
                 for (Object value : (v instanceof List) ? ((List) v) : Arrays.asList(new Object[] { v })) {
-                    String toWrite = mapper.writeValueAsString(value);
+                    log.info("Calling list for " + id + " on " + value);
+                    String toWrite = mapper.writeValueAsString(MetadataMapper.lister(value));
                     stmt.setString(i++, k);
                     stmt.setString(i++, toWrite);
                     stmt.setLong(i++, id);
@@ -820,7 +822,7 @@ public class DBManager {
         Map<String, Object> ret = new HashMap<String, Object>();
         while (rs.next()) {
             String key = rs.getString("name");
-            Object value = mapper.readValue(rs.getString("value"), Object.class);
+            Object value = MetadataMapper.delister(mapper.readValue(rs.getString("value"), Object.class));
             log.debug("Type of value " + ((value == null) ? "null" : value.getClass().getName()));
             // String value = rs.getString("value");
             if (!ret.containsKey(key))
