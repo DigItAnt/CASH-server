@@ -250,7 +250,8 @@ public class GenStatus {
 
             log.info("subfieldsJson: " + subfieldsJson);
 
-            if ( op.contains("<") || op.contains(">") ) {
+            if ( op.contains("<") || op.contains(">") || op.equals("==") || op.equals("REGEXP") ) {
+                String[] choices = splitOnPipe(value);
                 String subfieldsPath = "";
                 for (int i = 0; i < subfields.length; i++)
                     subfieldsPath += subfields[i] + "[*].";
@@ -260,12 +261,32 @@ public class GenStatus {
                 String clause = "( " + prop + ".name=? AND " +
                                 "(EXISTS (SELECT 1" +
                                 "         FROM JSON_TABLE(" + prop + ".value, '$." + subfieldsPath + "'" +
-                                "                         COLUMNS(" + propv + " JSON PATH '$')) as " + propt +
-                                "         WHERE CAST(" + propv + " AS SIGNED) " + op + " CAST(? AS SIGNED) ) ) = 1)";
+                                "                         COLUMNS(" + propv + " JSON PATH '$')) as " + propt;
+
+                boolean multiplechoices = false;
+
+                if ( op.equals("==") ) {
+                    if (choices.length == 1)
+                        clause +=   "         WHERE " + propv + " = ? ) ) = 1)";
+                    else {
+                        multiplechoices = true;
+                        clause +=   "         WHERE " + propv + " IN (" + generatePlaceholders(choices.length) + ") ) ) = 1)";
+                    }
+
+                } else {
+                    if ( op.equals("REGEXP") )
+                        clause +=   "         WHERE " + propv + " " + op + " ? ) ) = 1)";
+                    else
+                        clause +=   "         WHERE CAST(" + propv + " AS SIGNED) " + op + " CAST(? AS SIGNED) ) ) = 1)";
+                }
                 paramList.add(field);
                 currWhereList.add(clause);
-                paramList.add(clearString(value));
-            } else {
+                if (multiplechoices)
+                    for (String choice : choices)
+                        paramList.add(choice);
+                else
+                    paramList.add(clearString(value));
+            } else {  // TODO remove branch, evaluate IN BOOLEAN MODE
                 currWhereList.add("( " + prop + ".name=? AND JSON_CONTAINS(" + prop + ".value, '" + subfieldsJson
                         + "', \"$\") AND MATCH(" + prop + ".value_str) AGAINST(? IN BOOLEAN MODE) )");
                 paramList.add(field);
