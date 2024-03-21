@@ -1,16 +1,18 @@
 package it.cnr.ilc.lari.itant.cash.om;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class DownloadFileResponse extends ResponseEntity<String> {
+public class DownloadFileResponse extends ResponseEntity<byte []> {
     
     String requestUUID;
 
-    public DownloadFileResponse(String content, HttpHeaders headers) {
+    public DownloadFileResponse(byte[] content, HttpHeaders headers) {
         super(content, headers, HttpStatus.OK);
     }
 

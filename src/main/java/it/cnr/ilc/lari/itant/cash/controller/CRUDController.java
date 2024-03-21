@@ -1,12 +1,16 @@
 package it.cnr.ilc.lari.itant.cash.controller;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
@@ -56,6 +60,8 @@ import it.cnr.ilc.lari.itant.cash.om.ZoteroCSVResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import it.cnr.ilc.lari.itant.cash.utils.MetadataRefresher;
 import it.cnr.ilc.lari.itant.cash.utils.ZoteroImporter;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 @CrossOrigin
 @RestController
@@ -266,7 +272,7 @@ public class CRUDController {
 		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
 		headers.setContentDispositionFormData("attachment", node.getName());
 
-		DownloadFileResponse toret = new DownloadFileResponse(content, headers);
+		DownloadFileResponse toret = new DownloadFileResponse(content.getBytes(StandardCharsets.UTF_8), headers);
 
 		toret.setRequestUUID(request.getRequestUUID());
 		return toret;
@@ -276,5 +282,71 @@ public class CRUDController {
 	public MetadataRefreshStatus refreshAllMetadata(@RequestParam("requestUUID") String requestUUID,
 			@RequestParam("element-id") Integer elementID) throws Exception {
 		return MetadataRefresher.run(elementID);
+	}
+
+	@GetMapping("/api/crud/exportEpiDoc")
+	public DownloadFileResponse exportEpiDoc(@RequestParam("element-id") long elementID, Principal principal) throws Exception {
+		DownloadFileResponse toret = null;
+		HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		if (elementID == 0)
+			elementID = DBManager.getRootNodeId();
+		FileInfo node = DBManager.getNodeById(elementID); // also raises exception if needed
+		if (node == null) {
+			log.error("Cannot download non-existent node " + elementID);
+			throw new NodeNotFoundException();
+		}
+		if ( node.getType() == DocumentSystemNode.FileDirectory.file ) {
+			String content = null;
+			try {
+				content = it.cnr.ilc.lari.itant.cash.utils.EpiDocXMLExporter.toXML(elementID);
+			} catch (Exception e) {
+				log.error("Error exporting EpiDoc for node " + elementID, e);
+				throw new InvalidParamException("Node " + elementID + " cannot be exported to EpiDoc");
+			}
+			// Set the headers
+			headers.setContentDispositionFormData("attachment", node.getName());
+			toret = new DownloadFileResponse(content.getBytes(StandardCharsets.UTF_8), headers);
+		} else if ( node.getType() == DocumentSystemNode.FileDirectory.directory ) {
+			// Set the headers
+			headers.setContentDispositionFormData("attachment", node.getName() + ".zip");			
+			toret = new DownloadFileResponse(exportZipFile(node), headers);
+		} else {
+			log.error("Cannot export non-file node " + elementID);
+			throw new it.cnr.ilc.lari.itant.cash.exc.InvalidParamException();
+		}
+		return toret;
+	}
+	
+	protected byte[] exportZipFile(FileInfo node) throws Exception {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ZipOutputStream zos = new ZipOutputStream(baos);
+
+		populateZip(zos, node, "");
+		zos.finish();
+		return baos.toByteArray();
+	}
+
+	protected void populateZip(ZipOutputStream zos, FileInfo node, String root) throws Exception {
+		if ( node.getType() == DocumentSystemNode.FileDirectory.file ) {
+			String content = null;
+			try {
+				content = it.cnr.ilc.lari.itant.cash.utils.EpiDocXMLExporter.toXML(node.getElementId());
+			} catch (Exception e) {
+				log.error("Error exporting EpiDoc for node " + node.getElementId());
+				return;
+			}
+			zos.putNextEntry(new ZipEntry(root + node.getName()));
+			zos.write(content.getBytes(StandardCharsets.UTF_8));
+			zos.closeEntry();
+		} else if ( node.getType() == DocumentSystemNode.FileDirectory.directory ) {
+			// add the directory
+			zos.putNextEntry(new ZipEntry(root + node.getName() + "/"));
+			zos.closeEntry();
+			// add the children
+			for ( FileInfo child: DBManager.getNodeChildren(node.getElementId()) ) {
+				populateZip(zos, child, root + node.getName() + "/");
+			}
+		}
 	}
 }

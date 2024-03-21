@@ -143,11 +143,12 @@ public class Annotation {
     public String toString() {
         StringBuffer ret = new StringBuffer("ANN: ");
         ret.append(layer).append("#").append(value);
-        ret.append("(@").append(firstSpan().start).append("-").append(firstSpan().end).append(",");
+        if ( this.spans != null )
+            ret.append("(@").append(firstSpan().start).append("-").append(firstSpan().end).append(",");
         for (String k: getAttributes().keySet()) {
             ret.append(k).append("=").append(getAttributes().get(k)).append(",");
         }
-        ret.append(")");
+        if ( this.spans != null ) ret.append(")");
         return ret.toString();
     }
 }
