@@ -1379,6 +1379,33 @@ public class DBManager {
         return ret;
     }
 
+    public static List<Annotation> getAnnotationsBySpan(long nodeId, long begin, long end, Connection connection) throws Exception {
+        List<Annotation> ret = new ArrayList<Annotation>();
+        boolean closeConnection = connection == null;
+        if (connection == null)
+            connection = getNewConnection();
+        // query all annotations for the node intersecting the given span
+        PreparedStatement stmt = connection.prepareStatement(
+                "SELECT a.id, a.layer, a.value FROM annotations a, ann_spans s WHERE a.id=s.ann AND a.node=? AND s.begin<=? AND s.end>=?");
+        stmt.setLong(1, nodeId);
+        stmt.setLong(2, begin);
+        stmt.setLong(3, end);
+        ResultSet res = stmt.executeQuery();
+        while (res.next()) {
+            Annotation ann = new Annotation();
+            ann.setID(res.getLong("id"));
+            ann.setNode(nodeId);
+            ann.setLayer(res.getString("layer"));
+            ann.setValue(res.getString("value"));
+            ret.add(ann);
+        }
+        
+        if (closeConnection)
+            connection.close();
+        return ret;
+
+    }
+
     public static String getNodeText(long nodeId, Connection connection) throws Exception {
         return getNodeText(nodeId, null, connection);
     }
