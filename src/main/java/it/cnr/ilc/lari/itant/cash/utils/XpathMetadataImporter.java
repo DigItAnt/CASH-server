@@ -26,6 +26,7 @@ public class XpathMetadataImporter {
         String expression;
         Map<String, FieldDef> subfields = new HashMap<>();
         String postprocess;
+        boolean isList = false; // if true, then expression is a list of nodes
 
         public FieldDef() {}
 
@@ -77,6 +78,17 @@ public class XpathMetadataImporter {
         return builder.toString();
     }
 
+    protected boolean isList(String fname) {
+        // check if the last character of fname is '*'
+        return (fname.length()>1) && (fname.charAt(fname.length()-1) == '*');
+    }
+
+    protected String cleanup(String fname) {
+        fname = fname.strip();
+        if ( isList(fname) ) return fname.substring(0, fname.length()-1);
+        return fname;
+    }
+
     public XpathMetadataImporter(String expressions) {
         fields = new HashMap<String, FieldDef>();
         String[] lines = expressions.split("\n");
@@ -88,20 +100,25 @@ public class XpathMetadataImporter {
             if ( columns.length < 2 ) continue;
             if ( !line.startsWith("__") && !line.contains(".") ) { // single value
                 FieldDef fdef = new FieldDef(columns[1].strip());
-                log.info("Field: " + columns[0] + ":" + fdef.expression);
-                fields.put(columns[0].strip(), fdef);
+                fdef.isList = isList(columns[0]);
+                String fname = cleanup(columns[0]);
+                log.info("Field: " + columns[0] + ":" + fdef.expression + " " + (fdef.isList? "list": "scalar"));
+                fields.put(fname, fdef);
             } else if ( !line.startsWith("__") && line.contains(".") ) {
                 String[] f_sub = columns[0].split("\\.");
-                String field = f_sub[0].strip();
-                String subfield = f_sub[1].strip();
+                String field = cleanup(f_sub[0].strip());
+                String subfield = cleanup(f_sub[1].strip());
                 log.info("SubField: " + subfield);
                 FieldDef fdef = fields.get(field);
                 if ( fdef == null ) { // create a new one
                     fdef = new FieldDef();
+                    fdef.isList = isList(f_sub[0].strip());
                     fields.put(field, fdef);
                     fdef.subfields = new HashMap<String, FieldDef>();
                 }
-                fdef.subfields.put(subfield, new FieldDef(columns[1].strip()));
+                FieldDef subDef = new FieldDef(columns[1].strip());
+                subDef.isList = isList(f_sub[1].strip());
+                fdef.subfields.put(subfield, subDef);
             } else if ( line.startsWith("__") ) {
                 log.info("Sublist: " + columns[0]);
                 li += processSubListDef(fields, lines, li);
@@ -135,8 +152,10 @@ public class XpathMetadataImporter {
                 log.info("ListSubField: " + columns[0] + ":" + columns[1]);
                 String[] f_sub = columns[0].split("\\.");
                 String field = f_sub[0].strip();
-                String subfield = f_sub[1].strip();
-                fDef.subfields.put(subfield, new FieldDef(columns[1].strip()));
+                String subfield = cleanup(f_sub[1].strip());
+                FieldDef subDef = new FieldDef(columns[1].strip());
+                subDef.isList = isList(f_sub[1].strip());
+                fDef.subfields.put(subfield, subDef);
             }
         }
     
@@ -159,13 +178,25 @@ public class XpathMetadataImporter {
     protected Object extractField(Object doc, FieldDef fdef) throws Exception {
         Object ret = null;
 
-        if ( fdef.subfields == null || fdef.subfields.size() == 0 ) { // scalar or list (list unsupported)
+        if ( fdef.subfields == null || fdef.subfields.size() == 0 ) { // scalar or list
             log.info("Extracting scalar field: " + fdef.expression);
-            // even for a single field, multiple nodes (e.g., text()) could be returned, so we concatenate them
+            // even for a single field, multiple nodes (e.g., text()) could be returned, so we concatenate them unless it's a list
             try{
                 NodeList nlist = (NodeList) runXPath(doc, fdef.expression, XPathConstants.NODESET);
                 log.info("Extracted " + nlist.getLength() + " nodes");
-                return fdef.applyPostprocessing(nodeListToString(nlist)); //runXPath(doc, fdef.expression, XPathConstants.STRING);
+                if ( !fdef.isList ) {
+                    log.info("Field is not a list");
+                    return fdef.applyPostprocessing(nodeListToString(nlist)); //runXPath(doc, fdef.expression, XPathConstants.STRING);
+                } else {
+                    log.info("Field is a list");
+                    // return a list of Strings
+                    List<String> lst = new ArrayList<String>();
+                    for ( int ni = 0; ni < nlist.getLength(); ni++ ) {
+                        Node node = nlist.item(ni);
+                        lst.add(fdef.applyPostprocessing(node.getTextContent()));
+                    }
+                    return lst;
+                }
             } catch (XPathException e) {
                 log.info("Expression does not appear to return a NodeSet, trying string");
                 return fdef.applyPostprocessing((String)runXPath(doc, fdef.expression, XPathConstants.STRING));

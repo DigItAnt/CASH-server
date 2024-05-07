@@ -15,7 +15,7 @@ public class MetadataMapper {
 
     public static Object lister(Object value) {
         if ( value instanceof Map ) {
-            log.info("\"listing\" object: " + value);
+            log.debug("\"listing\" object: " + value);
             return listerMap((Map<String, Object>) value);
         }
         return value;
@@ -47,20 +47,20 @@ public class MetadataMapper {
 
     public static Object delister(Object value) {
         if ( value instanceof Map ) {
-            log.info("Delisting: " + value);
+            log.debug("Delisting: " + value);
             return delisterMap((Map<String, Object>) value);
         }
         return value;
     }
 
     public static Map<String, Object> delisterMap(Map<String, Object> metadata) {
-        log.info("Delisting map: " + metadata + " of class " + metadata.getClass());
+        log.debug("Delisting map: " + metadata + " of class " + metadata.getClass());
         Map<String, Object> toret = new HashMap<>();
         for ( String key : metadata.keySet() ) {
             Object v = metadata.get(key);
-            log.info("Processing key: " + key + " value: " + v + " of class " + v.getClass());
+            log.debug("Processing key: " + key + " value: " + v + " of class " + v.getClass());
             if ( v instanceof List ) {
-                log.info("Delisting list: " + v + " of class " + v.getClass());
+                log.debug("Delisting list: " + v + " of class " + v.getClass());
                 List l = ((List)v);
                 // if the list is of size 1, put the first element of the list directly
                 if ( l.size() == 1 ) {
@@ -74,7 +74,7 @@ public class MetadataMapper {
                     Iterator i = l.iterator();
                     while ( i.hasNext() ) {
                         Object li = i.next();
-                        log.info("Delisting item: " + li);
+                        log.debug("Delisting item: " + li);
                         if ( li instanceof Map )
                             lv.add(delisterMap((Map<String, Object>)li));
                         else

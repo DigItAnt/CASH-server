@@ -449,7 +449,7 @@ public class DBManager {
             for (String k : attributes.keySet()) {
                 Object v = attributes.get(k);
                 for (Object value : (v instanceof List) ? ((List) v) : Arrays.asList(new Object[] { v })) {
-                    log.info("Calling list for " + id + " on " + value);
+                    log.debug("Calling list for " + id + " on " + value);
                     String toWrite = mapper.writeValueAsString(MetadataMapper.lister(value));
                     stmt.setString(i++, k);
                     stmt.setString(i++, toWrite);

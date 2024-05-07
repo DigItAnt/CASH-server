@@ -48,11 +48,14 @@ execution_conceptUrl	//tei:layoutDesc//tei:rs[@type='execution']/@ana
 opistography	//tei:layoutDesc//tei:rs[@type='opistography']/text()	
 layoutNotes	//tei:layoutDesc//tei:note[@type='layoutNotes']//text()	
 palaeographicNotes	//tei:physDesc//tei:handNote/tei:note[@type='palaeographicNotes']//text()	
-		
-writingSystem	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/text()	
-alphabet	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@subtype	
-alphabet_url	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']/@ref	
-wordDivisionType	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='wordDivision']/text()	
+
+__START__writingSystem	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='writingSystem']
+writingSystem.type	text()	
+writingSystem.alphabet	@subtype	
+writingSystem.alphabet_url	@ref
+__END__
+
+wordDivisionType*	//tei:physDesc/tei:scriptDesc/tei:scriptNote/tei:rs[@type='wordDivision']/text()	
 		
 decoration	//tei:physDesc/tei:decoDesc/tei:decoNote/text()	
 		
@@ -93,7 +96,7 @@ language.ident	@ident
 language.source	@source	
 __END__		
 		
-inscriptionType	//tei:profileDesc/tei:textClass/tei:keywords/tei:term/text()	
+inscriptionType*	//tei:profileDesc/tei:textClass/tei:keywords/tei:term/text()	
 		
 __START__facsimile	//tei:facsimile/tei:graphic	
 facsimile.Url	@url	
