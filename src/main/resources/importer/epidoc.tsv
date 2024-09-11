@@ -4,7 +4,7 @@ fileID	//tei:TEI/@xml:id
 title	//tei:teiHeader/tei:fileDesc/tei:titleStmt/tei:title/text()	
 itAnt_ID	//tei:teiHeader/tei:fileDesc//tei:edition/tei:idno/text()	
 		
-editor	//tei:editor/tei:persName/text()	
+editor*	//tei:editor/tei:persName/text()	
 		
 authority	//tei:publicationStmt/tei:authority/text()	
 publicationDate	//tei:publicationStmt/tei:date/text()	
@@ -12,12 +12,16 @@ publicationPID	//tei:publicationStmt/tei:idno/text()
 		
 license.distributionLicence	//tei:publicationStmt/tei:availability/tei:licence/text()	
 license.distributionLicence_URL	//tei:publicationStmt/tei:availability/tei:licence/@target	
+
+__START__settlement	//tei:sourceDesc/tei:msDesc/tei:msIdentifier//tei:settlement
+settlement.placeOfConservation	text()	
+settlement.placeOfConservationExternalReference	@ref
+__END__
 		
-settlement.placeOfConservation	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/text()	
-settlement.placeOfConservationExternalReference	//tei:sourceDesc/tei:msDesc/tei:msIdentifier/tei:settlement/@ref	
-		
-conservationInstitution.name	//tei:sourceDesc//tei:institution/text()	
-conservationInstitution.URL	//tei:sourceDesc//tei:institution/@ana	
+__START__conservationInstitution	//tei:sourceDesc//tei:institution
+conservationInstitution.name	text()	
+conservationInstitution.URL	@ana	
+__END__
 		
 inventoryNumber	//tei:sourceDesc//tei:idno[@type='museumID']/text()	
 inscriptionTitle	//tei:sourceDesc//tei:msName/text()	
@@ -84,10 +88,12 @@ ancientFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='
 modernFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/text()	
 modernFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/@ref	
 detailedFindSpot	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='detailed']/text()	
-		
-autopsy	//tei:history/tei:provenance[@type='observed']/@subtype	
-		
-autopsyAuthor	//tei:history/tei:provenance/tei:persName/text()	
+
+__START__autopsy	//tei:history/tei:provenance[@type='observed']
+autopsy.subtype	@subtype	
+autopsy.author*	tei:persName/text()
+__END__
+
 encoding	//tei:encodingDesc/tei:p/text()	
 encodingSourceUrl	//tei:encodingDesc/tei:p/@source	
 		
