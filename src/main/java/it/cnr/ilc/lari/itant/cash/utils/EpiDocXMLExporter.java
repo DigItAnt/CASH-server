@@ -61,7 +61,7 @@ public class EpiDocXMLExporter {
                 log.info(token.getXmlid() + " ANNOTATION " + annotation.toString());
                 if ( !annotation.getLayer().equals("attestation") ) continue;
                 // add an attribute to the element
-                element.setAttribute("attestazione", annotation.getValue());
+                element.setAttribute("sameAs", annotation.getValue());
             }
             
         }
