@@ -61,6 +61,7 @@ import it.cnr.ilc.lari.itant.cash.om.UploadFileResponse;
 import it.cnr.ilc.lari.itant.cash.om.ZoteroCSVResponse;
 import it.cnr.ilc.lari.itant.cash.utils.LogUtils;
 import it.cnr.ilc.lari.itant.cash.utils.MetadataRefresher;
+import it.cnr.ilc.lari.itant.cash.utils.TTLUtils;
 import it.cnr.ilc.lari.itant.cash.utils.ZoteroImporter;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -368,16 +369,12 @@ public class CRUDController {
 		// OK, node exists. Get attestations
 		List<Annotation> annotations = DBManager.getAnnotationsByLayer(elementID, "attestation");
 
-		//  TODO: generate the TTL file from the list of annotations with their spans
+		String ttl = TTLUtils.toTTL(node, annotations);
 
 		// The annotations have an extra entry in their attributes, "__xmlid" which is the xml:id of the token
-		StringBuilder sb = new StringBuilder();
-		for ( Annotation a: annotations) {
-			sb.append(a.toString() + "\n");
-		}
-		// TODO end
-		headers.setContentDispositionFormData("attachment", node.getName());
-		toret = new DownloadFileResponse(sb.toString().getBytes(StandardCharsets.UTF_8), headers);
+
+		headers.setContentDispositionFormData("attachment", node.getName() + ".ttl");
+		toret = new DownloadFileResponse(ttl.getBytes(StandardCharsets.UTF_8), headers);
 		return toret;
 	}
 }
