@@ -26,8 +26,10 @@ __END__
 inventoryNumber	//tei:sourceDesc//tei:idno[@type='museumID']/text()	
 inscriptionTitle	//tei:sourceDesc//tei:msName/text()	
 		
-trismegistos.trismegistosID	//tei:altIdentifier[@type='trismegistos']/tei:idno/text()	
-trismegistos.trismegistosID_url	//tei:altIdentifier[@type='trismegistos']/tei:idno/@source	
+__START__trismegistos	//tei:altIdentifier[@type='trismegistos']//tei:idno/
+trismegistos.trismegistosID	text()	
+trismegistos.trismegistosID_url	@source
+__END__
 		
 __START__traditionalIDs	//tei:altIdentifier[@type='traditionalID']/tei:idno	
 traditionalID.traditionalID	text()	
@@ -89,7 +91,7 @@ modernFindSpotName	//tei:history/tei:provenance[@type='found' and @subtype='disc
 modernFindSpotNameUri	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='modern']/@ref	
 detailedFindSpot	//tei:history/tei:provenance[@type='found' and @subtype='discovered']/tei:placeName[@type='detailed']/text()	
 
-__START__autopsy	//tei:history/tei:provenance[@type='observed']
+__START__autopsy	//tei:history//tei:provenance[@type='observed']
 autopsy.subtype	@subtype	
 autopsy.author*	tei:persName/text()
 __END__
