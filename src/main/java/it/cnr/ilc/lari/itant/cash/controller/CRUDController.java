@@ -9,6 +9,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -31,6 +32,7 @@ import it.cnr.ilc.lari.itant.cash.exc.InvalidParamException;
 import it.cnr.ilc.lari.itant.cash.exc.NodeNotFoundException;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderRequest;
 import it.cnr.ilc.lari.itant.cash.om.AddFolderResponse;
+import it.cnr.ilc.lari.itant.cash.om.Annotation;
 import it.cnr.ilc.lari.itant.cash.om.CopyFileToRequest;
 import it.cnr.ilc.lari.itant.cash.om.CopyFileToResponse;
 import it.cnr.ilc.lari.itant.cash.om.CreateFileRequest;
@@ -348,5 +350,34 @@ public class CRUDController {
 				populateZip(zos, child, root + node.getName() + "/");
 			}
 		}
+	}
+
+	@GetMapping("/api/crud/exportAttestations")
+	public DownloadFileResponse exportAttestations(@RequestParam("element-id") long elementID, Principal principal) throws Exception {
+		DownloadFileResponse toret = null;
+		HttpHeaders headers = new HttpHeaders();
+
+		headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+		if (elementID == 0)
+			elementID = DBManager.getRootNodeId();
+		FileInfo node = DBManager.getNodeById(elementID); // also raises exception if needed
+		if (node == null) {
+			log.error("Non-existent node " + elementID);
+			throw new NodeNotFoundException();
+		}
+		// OK, node exists. Get attestations
+		List<Annotation> annotations = DBManager.getAnnotationsByLayer(elementID, "attestation");
+
+		//  TODO: generate the TTL file from the list of annotations with their spans
+
+		// The annotations have an extra entry in their attributes, "__xmlid" which is the xml:id of the token
+		StringBuilder sb = new StringBuilder();
+		for ( Annotation a: annotations) {
+			sb.append(a.toString() + "\n");
+		}
+		// TODO end
+		headers.setContentDispositionFormData("attachment", node.getName());
+		toret = new DownloadFileResponse(sb.toString().getBytes(StandardCharsets.UTF_8), headers);
+		return toret;
 	}
 }

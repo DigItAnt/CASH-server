@@ -36,6 +36,7 @@ import it.cnr.ilc.lari.itant.cash.om.FileInfo;
 import it.cnr.ilc.lari.itant.cash.om.SearchRow;
 import it.cnr.ilc.lari.itant.cash.om.Token;
 import it.cnr.ilc.lari.itant.cash.om.TokenRef;
+import it.cnr.ilc.lari.itant.cash.om.Annotation.Span;
 import it.cnr.ilc.lari.itant.cash.om.DocumentSystemNode.FileDirectory;
 import it.cnr.ilc.lari.itant.cash.utils.EpiDocTextExtractor;
 import it.cnr.ilc.lari.itant.cash.utils.MetadataMapper;
@@ -1317,6 +1318,27 @@ public class DBManager {
         return ret;
     }
 
+    public static String getTokenXmlIdBySpan(long nodeId, int begin, int end, Connection connection) throws Exception {
+        log.info("Trying to get token of node " + nodeId + " by span " + begin + "-" + end);
+        boolean closeConnection = connection == null;
+        if (connection == null)
+            connection = getNewConnection();
+        PreparedStatement stmt = connection.prepareStatement(
+                "SELECT xmlid FROM tokens WHERE node=? and begin=? and end=? limit 1");
+        stmt.setLong(1, nodeId);
+        stmt.setInt(2, begin);
+        stmt.setInt(3, end);
+        ResultSet res = stmt.executeQuery();
+        String ret = null;
+        if (res.next()) {
+            log.info("Found.");
+            ret = res.getString("xmlid");
+        }
+        if (closeConnection)
+            connection.close();
+        return ret;
+    }
+
     // @TODO: there are missing columns here
     public static List<Annotation> getNodeAnnotations(long nodeId, Connection connection) throws Exception {
         log.info("Trying to get annotations of node " + nodeId);
@@ -1368,6 +1390,35 @@ public class DBManager {
         return ret;
     }
 
+    public static List<Annotation> getAnnotationsByLayer(long nodeId, String layer) throws Exception {
+        log.info("Trying to get annotations for node " + nodeId + " by layer " + layer);
+        Connection connection = getNewConnection();
+        PreparedStatement stmt = connection
+                .prepareStatement("SELECT id, value, imported FROM annotations where layer=? and node=?");
+        stmt.setString(1, layer);
+        stmt.setLong(2, nodeId);
+        ResultSet res = stmt.executeQuery();
+        List<Annotation> ret = new ArrayList<Annotation>();
+        while (res.next()) {
+            Annotation ann = new Annotation();
+            ann.setID(res.getLong("id"));
+            ann.setNode(nodeId);
+            ann.setLayer(layer);
+            ann.setValue(res.getString("value"));
+            ann.setImported(res.getBoolean("imported"));
+            Map<String, Object> attrs = getAnnotationAttributes(ann.getID(), connection);
+            List<Span> spans = getAnnotationSpans(ann.getID(), connection);
+            String xmlid = getTokenXmlIdBySpan(nodeId, spans.get(0).getStart(),
+                                               spans.get(0).getEnd(), connection);
+            if (xmlid != null)
+                attrs.put("__xmlid", xmlid);
+            ann.setAttributes(attrs);
+            ann.setSpans(spans);
+            ret.add(ann);
+        }
+        connection.close();
+        return ret;
+    }
 
     public static Annotation getAnnotationById(long annId, Connection connection) throws Exception {
         boolean closeConnection = connection == null;
