@@ -28,13 +28,14 @@ public class BootstrapController {
 	}
 
 	@GetMapping("/api/public/getDocumentSystem")
-	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, @RequestParam(name="element-id", required = false, defaultValue = "0") long id, Principal principal) {
+	public GetDocumentSystemResponse getDocumentSystem(@RequestParam String requestUUID, @RequestParam(name="element-id", required = false, defaultValue = "0") long id,
+	 												   @RequestParam(name="depth", required = false, defaultValue = "-1") int depth, Principal principal) {
 		log.info(LogUtils.CASH_INVOCATION_LOG_MSG, LogUtils.getPrincipalName(principal), requestUUID);
 
 		GetDocumentSystemResponse toret = new GetDocumentSystemResponse();
 		try {
 			long root = id == 0 ? DBManager.getRootNodeId() : id;
-			toret.setDocumentSystem(DocumentSystemNode.populateTree(root));
+			toret.setDocumentSystem(DocumentSystemNode.populateTree(root, depth));
 			toret.setRequestUUID(requestUUID);
 			toret.setResults(toret.getDocumentSystem().size());
 		} catch (Exception e) {

@@ -180,8 +180,10 @@ public class EpiDocTextExtractor implements TextExtractorInterface {
         NodeList bodys = doc.getElementsByTagName("tei:body");
         Node body = bodys.item(0);
         // Inside the body, look for 'div type=TYPE subtype=SUBTYPE'
-        if ( body == null )
+        if ( body == null ) {
+            log.warn("No body in document");
             return null;
+        }
         NodeList divs = body.getChildNodes();
         for ( int nl = 0; nl < divs.getLength(); nl++ ) {
             Node div = divs.item(nl);

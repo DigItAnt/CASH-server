@@ -73,8 +73,12 @@ public class DocumentSystemNode {
         this.metadata = metadata;
     }
 
-    // Constructor from FileInfo.
     public DocumentSystemNode(FileInfo node, boolean recur) throws Exception {
+        this(node, recur, -1);
+    }
+
+    // Constructor from FileInfo.
+    public DocumentSystemNode(FileInfo node, boolean recur, int depth) throws Exception {
         this.name = node.getName();
         this.elementId = node.getElementId();
         this.type = node.getType();
@@ -88,14 +92,14 @@ public class DocumentSystemNode {
             log.error("Metadata error", e);
             e.printStackTrace();
         } 
-        if ( recur ) recurChildren(this, node);
+        if ( recur && (depth > 0)) recurChildren(this, node, depth);
     }
 
-    protected static void recurChildren(DocumentSystemNode dsn, FileInfo node) throws Exception {
+    protected static void recurChildren(DocumentSystemNode dsn, FileInfo node, int depth) throws Exception {
         log.info("Recurring over children of " + node.getName());
         for ( FileInfo child: DBManager.getNodeChildren(node.getElementId()) ) {
             log.info("Child node " + child.getName());
-            DocumentSystemNode childdsn = new DocumentSystemNode(child, true);
+            DocumentSystemNode childdsn = new DocumentSystemNode(child, true, depth-1);
             dsn.children.add(childdsn);
         }
     }
@@ -104,12 +108,17 @@ public class DocumentSystemNode {
         return new ArrayList<DocumentSystemNode>();
     }
 
-    public static List<DocumentSystemNode> populateTree(long root) throws Exception {
+    public static List<DocumentSystemNode> populateTree(long root, int depth) throws Exception {
         log.info("Populating Tree");
         ArrayList<DocumentSystemNode> toret = new ArrayList<DocumentSystemNode>();
         FileInfo rnode = DBManager.getNodeById(root);
         if ( rnode.type != FileDirectory.directory ) {
-            DocumentSystemNode dsn = new DocumentSystemNode(rnode, true);
+            DocumentSystemNode dsn = new DocumentSystemNode(rnode, true, 0);
+            toret.add(dsn);
+            return toret;
+        }
+        if ( depth == 0 ) {
+            DocumentSystemNode dsn = new DocumentSystemNode(rnode, false);
             toret.add(dsn);
             return toret;
         }
@@ -117,7 +126,7 @@ public class DocumentSystemNode {
         log.info("Iterating over nodes.");
         for ( FileInfo node: children ) {;
             log.info("Node "  + node.getName());
-            DocumentSystemNode dsn = new DocumentSystemNode(node, true);
+            DocumentSystemNode dsn = new DocumentSystemNode(node, true, depth-1);
             log.info("Adding " + dsn.getName());
             toret.add(dsn);
         }
