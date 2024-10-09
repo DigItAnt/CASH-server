@@ -353,7 +353,7 @@ public class CRUDController {
 		}
 	}
 
-	@GetMapping("/api/crud/exportAttestations")
+	@GetMapping("/api/public/crud/exportAttestations")
 	public DownloadFileResponse exportAttestations(@RequestParam("element-id") long elementID, Principal principal) throws Exception {
 		DownloadFileResponse toret = null;
 		HttpHeaders headers = new HttpHeaders();
