@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.filter.ForwardedHeaderFilter;
 
 @Configuration
 @SpringBootApplication
@@ -20,6 +22,12 @@ public class CASHApplication {
 
 	public CASHApplication() throws Exception {
 		log.info("Starting Application");
+	}
+
+	// https://springdoc.org/v1/index.html#how-can-i-deploy-springdoc-openapi-ui-behind-a-reverse-proxy
+	@Bean
+	ForwardedHeaderFilter forwardedHeaderFilter() {
+   		return new ForwardedHeaderFilter();
 	}
 
     @PostConstruct
